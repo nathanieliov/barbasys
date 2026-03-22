@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import { AlertCircle, PlusCircle, X } from 'lucide-react';
+import { AlertCircle, PlusCircle, X, TrendingDown, Clock } from 'lucide-react';
 
 export default function Inventory() {
   const [products, setProducts] = useState<any[]>([]);
+  const [intelligence, setIntelligence] = useState<any[]>([]);
   const [showRestock, setShowRestock] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [restockAmount, setRestockAmount] = useState(0);
@@ -11,6 +12,7 @@ export default function Inventory() {
 
   const fetchProducts = () => {
     axios.get('/api/inventory').then(res => setProducts(res.data));
+    axios.get('/api/inventory/intelligence').then(res => setIntelligence(res.data));
   };
 
   useEffect(() => {
@@ -45,6 +47,31 @@ export default function Inventory() {
         </button>
       </div>
 
+      {intelligence.some(i => i.reorder_suggested) && (
+        <div className="card" style={{ border: '1px solid #f59e0b', background: 'rgba(245, 158, 11, 0.05)', marginBottom: '2rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem', color: '#f59e0b' }}>
+            <TrendingDown size={24} />
+            <h2 style={{ margin: 0, color: '#f59e0b' }}>Reorder Suggestions</h2>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1rem' }}>
+            {intelligence.filter(i => i.reorder_suggested).map(i => (
+              <div key={i.id} style={{ background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '0.5rem' }}>
+                <div style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>{i.name}</div>
+                <div style={{ fontSize: '0.875rem', color: '#94a3b8' }}>
+                  {i.days_remaining <= 7 ? (
+                    <span style={{ color: '#ef4444', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <Clock size={14} /> Out of stock in ~{i.days_remaining} days
+                    </span>
+                  ) : (
+                    <span>Current stock: {i.stock} (Min: {i.min_stock_threshold})</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="card">
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
@@ -59,7 +86,10 @@ export default function Inventory() {
           <tbody>
             {products.map(p => (
               <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                <td style={{ padding: '1rem' }}>{p.name}</td>
+                <td style={{ padding: '1rem' }}>
+                  <div style={{ fontWeight: 'bold' }}>{p.name}</div>
+                  <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Supplier: {p.supplier_name || 'Not set'}</div>
+                </td>
                 <td style={{ padding: '1rem' }}>${p.price.toFixed(2)}</td>
                 <td style={{ padding: '1rem' }}>{p.stock}</td>
                 <td style={{ padding: '1rem', color: '#94a3b8' }}>{p.min_stock_threshold}</td>
