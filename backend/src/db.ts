@@ -85,8 +85,10 @@ db.exec(`
     password_hash TEXT NOT NULL,
     role TEXT NOT NULL CHECK(role IN ('OWNER', 'MANAGER', 'BARBER')),
     barber_id INTEGER,
+    shop_id INTEGER,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (barber_id) REFERENCES barbers(id) ON DELETE SET NULL
+    FOREIGN KEY (barber_id) REFERENCES barbers(id) ON DELETE SET NULL,
+    FOREIGN KEY (shop_id) REFERENCES shops(id) ON DELETE SET NULL
   );
 
   CREATE TABLE IF NOT EXISTS sales (
@@ -160,16 +162,17 @@ db.exec(`
 `);
 
 // Seed initial data
-const settingsCount = db.prepare('SELECT count(*) as count FROM shop_settings').get() as { count: number };
-if (settingsCount.count === 0) {
-  db.prepare('INSERT INTO shop_settings (key, value) VALUES (?, ?)').run('shop_name', 'BarbaSys');
+const shopsCount = db.prepare('SELECT count(*) as count FROM shops').get() as { count: number };
+if (shopsCount.count === 0) {
+  db.prepare('INSERT INTO shops (name, address) VALUES (?, ?)').run('Main Street Shop', '123 Main St');
 }
+const defaultShopId = (db.prepare('SELECT id FROM shops LIMIT 1').get() as { id: number }).id;
 
 const usersCount = db.prepare('SELECT count(*) as count FROM users').get() as { count: number };
 if (usersCount.count === 0) {
   const salt = bcrypt.genSaltSync(10);
   const passwordHash = bcrypt.hashSync('admin123', salt);
-  db.prepare('INSERT OR IGNORE INTO users (username, email, password_hash, role) VALUES (?, ?, ?, ?)').run('admin', 'admin@barbasys.com', passwordHash, 'OWNER');
+  db.prepare('INSERT OR IGNORE INTO users (username, email, password_hash, role, shop_id) VALUES (?, ?, ?, ?, ?)').run('admin', 'admin@barbasys.com', passwordHash, 'OWNER', defaultShopId);
 }
 
 const barbersCount = db.prepare('SELECT count(*) as count FROM barbers').get() as { count: number };
