@@ -283,11 +283,13 @@ app.post('/api/barbers', protect, authorize('OWNER', 'MANAGER'), (req, res) => {
 
 // Products & Services
 app.get('/api/inventory', protect, (req, res) => {
+  const shopId = req.user?.shop_id;
   const products = db.prepare(`
     SELECT p.*, s.name as supplier_name 
     FROM products p 
     LEFT JOIN suppliers s ON p.supplier_id = s.id
-  `).all();
+    WHERE p.shop_id = ?
+  `).all(shopId);
   res.json(products);
 });
 
@@ -357,8 +359,9 @@ app.post('/api/inventory/restock', protect, authorize('OWNER', 'MANAGER'), (req,
 
 // Services
 app.get('/api/services', protect, async (req, res) => {
+  const shopId = req.user?.shop_id;
   try {
-    const services = await listServices.execute();
+    const services = await db.prepare('SELECT * FROM services WHERE shop_id = ?').all(shopId);
     res.json(services);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch services' });
@@ -375,9 +378,11 @@ app.get('/api/services/:id', protect, async (req, res) => {
 });
 
 app.post('/api/services', protect, authorize('OWNER', 'MANAGER'), async (req, res) => {
+  const shopId = req.user?.shop_id;
   try {
-    const id = await createService.execute(req.body);
-    res.status(201).json({ id });
+    const { name, price, duration_minutes } = req.body;
+    const result = db.prepare('INSERT INTO services (name, price, duration_minutes, shop_id) VALUES (?, ?, ?, ?)').run(name, price, duration_minutes, shopId);
+    res.status(201).json({ id: result.lastInsertRowid });
   } catch (err: any) {
     res.status(400).json({ error: err.message });
   }
