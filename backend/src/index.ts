@@ -504,6 +504,7 @@ app.post('/api/sales', protect, (req, res) => {
 
 // Reports
 app.get('/api/reports', protect, authorize('OWNER', 'MANAGER', 'BARBER'), (req, res) => {
+  const shopId = req.user?.shop_id;
   const startDate = (req.query.startDate as string) || (req.query.date as string) || new Date().toISOString().split('T')[0];
   const endDate = (req.query.endDate as string) || startDate;
   
@@ -511,11 +512,11 @@ app.get('/api/reports', protect, authorize('OWNER', 'MANAGER', 'BARBER'), (req, 
   const barberId = req.user?.barber_id;
 
   // Revenue and tips in range
-  let revenueQuery = 'SELECT SUM(total_amount) as total, SUM(tip_amount) as tips FROM sales WHERE date(timestamp) BETWEEN @startDate AND @endDate';
+  let revenueQuery = 'SELECT SUM(total_amount) as total, SUM(tip_amount) as tips FROM sales WHERE date(timestamp) BETWEEN @startDate AND @endDate AND shop_id = @shopId';
   if (isBarber) {
     revenueQuery += ' AND barber_id = @barberId';
   }
-  const revenueData = db.prepare(revenueQuery).get({ startDate, endDate, barberId }) as { total: number, tips: number };
+  const revenueData = db.prepare(revenueQuery).get({ startDate, endDate, barberId, shopId }) as { total: number, tips: number };
 
   // Barber commissions in range
   let commissionsQuery = `
@@ -526,19 +527,20 @@ app.get('/api/reports', protect, authorize('OWNER', 'MANAGER', 'BARBER'), (req, 
     FROM barbers b
     LEFT JOIN sales s ON s.barber_id = b.id AND date(s.timestamp) BETWEEN @startDate AND @endDate
     LEFT JOIN sale_items si ON si.sale_id = s.id
+    WHERE b.shop_id = @shopId
   `;
   
   if (isBarber) {
-    commissionsQuery += ' WHERE b.id = @barberId';
+    commissionsQuery += ' AND b.id = @barberId';
   }
   
   commissionsQuery += ' GROUP BY b.id';
   
-  const commissions = db.prepare(commissionsQuery).all({ startDate, endDate, barberId });
+  const commissions = db.prepare(commissionsQuery).all({ startDate, endDate, barberId, shopId });
 
   // Total Expenses in range
-  let expensesQuery = 'SELECT SUM(amount) as total FROM expenses WHERE date(date) BETWEEN @startDate AND @endDate';
-  const expenseData = db.prepare(expensesQuery).get({ startDate, endDate }) as { total: number };
+  let expensesQuery = 'SELECT SUM(amount) as total FROM expenses WHERE date(date) BETWEEN @startDate AND @endDate AND shop_id = @shopId';
+  const expenseData = db.prepare(expensesQuery).get({ startDate, endDate, shopId }) as { total: number };
 
   res.json({
     startDate,
@@ -552,13 +554,15 @@ app.get('/api/reports', protect, authorize('OWNER', 'MANAGER', 'BARBER'), (req, 
 
 // Expenses
 app.get('/api/expenses', protect, authorize('OWNER', 'MANAGER'), (req, res) => {
-  const expenses = db.prepare('SELECT * FROM expenses ORDER BY date DESC').all();
+  const shopId = req.user?.shop_id;
+  const expenses = db.prepare('SELECT * FROM expenses WHERE shop_id = ? ORDER BY date DESC').all(shopId);
   res.json(expenses);
 });
 
 app.post('/api/expenses', protect, authorize('OWNER', 'MANAGER'), (req, res) => {
+  const shopId = req.user?.shop_id;
   const { category, amount, description, date } = req.body;
-  const result = db.prepare('INSERT INTO expenses (category, amount, description, date) VALUES (?, ?, ?, ?)').run(category, amount, description, date || new Date().toISOString());
+  const result = db.prepare('INSERT INTO expenses (category, amount, description, date, shop_id) VALUES (?, ?, ?, ?, ?)').run(category, amount, description, date || new Date().toISOString(), shopId);
   res.json({ id: result.lastInsertRowid });
 });
 
@@ -568,25 +572,26 @@ app.delete('/api/expenses/:id', protect, authorize('OWNER', 'MANAGER'), (req, re
 });
 
 app.get('/api/reports/analytics', protect, authorize('OWNER', 'MANAGER'), (req, res) => {
+  const shopId = req.user?.shop_id;
   const { startDate, endDate } = req.query;
   
   // 1. Revenue by Hour (Heatmap data)
   const hourlyRevenue = db.prepare(`
     SELECT strftime('%H', timestamp) as hour, SUM(total_amount) as revenue
     FROM sales
-    WHERE date(timestamp) BETWEEN ? AND ?
+    WHERE date(timestamp) BETWEEN ? AND ? AND shop_id = ?
     GROUP BY hour
     ORDER BY hour ASC
-  `).all(startDate, endDate);
+  `).all(startDate, endDate, shopId);
 
   // 2. Revenue by Day of Week
   const dailyRevenue = db.prepare(`
     SELECT strftime('%w', timestamp) as day_of_week, SUM(total_amount) as revenue
     FROM sales
-    WHERE date(timestamp) BETWEEN ? AND ?
+    WHERE date(timestamp) BETWEEN ? AND ? AND shop_id = ?
     GROUP BY day_of_week
     ORDER BY day_of_week ASC
-  `).all(startDate, endDate);
+  `).all(startDate, endDate, shopId);
 
   // 3. Barber Performance Metrics
   const barberPerformance = db.prepare(`
@@ -595,11 +600,12 @@ app.get('/api/reports/analytics', protect, authorize('OWNER', 'MANAGER'), (req, 
       COUNT(s.id) as total_sales,
       SUM(s.total_amount) as total_revenue,
       AVG(s.total_amount) as avg_ticket_size,
-      (SELECT COUNT(*) FROM appointments a WHERE a.barber_id = b.id AND a.status = 'completed' AND date(a.start_time) BETWEEN ? AND ?) as completed_appointments
+      (SELECT COUNT(*) FROM appointments a WHERE a.barber_id = b.id AND a.status = 'completed' AND date(a.start_time) BETWEEN ? AND ? AND a.shop_id = ?) as completed_appointments
     FROM barbers b
-    LEFT JOIN sales s ON s.barber_id = b.id AND date(s.timestamp) BETWEEN ? AND ?
+    LEFT JOIN sales s ON s.barber_id = b.id AND date(s.timestamp) BETWEEN ? AND ? AND s.shop_id = ?
+    WHERE b.shop_id = ?
     GROUP BY b.id
-  `).all(startDate, endDate, startDate, endDate);
+  `).all(startDate, endDate, shopId, startDate, endDate, shopId, shopId);
 
   res.json({
     hourlyRevenue,
