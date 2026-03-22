@@ -22,12 +22,23 @@ db.exec(`
     product_commission_rate REAL DEFAULT 0.1
   );
 
+  CREATE TABLE IF NOT EXISTS suppliers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    contact_name TEXT,
+    email TEXT,
+    phone TEXT,
+    lead_time_days INTEGER DEFAULT 7
+  );
+
   CREATE TABLE IF NOT EXISTS products (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     price REAL NOT NULL,
     stock INTEGER DEFAULT 0 CHECK(stock >= 0),
-    min_stock_threshold INTEGER DEFAULT 2
+    min_stock_threshold INTEGER DEFAULT 2,
+    supplier_id INTEGER,
+    FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE SET NULL
   );
 
   CREATE TABLE IF NOT EXISTS stock_logs (
