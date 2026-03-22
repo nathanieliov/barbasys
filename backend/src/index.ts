@@ -188,73 +188,56 @@ app.get('/api/appointments', protect, (req, res) => {
 });
 
 app.post('/api/appointments', protect, (req, res) => {
-  const { barber_id, customer_id, service_id, start_time } = req.body;
+  const { barber_id, customer_id, service_id, start_time, recurring_rule, occurrences = 1 } = req.body;
+  const recurring_id = recurring_rule ? Math.random().toString(36).substring(2, 15) : null;
   
   const service = db.prepare('SELECT duration_minutes FROM services WHERE id = ?').get(service_id) as { duration_minutes: number };
-  const startTimeDate = new Date(start_time);
-  const endTimeDate = new Date(startTimeDate.getTime() + service.duration_minutes * 60000);
+  const insert = db.prepare('INSERT INTO appointments (barber_id, customer_id, service_id, start_time, recurring_id, recurring_rule) VALUES (?, ?, ?, ?, ?, ?)');
   
-  const dayOfWeek = startTimeDate.getDay();
-  const timeStr = startTimeDate.toTimeString().split(' ')[0].substring(0, 5); // "HH:MM"
+  const createdIds: number[] = [];
 
-  // 1. Check Shift
-  const shift = db.prepare(`
-    SELECT * FROM barber_shifts 
-    WHERE barber_id = ? AND day_of_week = ? 
-    AND ? >= start_time AND ? <= end_time
-  `).get(barber_id, dayOfWeek, timeStr, timeStr);
+  const transaction = db.transaction(() => {
+    for (let i = 0; i < occurrences; i++) {
+      const currentStart = new Date(start_time);
+      if (recurring_rule === 'weekly') currentStart.setDate(currentStart.getDate() + (i * 7));
+      if (recurring_rule === 'biweekly') currentStart.setDate(currentStart.getDate() + (i * 14));
+      if (recurring_rule === 'monthly') currentStart.setMonth(currentStart.getMonth() + i);
 
-  if (!shift) {
-    return res.status(400).json({ error: 'Barber is not working during this time' });
-  }
+      const startTimeStr = currentStart.toISOString().replace('T', ' ').substring(0, 19);
+      const endTimeDate = new Date(currentStart.getTime() + service.duration_minutes * 60000);
+      const endTimeStr = endTimeDate.toISOString().replace('T', ' ').substring(0, 19);
 
-  // 2. Check Time Off
-  const timeOff = db.prepare(`
-    SELECT id FROM barber_time_off
-    WHERE barber_id = ? 
-    AND (
-      (datetime(?) >= start_time AND datetime(?) < end_time) OR
-      (datetime(?) > start_time AND datetime(?) <= end_time)
-    )
-  `).get(barber_id, start_time, start_time, endTimeDate.toISOString(), endTimeDate.toISOString());
+      const dayOfWeek = currentStart.getDay();
+      const timeStr = currentStart.toTimeString().split(' ')[0].substring(0, 5);
 
-  if (timeOff) {
-    return res.status(400).json({ error: 'Barber has scheduled time off' });
-  }
+      // Validation
+      const shift = db.prepare('SELECT id FROM barber_shifts WHERE barber_id = ? AND day_of_week = ? AND ? >= start_time AND ? <= end_time').get(barber_id, dayOfWeek, timeStr, timeStr);
+      if (!shift) throw new Error(`Barber not working on ${currentStart.toLocaleDateString()} at ${timeStr}`);
 
-  // 3. Conflict check: Overlapping time ranges for same barber
-  const conflict = db.prepare(`
-    SELECT a.id FROM appointments a
-    JOIN services s ON a.service_id = s.id
-    WHERE a.barber_id = ? 
-    AND a.status != 'cancelled'
-    AND (
-      (datetime(a.start_time) < datetime(?)) AND (datetime(a.start_time, '+' || s.duration_minutes || ' minutes') > datetime(?))
-    )
-  `).get(barber_id, endTimeDate.toISOString(), startTimeDate.toISOString());
+      const conflict = db.prepare(`
+        SELECT a.id FROM appointments a
+        JOIN services s ON a.service_id = s.id
+        WHERE a.barber_id = ? AND a.status != 'cancelled'
+        AND ((datetime(a.start_time) < datetime(?)) AND (datetime(a.start_time, '+' || s.duration_minutes || ' minutes') > datetime(?)))
+      `).get(barber_id, endTimeStr, startTimeStr);
+      if (conflict) throw new Error(`Conflict on ${currentStart.toLocaleDateString()} at ${timeStr}`);
 
-  if (conflict) {
-    return res.status(400).json({ error: 'Barber already booked during this time range' });
-  }
-
-  const result = db.prepare('INSERT INTO appointments (barber_id, customer_id, service_id, start_time) VALUES (?, ?, ?, ?)').run(barber_id, customer_id, service_id, start_time);
-  
-  // Send confirmation
-  const barber = db.prepare('SELECT name FROM barbers WHERE id = ?').get(barber_id) as { name: string };
-  const srv = db.prepare('SELECT name FROM services WHERE id = ?').get(service_id) as { name: string };
-  const customer = customer_id ? db.prepare('SELECT name, email, phone FROM customers WHERE id = ?').get(customer_id) as any : null;
-
-  sendAppointmentNotification({
-    customer_name: customer?.name,
-    customer_email: customer?.email,
-    customer_phone: customer?.phone,
-    start_time,
-    service_name: srv.name,
-    barber_name: barber.name,
-    type: 'confirmation'
+      const result = insert.run(barber_id, customer_id, service_id, startTimeStr, recurring_id, recurring_rule);
+      createdIds.push(Number(result.lastInsertRowid));
+    }
   });
 
-  res.json({ id: result.lastInsertRowid });
+  try {
+    transaction();
+    
+    // Send confirmation (only for the first one for brevity)
+    const firstApt = db.prepare('SELECT a.*, b.name as barber_name, s.name as service_name, c.name as customer_name, c.email, c.phone FROM appointments a JOIN barbers b ON a.barber_id = b.id JOIN services s ON a.service_id = s.id LEFT JOIN customers c ON a.customer_id = c.id WHERE a.id = ?').get(createdIds[0]) as any;
+    sendAppointmentNotification({ ...firstApt, type: 'confirmation', customer_name: firstApt.customer_name || 'Valued Client' });
+
+    res.json({ ids: createdIds, recurring_id });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
 });
 
 app.patch('/api/appointments/:id', protect, (req, res) => {
