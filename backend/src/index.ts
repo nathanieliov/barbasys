@@ -64,8 +64,9 @@ app.get('/api/auth/me', protect, async (req, res) => {
 
 // Barbers
 app.get('/api/barbers', protect, async (req, res) => {
+  const shopId = req.user?.shop_id;
   try {
-    const barbers = await listBarbers.execute();
+    const barbers = await db.prepare('SELECT * FROM barbers WHERE shop_id = ?').all(shopId);
     res.json(barbers);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch barbers' });
@@ -274,8 +275,9 @@ app.patch('/api/appointments/:id', protect, (req, res) => {
 });
 
 app.post('/api/barbers', protect, authorize('OWNER', 'MANAGER'), (req, res) => {
+  const shopId = req.user?.shop_id;
   const { name, service_commission_rate, product_commission_rate } = req.body;
-  const result = db.prepare('INSERT INTO barbers (name, service_commission_rate, product_commission_rate) VALUES (?, ?, ?)').run(name, service_commission_rate, product_commission_rate);
+  const result = db.prepare('INSERT INTO barbers (name, service_commission_rate, product_commission_rate, shop_id) VALUES (?, ?, ?, ?)').run(name, service_commission_rate, product_commission_rate, shopId);
   res.json({ id: result.lastInsertRowid });
 });
 
