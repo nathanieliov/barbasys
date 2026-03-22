@@ -174,6 +174,7 @@ app.get('/api/customers/:id/history', protect, (req, res) => {
 
 // Appointments
 app.get('/api/appointments', protect, (req, res) => {
+  const shopId = req.user?.shop_id;
   const date = req.query.date || new Date().toISOString().split('T')[0];
   const appointments = db.prepare(`
     SELECT a.*, b.name as barber_name, c.name as customer_name, s.name as service_name
@@ -181,18 +182,19 @@ app.get('/api/appointments', protect, (req, res) => {
     JOIN barbers b ON a.barber_id = b.id
     LEFT JOIN customers c ON a.customer_id = c.id
     JOIN services s ON a.service_id = s.id
-    WHERE date(a.start_time) = ?
+    WHERE date(a.start_time) = ? AND a.shop_id = ?
     ORDER BY a.start_time ASC
-  `).all(date);
+  `).all(date, shopId);
   res.json(appointments);
 });
 
 app.post('/api/appointments', protect, (req, res) => {
+  const shopId = req.user?.shop_id;
   const { barber_id, customer_id, service_id, start_time, recurring_rule, occurrences = 1 } = req.body;
   const recurring_id = recurring_rule ? Math.random().toString(36).substring(2, 15) : null;
   
   const service = db.prepare('SELECT duration_minutes FROM services WHERE id = ?').get(service_id) as { duration_minutes: number };
-  const insert = db.prepare('INSERT INTO appointments (barber_id, customer_id, service_id, start_time, recurring_id, recurring_rule) VALUES (?, ?, ?, ?, ?, ?)');
+  const insert = db.prepare('INSERT INTO appointments (barber_id, customer_id, service_id, start_time, recurring_id, recurring_rule, shop_id) VALUES (?, ?, ?, ?, ?, ?, ?)');
   
   const createdIds: number[] = [];
 
@@ -222,7 +224,7 @@ app.post('/api/appointments', protect, (req, res) => {
       `).get(barber_id, endTimeStr, startTimeStr);
       if (conflict) throw new Error(`Conflict on ${currentStart.toLocaleDateString()} at ${timeStr}`);
 
-      const result = insert.run(barber_id, customer_id, service_id, startTimeStr, recurring_id, recurring_rule);
+      const result = insert.run(barber_id, customer_id, service_id, startTimeStr, recurring_id, recurring_rule, shopId);
       createdIds.push(Number(result.lastInsertRowid));
     }
   });
