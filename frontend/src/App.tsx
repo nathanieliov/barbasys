@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Link, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Scissors, Package, BarChart3, Users, ShoppingCart, Calendar as CalendarIcon, LogOut, Settings as SettingsIcon, Clock, Truck } from 'lucide-react';
+import { LayoutDashboard, Scissors, Package, BarChart3, Users, ShoppingCart, Calendar as CalendarIcon, LogOut, Settings as SettingsIcon, Clock, Truck, BarChart } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import POS from './pages/POS';
 import Inventory from './pages/Inventory';
@@ -11,6 +11,7 @@ import Customers from './pages/Customers';
 import Schedule from './pages/Schedule';
 import Shifts from './pages/Shifts';
 import Suppliers from './pages/Suppliers';
+import Analytics from './pages/Analytics';
 import Login from './pages/Login';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider, useAuth } from './hooks/useAuth';
@@ -42,6 +43,7 @@ const Sidebar = () => {
         <li><Link to="/inventory"><Package size={20} /> Inventory</Link></li>
         {isAdmin && <li><Link to="/suppliers"><Truck size={20} /> Suppliers</Link></li>}
         <li><Link to="/services"><Scissors size={20} /> Services</Link></li>
+        {isAdmin && <li><Link to="/analytics"><BarChart size={20} /> Analytics</Link></li>}
         <li><Link to="/reports"><BarChart3 size={20} /> Reports</Link></li>
         <li><Link to="/barbers"><Users size={20} /> Barbers</Link></li>
         <li><Link to="/customers"><Users size={20} /> Customers</Link></li>
@@ -84,6 +86,7 @@ function App() {
               {/* Only Owner and Manager can access these */}
               <Route element={<ProtectedRoute roles={['OWNER', 'MANAGER']} />}>
                 <Route path="/reports" element={<Reports />} />
+                <Route path="/analytics" element={<Analytics />} />
                 <Route path="/barbers" element={<Barbers />} />
                 <Route path="/services" element={<Services />} />
                 <Route path="/suppliers" element={<Suppliers />} />
