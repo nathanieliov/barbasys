@@ -436,6 +436,7 @@ app.post('/api/settings', protect, authorize('OWNER', 'MANAGER'), (req, res) => 
 
 // Sales (POS)
 app.post('/api/sales', protect, (req, res) => {
+  const shopId = req.user?.shop_id;
   const { barber_id, items, customer_email, customer_phone, tip_amount = 0, discount_amount = 0 } = req.body;
   
   const total_items_amount = items.reduce((sum: number, item: any) => sum + item.price, 0);
@@ -458,7 +459,7 @@ app.post('/api/sales', protect, (req, res) => {
       }
     }
 
-    const saleResult = db.prepare('INSERT INTO sales (barber_id, customer_id, total_amount, tip_amount, discount_amount, customer_email, customer_phone) VALUES (?, ?, ?, ?, ?, ?, ?)').run(barber_id, customerId, total_amount, tip_amount, discount_amount, customer_email, customer_phone);
+    const saleResult = db.prepare('INSERT INTO sales (barber_id, customer_id, total_amount, tip_amount, discount_amount, customer_email, customer_phone, shop_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(barber_id, customerId, total_amount, tip_amount, discount_amount, customer_email, customer_phone, shopId);
     const saleId = Number(saleResult.lastInsertRowid);
 
     for (const item of items) {
