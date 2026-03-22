@@ -7,6 +7,7 @@ export interface User {
   password_hash: string;
   role: UserRole;
   barber_id: number | null;
+  shop_id: number | null;
   created_at: string;
 }
 
