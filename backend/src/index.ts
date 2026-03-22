@@ -535,6 +535,47 @@ app.get('/api/reports', protect, authorize('OWNER', 'MANAGER', 'BARBER'), (req, 
   });
 });
 
+app.get('/api/reports/analytics', protect, authorize('OWNER', 'MANAGER'), (req, res) => {
+  const { startDate, endDate } = req.query;
+  
+  // 1. Revenue by Hour (Heatmap data)
+  const hourlyRevenue = db.prepare(`
+    SELECT strftime('%H', timestamp) as hour, SUM(total_amount) as revenue
+    FROM sales
+    WHERE date(timestamp) BETWEEN ? AND ?
+    GROUP BY hour
+    ORDER BY hour ASC
+  `).all(startDate, endDate);
+
+  // 2. Revenue by Day of Week
+  const dailyRevenue = db.prepare(`
+    SELECT strftime('%w', timestamp) as day_of_week, SUM(total_amount) as revenue
+    FROM sales
+    WHERE date(timestamp) BETWEEN ? AND ?
+    GROUP BY day_of_week
+    ORDER BY day_of_week ASC
+  `).all(startDate, endDate);
+
+  // 3. Barber Performance Metrics
+  const barberPerformance = db.prepare(`
+    SELECT 
+      b.name,
+      COUNT(s.id) as total_sales,
+      SUM(s.total_amount) as total_revenue,
+      AVG(s.total_amount) as avg_ticket_size,
+      (SELECT COUNT(*) FROM appointments a WHERE a.barber_id = b.id AND a.status = 'completed' AND date(a.start_time) BETWEEN ? AND ?) as completed_appointments
+    FROM barbers b
+    LEFT JOIN sales s ON s.barber_id = b.id AND date(s.timestamp) BETWEEN ? AND ?
+    GROUP BY b.id
+  `).all(startDate, endDate, startDate, endDate);
+
+  res.json({
+    hourlyRevenue,
+    dailyRevenue,
+    barberPerformance
+  });
+});
+
 // Background Job: Check for reminders every hour
 setInterval(() => {
   console.log('[Job] Checking for appointment reminders...');
