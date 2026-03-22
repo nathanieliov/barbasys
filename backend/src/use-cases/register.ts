@@ -22,7 +22,8 @@ export class RegisterUseCase {
     const user = await this.userRepository.create({
       ...data,
       password_hash,
-      barber_id: data.barber_id || null
+      barber_id: data.barber_id || null,
+      shop_id: data.shop_id || null
     });
 
     return {
@@ -30,7 +31,8 @@ export class RegisterUseCase {
       username: user.username,
       email: user.email,
       role: user.role,
-      barber_id: user.barber_id
+      barber_id: user.barber_id,
+      shop_id: user.shop_id
     };
   }
 }
