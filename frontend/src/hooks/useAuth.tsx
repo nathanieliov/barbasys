@@ -7,6 +7,7 @@ interface User {
   email: string;
   role: 'OWNER' | 'MANAGER' | 'BARBER';
   barber_id: number | null;
+  shop_id: number | null;
 }
 
 interface AuthContextType {
