@@ -407,6 +407,12 @@ app.delete('/api/services/:id', protect, authorize('OWNER', 'MANAGER'), async (r
 });
 
 // Shop Settings
+app.get('/api/shops/:id', protect, (req, res) => {
+  const shop = db.prepare('SELECT * FROM shops WHERE id = ?').get(req.params.id);
+  if (!shop) return res.status(404).json({ error: 'Shop not found' });
+  res.json(shop);
+});
+
 app.get('/api/settings', protect, (req, res) => {
   const settings = db.prepare('SELECT * FROM shop_settings').all();
   const settingsMap = (settings as any[]).reduce((acc, curr) => {
