@@ -6,9 +6,9 @@ import bcrypt from 'bcryptjs';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const dbPath = process.env.NODE_ENV === 'test' 
+const dbPath = process.env.DATABASE_URL || (process.env.NODE_ENV === 'test' 
   ? ':memory:' 
-  : path.join(__dirname, '../barbasys.db');
+  : path.join(__dirname, '../barbasys.db'));
 
 const db: Database.Database = new Database(dbPath);
 db.pragma('foreign_keys = ON');
