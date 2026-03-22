@@ -101,6 +101,8 @@ db.exec(`
     start_time DATETIME NOT NULL,
     status TEXT DEFAULT 'scheduled', -- scheduled, completed, cancelled
     reminder_sent INTEGER DEFAULT 0,
+    recurring_id TEXT, -- UUID or unique string to group a series
+    recurring_rule TEXT, -- NULL, 'weekly', 'biweekly', 'monthly'
     FOREIGN KEY (barber_id) REFERENCES barbers(id) ON DELETE CASCADE,
     FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL,
     FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE CASCADE
