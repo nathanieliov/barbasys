@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Calendar, DollarSign, TrendingUp } from 'lucide-react';
+import { Calendar, DollarSign, TrendingUp, Receipt } from 'lucide-react';
 
 export default function Reports() {
   const [report, setReport] = useState<any>(null);
@@ -68,15 +68,27 @@ export default function Reports() {
         </div>
       </div>
 
-      <div className="grid" style={{ marginBottom: '2rem' }}>
+      <div className="grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginBottom: '2rem' }}>
         <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
           <div style={{ background: 'rgba(16, 185, 129, 0.2)', padding: '1rem', borderRadius: '50%', color: '#10b981' }}>
             <TrendingUp size={32} />
           </div>
           <div>
             <h2 style={{ margin: 0, color: '#94a3b8', fontSize: '1rem' }}>Total Revenue</h2>
-            <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: 'var(--text)' }}>
+            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--text)' }}>
               ${report?.revenue?.toFixed(2) || '0.00'}
+            </div>
+          </div>
+        </div>
+
+        <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+          <div style={{ background: 'rgba(239, 68, 68, 0.2)', padding: '1rem', borderRadius: '50%', color: '#ef4444' }}>
+            <Receipt size={32} />
+          </div>
+          <div>
+            <h2 style={{ margin: 0, color: '#94a3b8', fontSize: '1rem' }}>Total Expenses</h2>
+            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--text)' }}>
+              ${report?.expenses?.toFixed(2) || '0.00'}
             </div>
           </div>
         </div>
@@ -86,9 +98,9 @@ export default function Reports() {
             <DollarSign size={32} />
           </div>
           <div>
-            <h2 style={{ margin: 0, color: '#94a3b8', fontSize: '1rem' }}>Total Tips</h2>
-            <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: 'var(--text)' }}>
-              ${report?.tips?.toFixed(2) || '0.00'}
+            <h2 style={{ margin: 0, color: '#94a3b8', fontSize: '1rem' }}>Net Profit</h2>
+            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--text)' }}>
+              ${((report?.revenue || 0) - (report?.expenses || 0)).toFixed(2)}
             </div>
           </div>
         </div>
