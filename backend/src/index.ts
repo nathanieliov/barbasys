@@ -279,8 +279,59 @@ app.post('/api/barbers', protect, authorize('OWNER', 'MANAGER'), (req, res) => {
 
 // Products & Services
 app.get('/api/inventory', protect, (req, res) => {
-  const products = db.prepare('SELECT * FROM products').all();
+  const products = db.prepare(`
+    SELECT p.*, s.name as supplier_name 
+    FROM products p 
+    LEFT JOIN suppliers s ON p.supplier_id = s.id
+  `).all();
   res.json(products);
+});
+
+app.get('/api/inventory/intelligence', protect, authorize('OWNER', 'MANAGER'), (req, res) => {
+  // Calculate sales velocity (avg units per day over last 30 days)
+  const intelligence = db.prepare(`
+    SELECT 
+      p.id, p.name, p.stock, p.min_stock_threshold,
+      IFNULL(AVG(daily_sales.units), 0) as avg_daily_velocity
+    FROM products p
+    LEFT JOIN (
+      SELECT product_id, date(timestamp) as sale_date, COUNT(*) as units
+      FROM stock_logs
+      WHERE type = 'SALE' AND timestamp > date('now', '-30 days')
+      GROUP BY product_id, sale_date
+    ) daily_sales ON p.id = daily_sales.product_id
+    GROUP BY p.id
+  `).all();
+
+  const results = (intelligence as any[]).map(item => {
+    const daysRemaining = item.avg_daily_velocity > 0 
+      ? Math.floor(item.stock / item.avg_daily_velocity) 
+      : 999;
+    return {
+      ...item,
+      days_remaining: daysRemaining,
+      reorder_suggested: daysRemaining <= 7 || item.stock <= item.min_stock_threshold
+    };
+  });
+
+  res.json(results);
+});
+
+// Suppliers
+app.get('/api/suppliers', protect, authorize('OWNER', 'MANAGER'), (req, res) => {
+  const suppliers = db.prepare('SELECT * FROM suppliers').all();
+  res.json(suppliers);
+});
+
+app.post('/api/suppliers', protect, authorize('OWNER', 'MANAGER'), (req, res) => {
+  const { name, contact_name, email, phone, lead_time_days } = req.body;
+  const result = db.prepare('INSERT INTO suppliers (name, contact_name, email, phone, lead_time_days) VALUES (?, ?, ?, ?, ?)').run(name, contact_name, email, phone, lead_time_days);
+  res.json({ id: result.lastInsertRowid });
+});
+
+app.delete('/api/suppliers/:id', protect, authorize('OWNER', 'MANAGER'), (req, res) => {
+  db.prepare('DELETE FROM suppliers WHERE id = ?').run(req.params.id);
+  res.json({ success: true });
 });
 
 app.post('/api/inventory/restock', protect, authorize('OWNER', 'MANAGER'), (req, res) => {
