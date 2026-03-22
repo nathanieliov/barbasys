@@ -27,7 +27,9 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     service_commission_rate REAL DEFAULT 0.5,
-    product_commission_rate REAL DEFAULT 0.1
+    product_commission_rate REAL DEFAULT 0.1,
+    shop_id INTEGER,
+    FOREIGN KEY (shop_id) REFERENCES shops(id) ON DELETE CASCADE
   );
 
   CREATE TABLE IF NOT EXISTS suppliers (
@@ -46,7 +48,9 @@ db.exec(`
     stock INTEGER DEFAULT 0 CHECK(stock >= 0),
     min_stock_threshold INTEGER DEFAULT 2,
     supplier_id INTEGER,
-    FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE SET NULL
+    shop_id INTEGER,
+    FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE SET NULL,
+    FOREIGN KEY (shop_id) REFERENCES shops(id) ON DELETE CASCADE
   );
 
   CREATE TABLE IF NOT EXISTS stock_logs (
@@ -64,7 +68,9 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     price REAL NOT NULL,
-    duration_minutes INTEGER DEFAULT 30
+    duration_minutes INTEGER DEFAULT 30,
+    shop_id INTEGER,
+    FOREIGN KEY (shop_id) REFERENCES shops(id) ON DELETE CASCADE
   );
 
   CREATE TABLE IF NOT EXISTS customers (
@@ -101,8 +107,10 @@ db.exec(`
     customer_email TEXT, -- Keep for legacy/external tracking
     customer_phone TEXT,
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    shop_id INTEGER,
     FOREIGN KEY (barber_id) REFERENCES barbers(id) ON DELETE SET NULL,
-    FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL
+    FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL,
+    FOREIGN KEY (shop_id) REFERENCES shops(id) ON DELETE CASCADE
   );
 
   CREATE TABLE IF NOT EXISTS sale_items (
@@ -124,9 +132,11 @@ db.exec(`
     reminder_sent INTEGER DEFAULT 0,
     recurring_id TEXT, -- UUID or unique string to group a series
     recurring_rule TEXT, -- NULL, 'weekly', 'biweekly', 'monthly'
+    shop_id INTEGER,
     FOREIGN KEY (barber_id) REFERENCES barbers(id) ON DELETE CASCADE,
     FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL,
-    FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE CASCADE
+    FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE CASCADE,
+    FOREIGN KEY (shop_id) REFERENCES shops(id) ON DELETE CASCADE
   );
 
   CREATE TABLE IF NOT EXISTS barber_shifts (
@@ -157,7 +167,9 @@ db.exec(`
     category TEXT NOT NULL, -- Rent, Utilities, Supplies, Marketing, Other
     amount REAL NOT NULL,
     description TEXT,
-    date DATETIME DEFAULT CURRENT_TIMESTAMP
+    date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    shop_id INTEGER,
+    FOREIGN KEY (shop_id) REFERENCES shops(id) ON DELETE CASCADE
   );
 `);
 
