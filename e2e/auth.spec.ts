@@ -4,8 +4,8 @@ test.describe('Authentication & RBAC', () => {
   test('should login successfully as admin', async ({ page }) => {
     await page.goto('/login');
     
-    await page.fill('input[placeholder="Username"]', 'admin');
-    await page.fill('input[placeholder="Password"]', 'admin123');
+    await page.fill('input[placeholder="Enter your username"]', 'admin');
+    await page.fill('input[placeholder="Enter your password"]', 'admin123');
     await page.click('button:has-text("Login")');
 
     await expect(page).toHaveURL('/');
@@ -15,8 +15,8 @@ test.describe('Authentication & RBAC', () => {
 
   test('admin should see all restricted tabs', async ({ page }) => {
     await page.goto('/login');
-    await page.fill('input[placeholder="Username"]', 'admin');
-    await page.fill('input[placeholder="Password"]', 'admin123');
+    await page.fill('input[placeholder="Enter your username"]', 'admin');
+    await page.fill('input[placeholder="Enter your password"]', 'admin123');
     await page.click('button:has-text("Login")');
 
     await expect(page.locator('.sidebar')).toContainText('Analytics');

@@ -4,8 +4,8 @@ test.describe('Inventory & Supplier Management', () => {
   test.beforeEach(async ({ page }) => {
     // Login before each test
     await page.goto('/login');
-    await page.fill('input[placeholder="Username"]', 'admin');
-    await page.fill('input[placeholder="Password"]', 'admin123');
+    await page.fill('input[placeholder="Enter your username"]', 'admin');
+    await page.fill('input[placeholder="Enter your password"]', 'admin123');
     await page.click('button:has-text("Login")');
   });
 
