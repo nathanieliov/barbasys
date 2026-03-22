@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+dist/
+build/
+.env
+
+# Databases
+*.db
+*.db-journal
+*.sqlite
+
+# IDEs/Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Vite
+*.local
