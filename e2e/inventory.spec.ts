@@ -1,0 +1,23 @@
+import { test, expect } from '@playwright/test';
+
+test.describe('Inventory & Supplier Management', () => {
+  test.beforeEach(async ({ page }) => {
+    // Login before each test
+    await page.goto('/login');
+    await page.fill('input[placeholder="Username"]', 'admin');
+    await page.fill('input[placeholder="Password"]', 'admin123');
+    await page.click('button:has-text("Login")');
+  });
+
+  test('should add a new supplier', async ({ page }) => {
+    await page.click('text=Suppliers');
+    await expect(page).toHaveURL('/suppliers');
+
+    await page.fill('input:below(:text("Company Name"))', 'E2E Supplier');
+    await page.fill('input:below(:text("Contact Person"))', 'Test Agent');
+    await page.click('button:has-text("Add Supplier")');
+
+    await expect(page.locator('.card')).toContainText('E2E Supplier');
+    await expect(page.locator('.card')).toContainText('Test Agent');
+  });
+});
