@@ -141,6 +141,14 @@ db.exec(`
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL
   );
+
+  CREATE TABLE IF NOT EXISTS expenses (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    category TEXT NOT NULL, -- Rent, Utilities, Supplies, Marketing, Other
+    amount REAL NOT NULL,
+    description TEXT,
+    date DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
 `);
 
 // Seed initial data
