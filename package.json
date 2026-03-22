@@ -8,6 +8,7 @@
     "test": "npm test --prefix backend && npm test --prefix frontend"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "concurrently": "^8.2.2"
   }
 }
