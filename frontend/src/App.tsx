@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Link, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Scissors, Package, BarChart3, Users, ShoppingCart, Calendar as CalendarIcon, LogOut, Settings as SettingsIcon, Clock } from 'lucide-react';
+import { LayoutDashboard, Scissors, Package, BarChart3, Users, ShoppingCart, Calendar as CalendarIcon, LogOut, Settings as SettingsIcon, Clock, Truck } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import POS from './pages/POS';
 import Inventory from './pages/Inventory';
@@ -10,6 +10,7 @@ import Settings from './pages/Settings';
 import Customers from './pages/Customers';
 import Schedule from './pages/Schedule';
 import Shifts from './pages/Shifts';
+import Suppliers from './pages/Suppliers';
 import Login from './pages/Login';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider, useAuth } from './hooks/useAuth';
@@ -39,6 +40,7 @@ const Sidebar = () => {
         <li><Link to="/schedule"><CalendarIcon size={20} /> Schedule</Link></li>
         <li><Link to="/shifts"><Clock size={20} /> Shifts</Link></li>
         <li><Link to="/inventory"><Package size={20} /> Inventory</Link></li>
+        {isAdmin && <li><Link to="/suppliers"><Truck size={20} /> Suppliers</Link></li>}
         <li><Link to="/services"><Scissors size={20} /> Services</Link></li>
         <li><Link to="/reports"><BarChart3 size={20} /> Reports</Link></li>
         <li><Link to="/barbers"><Users size={20} /> Barbers</Link></li>
@@ -84,6 +86,7 @@ function App() {
                 <Route path="/reports" element={<Reports />} />
                 <Route path="/barbers" element={<Barbers />} />
                 <Route path="/services" element={<Services />} />
+                <Route path="/suppliers" element={<Suppliers />} />
                 <Route path="/settings" element={<Settings />} />
               </Route>
             </Routes>
