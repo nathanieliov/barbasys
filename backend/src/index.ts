@@ -526,13 +526,35 @@ app.get('/api/reports', protect, authorize('OWNER', 'MANAGER', 'BARBER'), (req, 
   
   const commissions = db.prepare(commissionsQuery).all({ startDate, endDate, barberId });
 
+  // Total Expenses in range
+  let expensesQuery = 'SELECT SUM(amount) as total FROM expenses WHERE date(date) BETWEEN @startDate AND @endDate';
+  const expenseData = db.prepare(expensesQuery).get({ startDate, endDate }) as { total: number };
+
   res.json({
     startDate,
     endDate,
     revenue: revenueData?.total || 0,
     tips: revenueData?.tips || 0,
+    expenses: expenseData?.total || 0,
     commissions
   });
+});
+
+// Expenses
+app.get('/api/expenses', protect, authorize('OWNER', 'MANAGER'), (req, res) => {
+  const expenses = db.prepare('SELECT * FROM expenses ORDER BY date DESC').all();
+  res.json(expenses);
+});
+
+app.post('/api/expenses', protect, authorize('OWNER', 'MANAGER'), (req, res) => {
+  const { category, amount, description, date } = req.body;
+  const result = db.prepare('INSERT INTO expenses (category, amount, description, date) VALUES (?, ?, ?, ?)').run(category, amount, description, date || new Date().toISOString());
+  res.json({ id: result.lastInsertRowid });
+});
+
+app.delete('/api/expenses/:id', protect, authorize('OWNER', 'MANAGER'), (req, res) => {
+  db.prepare('DELETE FROM expenses WHERE id = ?').run(req.params.id);
+  res.json({ success: true });
 });
 
 app.get('/api/reports/analytics', protect, authorize('OWNER', 'MANAGER'), (req, res) => {
