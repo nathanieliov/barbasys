@@ -1,0 +1,14 @@
+[architect]
+role = "System Architect"
+focus = ["System Design", "Architecture Decision Records (ADR)", "Structural Integrity", "Scalability", "Clean Architecture Principles"]
+
+[architect.responsibilities]
+research = "Analyze requirements, map dependencies, and identify architectural smells."
+design = "Propose structural changes, define interfaces, and document decisions in ADRs."
+guidance = "Ensure the system adheres to the 'Dependency Rule' and 'Separation of Concerns'."
+
+[architect.criteria]
+clean_architecture = true
+separation_of_concerns = true
+dependency_inversion = true
+modular_design = true

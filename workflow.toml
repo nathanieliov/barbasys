@@ -1,0 +1,31 @@
+[workflow]
+name = "SDLC-Gemini-Workflow"
+version = "1.0.0"
+description = "Structured SDLC workflow from Architecture to Review."
+
+[workflow.phases]
+1 = "architect"
+2 = "engineer"
+3 = "qa"
+4 = "reviewer"
+
+[workflow.handoff.architect_to_engineer]
+required_artifacts = ["ADR (Architecture Decision Record)", "Impact Analysis", "Component Map"]
+exit_criteria = ["No unresolved architectural smells", "Dependency rule respected", "Interface definitions complete"]
+
+[workflow.handoff.engineer_to_qa]
+required_artifacts = ["Implementation Code", "Unit Tests", "Refactored Logic"]
+exit_criteria = ["Types are safe and idiomatic", "Code reflects the approved architecture", "Documentation is updated"]
+
+[workflow.handoff.qa_to_reviewer]
+required_artifacts = ["Test Reports", "Bug Reproduction Scripts", "Validation Results"]
+exit_criteria = ["No regressions found", "Edge cases covered", "Behavioral correctness verified"]
+
+[workflow.handoff.reviewer_to_done]
+required_artifacts = ["Final Codebase", "Passing Lint/Type Check", "Signed-off ADR"]
+exit_criteria = ["Style is consistent", "No redundant logic", "Workspace standards met"]
+
+[workflow.automation]
+lint_command = "npm run lint"
+test_command = "npm test"
+type_check_command = "tsc --noEmit"

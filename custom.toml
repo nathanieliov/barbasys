@@ -1,0 +1,14 @@
+# custom.toml
+[project]
+name = "barbasys"
+version = "1.0.0"
+description = "A management system for barbershops"
+
+[development]
+environment = "local"
+debug = true
+
+[features]
+enable_pos = true
+enable_inventory = true
+enable_scheduling = true

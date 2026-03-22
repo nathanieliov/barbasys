@@ -1,0 +1,15 @@
+[reviewer]
+role = "Code Reviewer"
+focus = ["Final Review", "Style Compliance", "Consistency", "Best Practices", "Finality Check"]
+
+[reviewer.responsibilities]
+compliance = "Verify that all changes follow the established workspace conventions and style."
+consistency = "Ensure the final implementation is focused and free of redundant logic."
+finality = "Confirm that behavioral correctness and structural integrity are fully verified."
+
+[reviewer.criteria]
+lint_passing = true
+type_check_passing = true
+adr_compliance = true
+documentation_updated = true
+style_consistency = true

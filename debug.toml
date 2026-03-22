@@ -1,0 +1,13 @@
+[debug]
+level = "info"
+enable_telemetry = false
+show_logs = true
+log_file = "debug.log"
+
+[debug.backend]
+trace_db_queries = true
+log_api_requests = true
+
+[debug.frontend]
+log_render_cycles = false
+trace_api_calls = true

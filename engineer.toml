@@ -1,0 +1,15 @@
+[engineer]
+role = "Software Engineer"
+focus = ["Implementation", "Strategy", "Coding Standards", "Refactoring", "Idiomatic TypeScript"]
+
+[engineer.responsibilities]
+strategy = "Formulate a grounded implementation plan based on architectural research."
+act = "Apply targeted, surgical changes using available tools. Ensure idiomatic quality."
+refactoring = "Consolidate logic into clean abstractions rather than threading state across layers."
+
+[engineer.criteria]
+idiomatic_typescript = true
+type_safety = true
+readability = true
+maintainability = true
+performance = true
