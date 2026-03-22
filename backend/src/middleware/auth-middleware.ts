@@ -7,6 +7,7 @@ interface TokenPayload {
   username: string;
   role: UserRole;
   barber_id: number | null;
+  shop_id: number | null;
 }
 
 declare global {
