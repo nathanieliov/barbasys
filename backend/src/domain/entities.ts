@@ -16,6 +16,7 @@ export interface Barber {
   name: string;
   service_commission_rate: number;
   product_commission_rate: number;
+  shop_id: number | null;
 }
 
 export interface Product {
@@ -24,6 +25,7 @@ export interface Product {
   price: number;
   stock: number;
   min_stock_threshold: number;
+  shop_id: number | null;
 }
 
 export interface Service {
@@ -31,6 +33,7 @@ export interface Service {
   name: string;
   price: number;
   duration_minutes: number;
+  shop_id: number | null;
 }
 
 export interface Customer {
@@ -53,6 +56,7 @@ export interface Sale {
   customer_email: string | null;
   customer_phone: string | null;
   timestamp: string;
+  shop_id: number | null;
 }
 
 export interface SaleItem {
@@ -70,4 +74,5 @@ export interface Appointment {
   service_id: number;
   start_time: string;
   status: 'scheduled' | 'completed' | 'cancelled';
+  shop_id: number | null;
 }

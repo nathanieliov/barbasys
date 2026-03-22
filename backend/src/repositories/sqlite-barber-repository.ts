@@ -15,8 +15,8 @@ export class SQLiteBarberRepository implements IBarberRepository {
 
   async create(barber: Omit<Barber, 'id'>): Promise<number> {
     const result = this.db.prepare(
-      'INSERT INTO barbers (name, service_commission_rate, product_commission_rate) VALUES (?, ?, ?)'
-    ).run(barber.name, barber.service_commission_rate, barber.product_commission_rate);
+      'INSERT INTO barbers (name, service_commission_rate, product_commission_rate, shop_id) VALUES (?, ?, ?, ?)'
+    ).run(barber.name, barber.service_commission_rate, barber.product_commission_rate, barber.shop_id);
     return Number(result.lastInsertRowid);
   }
 }

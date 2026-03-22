@@ -189,8 +189,8 @@ if (usersCount.count === 0) {
 
 const barbersCount = db.prepare('SELECT count(*) as count FROM barbers').get() as { count: number };
 if (barbersCount.count === 0) {
-  const nathaniel = db.prepare('INSERT INTO barbers (name, service_commission_rate, product_commission_rate) VALUES (?, ?, ?)').run('Nathaniel', 0.6, 0.15);
-  const alex = db.prepare('INSERT INTO barbers (name, service_commission_rate, product_commission_rate) VALUES (?, ?, ?)').run('Alex', 0.5, 0.10);
+  const nathaniel = db.prepare('INSERT INTO barbers (name, service_commission_rate, product_commission_rate, shop_id) VALUES (?, ?, ?, ?)').run('Nathaniel', 0.6, 0.15, defaultShopId);
+  const alex = db.prepare('INSERT INTO barbers (name, service_commission_rate, product_commission_rate, shop_id) VALUES (?, ?, ?, ?)').run('Alex', 0.5, 0.10, defaultShopId);
   
   // Seed Monday-Friday shifts (1-5)
   const shiftInsert = db.prepare('INSERT INTO barber_shifts (barber_id, day_of_week, start_time, end_time) VALUES (?, ?, ?, ?)');
@@ -199,11 +199,11 @@ if (barbersCount.count === 0) {
     shiftInsert.run(alex.lastInsertRowid, day, '10:00', '18:00');
   });
 
-  db.prepare('INSERT INTO services (name, price, duration_minutes) VALUES (?, ?, ?)').run('Haircut', 25, 30);
-  db.prepare('INSERT INTO services (name, price, duration_minutes) VALUES (?, ?, ?)').run('Beard Trim', 15, 15);
+  db.prepare('INSERT INTO services (name, price, duration_minutes, shop_id) VALUES (?, ?, ?, ?)').run('Haircut', 25, 30, defaultShopId);
+  db.prepare('INSERT INTO services (name, price, duration_minutes, shop_id) VALUES (?, ?, ?, ?)').run('Beard Trim', 15, 15, defaultShopId);
   
-  db.prepare('INSERT INTO products (name, price, stock, min_stock_threshold) VALUES (?, ?, ?, ?)').run('Pomade', 18, 10, 3);
-  db.prepare('INSERT INTO products (name, price, stock, min_stock_threshold) VALUES (?, ?, ?, ?)').run('Shampoo', 12, 5, 2);
+  db.prepare('INSERT INTO products (name, price, stock, min_stock_threshold, shop_id) VALUES (?, ?, ?, ?, ?)').run('Pomade', 18, 10, 3, defaultShopId);
+  db.prepare('INSERT INTO products (name, price, stock, min_stock_threshold, shop_id) VALUES (?, ?, ?, ?, ?)').run('Shampoo', 12, 5, 2, defaultShopId);
 }
 
 export default db;
