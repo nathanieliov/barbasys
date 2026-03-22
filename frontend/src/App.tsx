@@ -20,6 +20,13 @@ import { AuthProvider, useAuth } from './hooks/useAuth';
 const Sidebar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [shopName, setShopName] = useState('BarbaSys');
+
+  useEffect(() => {
+    if (user?.shop_id) {
+      axios.get(`/api/shops/${user.shop_id}`).then(res => setShopName(res.data.name));
+    }
+  }, [user]);
 
   const handleLogout = () => {
     logout();
@@ -34,7 +41,10 @@ const Sidebar = () => {
     <nav className="sidebar">
       <div className="logo">
         <Scissors size={32} color="#fff" />
-        <span>BarbaSys</span>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <span>{shopName}</span>
+          <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 'normal' }}>BarbaSys Admin</span>
+        </div>
       </div>
       <ul>
         <li><Link to="/"><LayoutDashboard size={20} /> Dashboard</Link></li>
