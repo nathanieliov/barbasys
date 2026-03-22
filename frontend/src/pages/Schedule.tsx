@@ -18,6 +18,8 @@ export default function Schedule() {
   const [selectedCustomer, setSelectedCustomer] = useState('');
   const [selectedService, setSelectedService] = useState('');
   const [selectedTime, setSelectedTime] = useState('10:00');
+  const [recurringRule, setRecurringRule] = useState('');
+  const [occurrences, setOccurrences] = useState(1);
 
   const fetchData = () => {
     axios.get(`/api/appointments?date=${date}`).then(res => setAppointments(res.data));
@@ -38,9 +40,13 @@ export default function Schedule() {
         barber_id: parseInt(selectedBarber),
         customer_id: selectedCustomer ? parseInt(selectedCustomer) : null,
         service_id: parseInt(selectedService),
-        start_time
+        start_time,
+        recurring_rule: recurringRule || null,
+        occurrences: recurringRule ? occurrences : 1
       });
       setShowBook(false);
+      setRecurringRule('');
+      setOccurrences(1);
       fetchData();
     } catch (err: any) {
       alert(err.response?.data?.error || 'Failed to book appointment');
@@ -164,7 +170,31 @@ export default function Schedule() {
                 <p style={{ marginBottom: '0.5rem', color: '#94a3b8' }}>Time</p>
                 <input type="time" value={selectedTime} onChange={e => setSelectedTime(e.target.value)} required />
               </div>
-              <button type="submit" style={{ width: '100%' }}>Create Appointment</button>
+
+              <div style={{ marginBottom: '1rem', padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '0.5rem' }}>
+                <p style={{ marginBottom: '0.5rem', color: '#94a3b8', fontSize: '0.875rem' }}>Repeat Appointment</p>
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                  <select value={recurringRule} onChange={e => setRecurringRule(e.target.value)} style={{ flex: 1.5 }}>
+                    <option value="">No Repeat</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="biweekly">Bi-weekly</option>
+                    <option value="monthly">Monthly</option>
+                  </select>
+                  {recurringRule && (
+                    <input 
+                      type="number" 
+                      min="2" 
+                      max="12" 
+                      value={occurrences} 
+                      onChange={e => setOccurrences(parseInt(e.target.value) || 2)} 
+                      style={{ flex: 1 }}
+                      placeholder="Times"
+                    />
+                  )}
+                </div>
+              </div>
+
+              <button type="submit" style={{ width: '100%' }}>Create Appointment{recurringRule ? 's' : ''}</button>
             </form>
           </div>
         </div>
