@@ -5,7 +5,7 @@ import { UserRole } from '../domain/entities.js';
 export class RegisterUseCase {
   constructor(private userRepository: UserRepository) {}
 
-  async execute(data: { username: string; email: string; password_hash: string; role: UserRole; barber_id?: number | null }) {
+  async execute(data: { username: string; email: string; password_hash: string; role: UserRole; barber_id?: number | null; shop_id?: number | null }) {
     const existingUsername = await this.userRepository.findByUsername(data.username);
     if (existingUsername) {
       throw new Error('Username already exists');
