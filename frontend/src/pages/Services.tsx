@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import apiClient from '../api/apiClient';
 import { PlusCircle, Edit2, Trash2, Clock, DollarSign, X, Save } from 'lucide-react';
 
 export default function Services() {
@@ -10,7 +10,7 @@ export default function Services() {
   const [editingId, setEditingId] = useState<number | null>(null);
 
   const fetchServices = () => {
-    axios.get('/api/services').then(res => setServices(res.data)).catch(() => {});
+    apiClient.get('/services').then(res => setServices(res.data)).catch(() => {});
   };
 
   useEffect(() => {
@@ -30,13 +30,13 @@ export default function Services() {
 
     try {
       if (editingId) {
-        await axios.put(`/api/services/${editingId}`, {
+        await apiClient.put(`/services/${editingId}`, {
           name,
           price: parseFloat(price),
           duration_minutes: parseInt(duration)
         });
       } else {
-        await axios.post('/api/services', {
+        await apiClient.post('/services', {
           name,
           price: parseFloat(price),
           duration_minutes: parseInt(duration)
@@ -59,7 +59,7 @@ export default function Services() {
   const deleteService = async (id: number) => {
     if (!window.confirm('Are you sure you want to delete this service?')) return;
     try {
-      await axios.delete(`/api/services/${id}`);
+      await apiClient.delete(`/services/${id}`);
       fetchServices();
     } catch (err) {
       alert('Failed to delete service');

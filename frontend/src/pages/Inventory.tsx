@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import apiClient from '../api/apiClient';
 import { AlertCircle, PlusCircle, X, TrendingDown, Clock } from 'lucide-react';
 
 export default function Inventory() {
@@ -11,8 +11,8 @@ export default function Inventory() {
   const [restockReason, setRestockReason] = useState('Manual Restock');
 
   const fetchProducts = () => {
-    axios.get('/api/inventory').then(res => setProducts(res.data));
-    axios.get('/api/inventory/intelligence').then(res => setIntelligence(res.data));
+    apiClient.get('/inventory').then(res => setProducts(res.data));
+    apiClient.get('/inventory/intelligence').then(res => setIntelligence(res.data));
   };
 
   useEffect(() => {
@@ -24,7 +24,7 @@ export default function Inventory() {
     if (!selectedProduct || restockAmount <= 0) return;
 
     try {
-      await axios.post('/api/inventory/restock', {
+      await apiClient.post('/inventory/restock', {
         product_id: selectedProduct.id,
         amount: restockAmount,
         reason: restockReason

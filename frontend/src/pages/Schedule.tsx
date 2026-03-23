@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import apiClient from '../api/apiClient';
 import { Calendar as CalendarIcon, Clock, Scissors, User, X, PlusCircle, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -22,10 +22,10 @@ export default function Schedule() {
   const [occurrences, setOccurrences] = useState(1);
 
   const fetchData = () => {
-    axios.get(`/api/appointments?date=${date}`).then(res => setAppointments(res.data));
-    axios.get('/api/barbers').then(res => setBarbers(res.data));
-    axios.get('/api/customers').then(res => setCustomers(res.data));
-    axios.get('/api/services').then(res => setServices(res.data));
+    apiClient.get(`/appointments?date=${date}`).then(res => setAppointments(res.data));
+    apiClient.get('/barbers').then(res => setBarbers(res.data));
+    apiClient.get('/customers').then(res => setCustomers(res.data));
+    apiClient.get('/services').then(res => setServices(res.data));
   };
 
   useEffect(() => {
@@ -36,7 +36,7 @@ export default function Schedule() {
     e.preventDefault();
     const start_time = `${date}T${selectedTime}:00`;
     try {
-      await axios.post('/api/appointments', {
+      await apiClient.post('/appointments', {
         barber_id: parseInt(selectedBarber),
         customer_id: selectedCustomer ? parseInt(selectedCustomer) : null,
         service_id: parseInt(selectedService),

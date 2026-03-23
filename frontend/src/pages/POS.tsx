@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import apiClient from '../api/apiClient';
 import { Trash2 } from 'lucide-react';
 import { calculatePOSTotals } from '../utils/pos';
 import { useLocation } from 'react-router-dom';
@@ -21,9 +21,9 @@ export default function POS() {
   const [discountAmount, setDiscountAmount] = useState<number>(0);
 
   useEffect(() => {
-    axios.get('/api/barbers').then(res => setBarbers(res.data)).catch(() => {});
-    axios.get('/api/services').then(res => setServices(res.data)).catch(() => {});
-    axios.get('/api/inventory').then(res => setProducts(res.data)).catch(() => {});
+    apiClient.get('/barbers').then(res => setBarbers(res.data)).catch(() => {});
+    apiClient.get('/services').then(res => setServices(res.data)).catch(() => {});
+    apiClient.get('/inventory').then(res => setProducts(res.data)).catch(() => {});
 
     // If navigated from Schedule with an appointment
     if (appointmentData) {
@@ -33,7 +33,7 @@ export default function POS() {
       }
       // If we had customer data, we'd fetch it here or pass it in state
       if (appointmentData.customerId) {
-        axios.get('/api/customers').then(res => {
+        apiClient.get('/customers').then(res => {
           const customer = res.data.find((c: any) => c.id === appointmentData.customerId);
           if (customer) {
             setCustomerEmail(customer.email || '');
@@ -56,7 +56,7 @@ export default function POS() {
     if (!selectedBarber || cart.length === 0) return alert('Select barber and items');
     
     try {
-      await axios.post('/api/sales', {
+      await apiClient.post('/sales', {
         barber_id: parseInt(selectedBarber),
         customer_email: customerEmail,
         customer_phone: customerPhone,
@@ -67,7 +67,7 @@ export default function POS() {
 
       // If this was an appointment, mark it completed
       if (appointmentData?.appointmentId) {
-        await axios.patch(`/api/appointments/${appointmentData.appointmentId}`, { status: 'completed' });
+        await apiClient.patch(`/appointments/${appointmentData.appointmentId}`, { status: 'completed' });
       }
 
       setCart([]);

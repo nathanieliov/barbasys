@@ -1,0 +1,62 @@
+
+> backend@1.0.0 dev
+> NODE_OPTIONS='--loader ts-node/esm --no-warnings' nodemon src/index.ts
+
+[33m[nodemon] 3.1.14[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: ts,json[39m
+[32m[nodemon] starting `node src/index.ts`[39m
+[dotenv@17.3.1] injecting env (4) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+Server running on http://localhost:3000
+[Job] Checking for appointment reminders...
+
+/Users/nathaniel/dev/workspace/projects/barbasys/backend/node_modules/better-sqlite3/lib/methods/wrappers.js:5
+	return this[cppdb].prepare(sql, this, false);
+	                   ^
+SqliteError: no such column: a.reminder_sent
+    at Database.prepare (/Users/nathaniel/dev/workspace/projects/barbasys/backend/node_modules/better-sqlite3/lib/methods/wrappers.js:5:21)
+    at Timeout._onTimeout (file:///Users/nathaniel/dev/workspace/projects/barbasys/backend/src/index.ts:560:25)
+    at listOnTimeout (node:internal/timers:588:17)
+    at process.processTimers (node:internal/timers:523:7) {
+  code: 'SQLITE_ERROR'
+}
+
+Node.js v22.18.0
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/index.ts`[39m
+[dotenv@17.3.1] injecting env (4) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
+Server running on http://localhost:3000
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/index.ts`[39m
+[dotenv@17.3.1] injecting env (4) from .env -- tip: ⚙️  override existing env vars with { override: true }
+Server running on http://localhost:3000
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/index.ts`[39m
+[dotenv@17.3.1] injecting env (4) from .env -- tip: ⚙️  override existing env vars with { override: true }
+Server running on http://localhost:3000
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/index.ts`[39m
+[dotenv@17.3.1] injecting env (4) from .env -- tip: ⚡️ secrets for agents: https://dotenvx.com/as2
+Server running on http://localhost:3000
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/index.ts`[39m
+[dotenv@17.3.1] injecting env (4) from .env -- tip: 🤖 agentic secret storage: https://dotenvx.com/as2
+Server running on http://localhost:3000
+[Job] Checking for appointment reminders...
+[Job] Checking for appointment reminders...
+[Job] Checking for appointment reminders...
+[Job] Checking for appointment reminders...
+[Job] Checking for appointment reminders...
+[Job] Checking for appointment reminders...
+[Job] Checking for appointment reminders...
+[Job] Checking for appointment reminders...
+[Job] Checking for appointment reminders...
+[Job] Checking for appointment reminders...
+[Job] Checking for appointment reminders...
+[Job] Checking for appointment reminders...
+[Job] Checking for appointment reminders...
+[Job] Checking for appointment reminders...
+[Job] Checking for appointment reminders...
+[Job] Checking for appointment reminders...

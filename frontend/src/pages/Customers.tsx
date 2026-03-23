@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import apiClient from '../api/apiClient';
 import { Search, User, Mail, Phone, Calendar, X, ShoppingBag, Scissors, Tag, Save, History } from 'lucide-react';
 
 export default function Customers() {
@@ -11,7 +11,7 @@ export default function Customers() {
   const [editingTags, setEditingTags] = useState('');
 
   const fetchCustomers = () => {
-    axios.get('/api/customers').then(res => setCustomers(res.data));
+    apiClient.get('/customers').then(res => setCustomers(res.data));
   };
 
   useEffect(() => {
@@ -20,7 +20,7 @@ export default function Customers() {
 
   const openProfile = async (customer: any) => {
     try {
-      const res = await axios.get(`/api/customers/${customer.id}`);
+      const res = await apiClient.get(`/customers/${customer.id}`);
       setSelectedCustomer(res.data);
       setHistory(res.data.history || []);
       setEditingNotes(res.data.notes || '');
@@ -32,7 +32,7 @@ export default function Customers() {
 
   const saveProfile = async () => {
     try {
-      await axios.patch(`/api/customers/${selectedCustomer.id}`, {
+      await apiClient.patch(`/customers/${selectedCustomer.id}`, {
         ...selectedCustomer,
         notes: editingNotes,
         tags: editingTags

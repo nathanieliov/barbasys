@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import apiClient from '../api/apiClient';
 import { Save, Building, Clock, Percent } from 'lucide-react';
 
 export default function Settings() {
@@ -14,7 +14,7 @@ export default function Settings() {
   const [message, setMessage] = useState({ text: '', type: '' });
 
   useEffect(() => {
-    axios.get('/api/settings').then(res => {
+    apiClient.get('/settings').then(res => {
       setSettings((prev: any) => ({ ...prev, ...res.data }));
     });
   }, []);
@@ -23,7 +23,7 @@ export default function Settings() {
     e.preventDefault();
     setSaving(true);
     try {
-      await axios.post('/api/settings', settings);
+      await apiClient.post('/settings', settings);
       setMessage({ text: 'Settings saved successfully!', type: 'success' });
       setTimeout(() => setMessage({ text: '', type: '' }), 3000);
     } catch (err) {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import apiClient from '../api/apiClient';
 import { UserPlus, User } from 'lucide-react';
 
 export default function Barbers() {
@@ -9,7 +9,7 @@ export default function Barbers() {
   const [productRate, setProductRate] = useState('0.1');
 
   const fetchBarbers = () => {
-    axios.get('/api/barbers').then(res => setBarbers(res.data)).catch(() => {});
+    apiClient.get('/barbers').then(res => setBarbers(res.data)).catch(() => {});
   };
 
   useEffect(() => {
@@ -20,7 +20,7 @@ export default function Barbers() {
     e.preventDefault();
     if (!name) return;
     try {
-      await axios.post('/api/barbers', { 
+      await apiClient.post('/barbers', { 
         name, 
         service_commission_rate: parseFloat(serviceRate),
         product_commission_rate: parseFloat(productRate)

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import apiClient from '../api/apiClient';
 import { Truck, User, Mail, Phone, Clock, Plus, Trash2 } from 'lucide-react';
 
 export default function Suppliers() {
@@ -11,7 +11,7 @@ export default function Suppliers() {
   const [leadTime, setLeadTime] = useState('7');
 
   const fetchSuppliers = () => {
-    axios.get('/api/suppliers').then(res => setSuppliers(res.data));
+    apiClient.get('/suppliers').then(res => setSuppliers(res.data));
   };
 
   useEffect(() => {
@@ -21,7 +21,7 @@ export default function Suppliers() {
   const addSupplier = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await axios.post('/api/suppliers', {
+      await apiClient.post('/suppliers', {
         name,
         contact_name: contact,
         email,
@@ -42,7 +42,7 @@ export default function Suppliers() {
   const deleteSupplier = async (id: number) => {
     if (!window.confirm('Delete this supplier?')) return;
     try {
-      await axios.delete(`/api/suppliers/${id}`);
+      await apiClient.delete(`/suppliers/${id}`);
       fetchSuppliers();
     } catch (err) {
       alert('Failed to delete supplier');

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
-import { BarChart, Clock, Calendar, User, TrendingUp, Filter } from 'lucide-react';
+import apiClient from '../api/apiClient';
+import { Clock, Calendar, User, TrendingUp, Filter } from 'lucide-react';
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -12,7 +12,7 @@ export default function Analytics() {
   });
 
   const fetchAnalytics = () => {
-    axios.get(`/api/reports/analytics?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`)
+    apiClient.get(`/reports/analytics?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`)
       .then(res => setData(res.data));
   };
 

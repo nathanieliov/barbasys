@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import apiClient from '../api/apiClient';
 import { Calendar, Clock, Plus, Trash2, Save, User } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 
@@ -21,7 +21,7 @@ export default function Shifts() {
   const isAdmin = user?.role === 'OWNER' || user?.role === 'MANAGER';
 
   useEffect(() => {
-    axios.get('/api/barbers').then(res => {
+    apiClient.get('/barbers').then(res => {
       setBarbers(res.data);
       if (user?.role === 'BARBER') {
         setSelectedBarberId(user.barber_id || '');
@@ -33,8 +33,8 @@ export default function Shifts() {
 
   useEffect(() => {
     if (selectedBarberId) {
-      axios.get(`/api/barbers/${selectedBarberId}/shifts`).then(res => setShifts(res.data));
-      axios.get(`/api/barbers/${selectedBarberId}/time-off`).then(res => setTimeOff(res.data));
+      apiClient.get(`/barbers/${selectedBarberId}/shifts`).then(res => setShifts(res.data));
+      apiClient.get(`/barbers/${selectedBarberId}/time-off`).then(res => setTimeOff(res.data));
     }
   }, [selectedBarberId]);
 
@@ -54,7 +54,7 @@ export default function Shifts() {
 
   const saveShifts = async () => {
     try {
-      await axios.post(`/api/barbers/${selectedBarberId}/shifts`, { shifts });
+      await apiClient.post(`/barbers/${selectedBarberId}/shifts`, { shifts });
       alert('Shifts saved successfully');
     } catch (err) {
       alert('Failed to save shifts');
@@ -64,9 +64,9 @@ export default function Shifts() {
   const addTimeOff = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await axios.post(`/api/barbers/${selectedBarberId}/time-off`, newTimeOff);
+      await apiClient.post(`/barbers/${selectedBarberId}/time-off`, newTimeOff);
       setNewTimeOff({ start_time: '', end_time: '', reason: '' });
-      axios.get(`/api/barbers/${selectedBarberId}/time-off`).then(res => setTimeOff(res.data));
+      apiClient.get(`/barbers/${selectedBarberId}/time-off`).then(res => setTimeOff(res.data));
     } catch (err) {
       alert('Failed to add time off');
     }

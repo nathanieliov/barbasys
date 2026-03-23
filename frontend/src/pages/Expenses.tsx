@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
-import { Receipt, Plus, Trash2, Calendar, Tag, DollarSign } from 'lucide-react';
+import apiClient from '../api/apiClient';
+import { Plus, Trash2, Calendar, Tag, DollarSign } from 'lucide-react';
 
 const CATEGORIES = ['Rent', 'Utilities', 'Supplies', 'Marketing', 'Maintenance', 'Other'];
 
@@ -12,7 +12,7 @@ export default function Expenses() {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
 
   const fetchExpenses = () => {
-    axios.get('/api/expenses').then(res => setExpenses(res.data));
+    apiClient.get('/expenses').then(res => setExpenses(res.data));
   };
 
   useEffect(() => {
@@ -22,7 +22,7 @@ export default function Expenses() {
   const addExpense = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await axios.post('/api/expenses', {
+      await apiClient.post('/expenses', {
         category,
         amount: parseFloat(amount),
         description,
@@ -39,7 +39,7 @@ export default function Expenses() {
   const deleteExpense = async (id: number) => {
     if (!window.confirm('Delete this expense?')) return;
     try {
-      await axios.delete(`/api/expenses/${id}`);
+      await apiClient.delete(`/expenses/${id}`);
       fetchExpenses();
     } catch (err) {
       alert('Failed to delete expense');

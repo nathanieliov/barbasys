@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import apiClient from './api/apiClient';
 import { BrowserRouter as Router, Routes, Route, Link, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Scissors, Package, BarChart3, Users, ShoppingCart, Calendar as CalendarIcon, LogOut, Settings as SettingsIcon, Clock, Truck, BarChart, Receipt } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
@@ -26,9 +26,10 @@ const Sidebar = () => {
 
   useEffect(() => {
     if (user?.shop_id) {
-      axios.get(`/api/shops/${user.shop_id}`).then(res => setShopName(res.data.name));
+      apiClient.get(`/shops/${user.shop_id}`).then(res => setShopName(res.data.name));
     }
   }, [user]);
+
 
   const handleLogout = () => {
     logout();

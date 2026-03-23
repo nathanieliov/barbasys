@@ -19,9 +19,9 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'DATABASE_URL="test_e2e.db" npm run dev',
+    command: 'rm -f test_e2e.db && DATABASE_URL="/Users/nathaniel/dev/workspace/projects/barbasys/test_e2e.db" npm run dev',
     url: 'http://localhost:5173',
     reuseExistingServer: !process.env.CI,
-    timeout: 120 * 1000,
+    timeout: 180 * 1000,
   },
 });

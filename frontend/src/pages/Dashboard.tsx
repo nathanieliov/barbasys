@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import apiClient from '../api/apiClient';
 import { TrendingUp, Users } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 
@@ -10,7 +10,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     // Fetch Daily
-    axios.get('/api/reports').then(res => setStats(res.data));
+    apiClient.get('/reports').then(res => setStats(res.data));
     
     // Fetch Weekly
     const d = new Date();
@@ -18,7 +18,7 @@ export default function Dashboard() {
     const diff = d.getDate() - day;
     const start = new Date(d.setDate(diff)).toISOString().split('T')[0];
     const end = new Date(d.setDate(diff + 6)).toISOString().split('T')[0];
-    axios.get(`/api/reports?startDate=${start}&endDate=${end}`).then(res => setWeeklyStats(res.data));
+    apiClient.get(`/reports?startDate=${start}&endDate=${end}`).then(res => setWeeklyStats(res.data));
   }, []);
 
   const isBarber = user?.role === 'BARBER';

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import apiClient from '../api/apiClient';
 import { Calendar, DollarSign, TrendingUp, Receipt } from 'lucide-react';
 
 export default function Reports() {
@@ -27,7 +27,7 @@ export default function Reports() {
       endDate = end.toISOString().split('T')[0];
     }
 
-    axios.get(`/api/reports?startDate=${startDate}&endDate=${endDate}`)
+    apiClient.get(`/reports?startDate=${startDate}&endDate=${endDate}`)
       .then(res => setReport(res.data))
       .catch(() => setReport(null));
   }, [date, rangeType]);
