@@ -17,7 +17,8 @@ test.describe('Inventory & Supplier Management', () => {
     await page.fill('input:below(:text("Contact Person"))', 'Test Agent');
     await page.click('button:has-text("Add Supplier")');
 
-    await expect(page.locator('.card')).toContainText('E2E Supplier');
-    await expect(page.locator('.card')).toContainText('Test Agent');
+    const partnersList = page.locator('.card', { hasText: 'Current Partners' });
+    await expect(partnersList).toContainText('E2E Supplier');
+    await expect(partnersList).toContainText('Test Agent');
   });
 });
