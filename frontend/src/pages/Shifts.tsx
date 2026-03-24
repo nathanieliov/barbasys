@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../api/apiClient';
-import { Calendar, Clock, Plus, Trash2, Save, User } from 'lucide-react';
+import { Clock, Plus, Trash2, Save, User, Coffee, Info } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -55,7 +55,7 @@ export default function Shifts() {
   const saveShifts = async () => {
     try {
       await apiClient.post(`/barbers/${selectedBarberId}/shifts`, { shifts });
-      alert('Shifts saved successfully');
+      alert('Weekly schedule updated successfully!');
     } catch (err) {
       alert('Failed to save shifts');
     }
@@ -73,16 +73,20 @@ export default function Shifts() {
   };
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <h1>Shift Management</h1>
+    <div className="shifts-container">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+        <div>
+          <h1>Shift Management</h1>
+          <p style={{ color: 'var(--text-muted)' }}>Configure availability and scheduled breaks for professionals.</p>
+        </div>
+        
         {isAdmin && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <User size={20} color="#94a3b8" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: 'white', padding: '0.5rem 1rem', borderRadius: '0.75rem', border: '1px solid var(--border)', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+            <User size={18} color="var(--primary)" />
             <select 
               value={selectedBarberId} 
               onChange={e => setSelectedBarberId(e.target.value)}
-              style={{ width: 'auto', marginBottom: 0 }}
+              style={{ width: 'auto', marginBottom: 0, border: 'none', fontWeight: '700', padding: '0.25rem' }}
             >
               {barbers.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
             </select>
@@ -90,107 +94,149 @@ export default function Shifts() {
         )}
       </div>
 
-      <div className="grid">
-        <div className="card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+      <div className="pos-grid">
+        {/* Left Column: Weekly Schedule */}
+        <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <Clock size={20} color="var(--primary)" />
+              <div style={{ background: 'rgba(79, 70, 229, 0.1)', color: 'var(--primary)', padding: '0.5rem', borderRadius: '0.5rem' }}>
+                <Clock size={20} />
+              </div>
               <h2 style={{ margin: 0 }}>Weekly Schedule</h2>
             </div>
             {isAdmin && (
-              <button className="secondary" onClick={addShift} style={{ padding: '0.5rem 1rem' }}>
-                <Plus size={16} style={{ marginRight: '0.4rem' }} /> Add Day
+              <button className="secondary" onClick={addShift} style={{ gap: '0.4rem', fontSize: '0.8rem' }}>
+                <Plus size={16} /> Add Day
               </button>
             )}
           </div>
 
-          <div style={{ display: 'grid', gap: '1rem' }}>
+          <div style={{ display: 'grid', gap: '0.75rem', flex: 1 }}>
             {shifts.map((s, i) => (
-              <div key={i} style={{ display: 'flex', gap: '1rem', alignItems: 'center', background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '0.5rem' }}>
+              <div key={i} style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', background: '#f9fafb', padding: '0.75rem', borderRadius: '0.75rem', border: '1px solid var(--border)' }}>
                 <select 
                   value={s.day_of_week} 
                   onChange={e => updateShift(i, 'day_of_week', parseInt(e.target.value))}
                   disabled={!isAdmin}
+                  style={{ width: '130px', marginBottom: 0, fontWeight: '600' }}
                 >
                   {DAYS.map((day, idx) => <option key={idx} value={idx}>{day}</option>)}
                 </select>
-                <input 
-                  type="time" 
-                  value={s.start_time} 
-                  onChange={e => updateShift(i, 'start_time', e.target.value)}
-                  disabled={!isAdmin}
-                />
-                <span style={{ color: '#94a3b8' }}>to</span>
-                <input 
-                  type="time" 
-                  value={s.end_time} 
-                  onChange={e => updateShift(i, 'end_time', e.target.value)}
-                  disabled={!isAdmin}
-                />
+                
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1 }}>
+                  <input 
+                    type="time" 
+                    value={s.start_time} 
+                    onChange={e => updateShift(i, 'start_time', e.target.value)}
+                    disabled={!isAdmin}
+                    style={{ marginBottom: 0, textAlign: 'center', fontWeight: '700' }}
+                  />
+                  <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: '600' }}>to</span>
+                  <input 
+                    type="time" 
+                    value={s.end_time} 
+                    onChange={e => updateShift(i, 'end_time', e.target.value)}
+                    disabled={!isAdmin}
+                    style={{ marginBottom: 0, textAlign: 'center', fontWeight: '700' }}
+                  />
+                </div>
+
                 {isAdmin && (
-                  <button className="secondary" onClick={() => removeShift(i)} style={{ color: '#ef4444', padding: '0.5rem' }}>
+                  <button className="secondary" onClick={() => removeShift(i)} style={{ color: 'var(--danger)', padding: '0.5rem', border: 'none', background: 'transparent' }}>
                     <Trash2 size={18} />
                   </button>
                 )}
               </div>
             ))}
-            {shifts.length === 0 && <p style={{ color: '#94a3b8' }}>No shifts scheduled.</p>}
+            
+            {shifts.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-muted)' }}>
+                <Clock size={40} style={{ margin: '0 auto 1rem', opacity: 0.1 }} />
+                <p>No regular shifts scheduled.</p>
+              </div>
+            )}
           </div>
 
           {isAdmin && shifts.length > 0 && (
-            <button onClick={saveShifts} style={{ marginTop: '1.5rem', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+            <button onClick={saveShifts} style={{ marginTop: '2rem', width: '100%', gap: '0.5rem', padding: '1rem' }}>
               <Save size={20} /> Save Weekly Schedule
             </button>
           )}
         </div>
 
-        <div className="card">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
-            <Calendar size={20} color="var(--primary)" />
-            <h2 style={{ margin: 0 }}>Time Off / Breaks</h2>
-          </div>
-
-          <form onSubmit={addTimeOff} style={{ marginBottom: '2rem', padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '0.5rem' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', color: '#94a3b8', marginBottom: '0.25rem' }}>Starts</label>
-                <input 
-                  type="datetime-local" 
-                  value={newTimeOff.start_time} 
-                  onChange={e => setNewTimeOff({...newTimeOff, start_time: e.target.value})}
-                  required
-                />
+        {/* Right Column: Time Off */}
+        <div>
+          <div className="card" style={{ marginBottom: '1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
+              <div style={{ background: 'rgba(16, 185, 129, 0.1)', color: 'var(--success)', padding: '0.5rem', borderRadius: '0.5rem' }}>
+                <Coffee size={20} />
               </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', color: '#94a3b8', marginBottom: '0.25rem' }}>Ends</label>
-                <input 
-                  type="datetime-local" 
-                  value={newTimeOff.end_time} 
-                  onChange={e => setNewTimeOff({...newTimeOff, end_time: e.target.value})}
-                  required
-                />
-              </div>
+              <h2 style={{ margin: 0 }}>Log Time Off / Break</h2>
             </div>
-            <input 
-              type="text" 
-              placeholder="Reason (e.g., Doctor, Lunch)" 
-              value={newTimeOff.reason} 
-              onChange={e => setNewTimeOff({...newTimeOff, reason: e.target.value})}
-              style={{ marginBottom: '1rem' }}
-            />
-            <button type="submit" className="secondary" style={{ width: '100%' }}>Add Time Off</button>
-          </form>
 
-          <div style={{ display: 'grid', gap: '1rem' }}>
-            {timeOff.map((t, i) => (
-              <div key={i} style={{ padding: '1rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                <div style={{ fontWeight: 'bold' }}>{t.reason || 'No reason provided'}</div>
-                <div style={{ fontSize: '0.875rem', color: '#94a3b8' }}>
-                  {new Date(t.start_time).toLocaleString()} - {new Date(t.end_time).toLocaleString()}
+            <form onSubmit={addTimeOff}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase', marginBottom: '0.4rem' }}>Starts</label>
+                  <input 
+                    type="datetime-local" 
+                    value={newTimeOff.start_time} 
+                    onChange={e => setNewTimeOff({...newTimeOff, start_time: e.target.value})}
+                    required
+                    style={{ marginBottom: 0, fontSize: '0.85rem' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase', marginBottom: '0.4rem' }}>Ends</label>
+                  <input 
+                    type="datetime-local" 
+                    value={newTimeOff.end_time} 
+                    onChange={e => setNewTimeOff({...newTimeOff, end_time: e.target.value})}
+                    required
+                    style={{ marginBottom: 0, fontSize: '0.85rem' }}
+                  />
                 </div>
               </div>
-            ))}
-            {timeOff.length === 0 && <p style={{ color: '#94a3b8' }}>No upcoming time off.</p>}
+              
+              <div style={{ marginBottom: '1.25rem' }}>
+                <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase', marginBottom: '0.4rem' }}>Reason</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. Lunch Break, Doctor Appt" 
+                  value={newTimeOff.reason} 
+                  onChange={e => setNewTimeOff({...newTimeOff, reason: e.target.value})}
+                  style={{ marginBottom: 0 }}
+                  required
+                />
+              </div>
+              
+              <button type="submit" className="secondary" style={{ width: '100%', padding: '0.75rem', fontWeight: '700' }}>
+                <Plus size={18} style={{ marginRight: '0.4rem' }} /> Add Time Off
+              </button>
+            </form>
+          </div>
+
+          <div className="card">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem', color: 'var(--text-main)' }}>
+              <Info size={16} />
+              <h3 style={{ margin: 0, fontSize: '0.9rem' }}>Upcoming Time Off</h3>
+            </div>
+
+            <div style={{ display: 'grid', gap: '0.75rem' }}>
+              {timeOff.map((t, i) => (
+                <div key={i} style={{ padding: '1rem', background: '#f9fafb', borderRadius: '0.75rem', border: '1px solid var(--border)', borderLeft: '4px solid var(--warning)' }}>
+                  <div style={{ fontWeight: '800', fontSize: '0.9rem', marginBottom: '0.25rem' }}>{t.reason || 'Personal Time'}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: '600' }}>
+                    {new Date(t.start_time).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })} - {new Date(t.end_time).toLocaleString(undefined, { hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                </div>
+              ))}
+              {timeOff.length === 0 && (
+                <div style={{ textAlign: 'center', padding: '2rem 0', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                  No upcoming time off recorded.
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
