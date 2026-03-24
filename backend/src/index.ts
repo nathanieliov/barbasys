@@ -503,25 +503,37 @@ app.post('/api/settings', protect, authorize('OWNER', 'MANAGER'), (req, res) => 
 // Sales (POS)
 app.post('/api/sales', protect, (req, res) => {
   const shopId = req.user?.shop_id;
-  const { barber_id, items, customer_email, customer_phone, tip_amount = 0, discount_amount = 0 } = req.body;
+  let { barber_id, items, customer_email, customer_phone, tip_amount, discount_amount } = req.body;
+  
+  // Normalize numeric values to ensure valid math
+  tip_amount = parseFloat(tip_amount) || 0;
+  discount_amount = parseFloat(discount_amount) || 0;
+  
+  // Normalize customer strings (empty strings should be treated as NULL)
+  customer_email = customer_email?.trim() || null;
+  customer_phone = customer_phone?.trim() || null;
+
+  if (!barber_id || !items || !Array.isArray(items)) {
+    return res.status(400).json({ error: 'Missing required sale data' });
+  }
+
   const barber = db.prepare('SELECT name FROM barbers WHERE id = ?').get(barber_id) as { name: string };
   
-  const total_items_amount = items.reduce((sum: number, item: any) => sum + item.price, 0);
-  const total_amount = total_items_amount + tip_amount - discount_amount;
+  const total_items_amount = items.reduce((sum: number, item: any) => sum + (parseFloat(item.price) || 0), 0);
+  const total_amount = Math.max(0, total_items_amount + tip_amount - discount_amount);
 
   const transaction = db.transaction(() => {
     let customerId = null;
     
-    // Upsert Customer
+    // Upsert Customer only if identifying info is provided
     if (customer_email || customer_phone) {
-      // Find existing customer by email or phone
-      let customer = db.prepare('SELECT id FROM customers WHERE (email = ? AND email IS NOT NULL) OR (phone = ? AND phone IS NOT NULL)').get(customer_email || null, customer_phone || null) as { id: number };
+      let customer = db.prepare('SELECT id FROM customers WHERE (email = ? AND email IS NOT NULL) OR (phone = ? AND phone IS NOT NULL)').get(customer_email, customer_phone) as { id: number };
       
       if (customer) {
         customerId = customer.id;
         db.prepare('UPDATE customers SET last_visit = CURRENT_TIMESTAMP WHERE id = ?').run(customerId);
       } else {
-        const res = db.prepare('INSERT INTO customers (email, phone, last_visit) VALUES (?, ?, CURRENT_TIMESTAMP)').run(customer_email || null, customer_phone || null);
+        const res = db.prepare('INSERT INTO customers (email, phone, last_visit) VALUES (?, ?, CURRENT_TIMESTAMP)').run(customer_email, customer_phone);
         customerId = Number(res.lastInsertRowid);
       }
     }

@@ -57,11 +57,11 @@ export default function POS() {
     try {
       await apiClient.post('/sales', {
         barber_id: parseInt(selectedBarber),
-        customer_email: customerEmail,
-        customer_phone: customerPhone,
+        customer_email: customerEmail.trim() || null,
+        customer_phone: customerPhone.trim() || null,
         items: cart.map(i => ({ id: i.id, name: i.name, type: i.type, price: i.price })),
-        tip_amount: tipAmount,
-        discount_amount: discountAmount
+        tip_amount: tipAmount || 0,
+        discount_amount: discountAmount || 0
       });
 
       if (appointmentData?.appointmentId) {
@@ -75,12 +75,12 @@ export default function POS() {
       setDiscountAmount(0);
       setShowCheckout(false);
       alert('Sale completed successfully!');
-    } catch (err) {
-      alert('Error processing sale');
+    } catch (err: any) {
+      alert(err.response?.data?.error || 'Error processing sale. Please check values.');
     }
   };
 
-  const { subtotal, total } = calculatePOSTotals(cart, tipAmount, discountAmount);
+  const { subtotal, total } = calculatePOSTotals(cart, tipAmount || 0, discountAmount || 0);
 
   return (
     <div className="pos-container">
