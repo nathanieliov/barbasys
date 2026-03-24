@@ -6,11 +6,11 @@ export class SQLiteBarberRepository implements IBarberRepository {
   constructor(private db: Database) {}
 
   async findAll(): Promise<Barber[]> {
-    return this.db.prepare('SELECT * FROM barbers').all() as Barber[];
+    return this.db.prepare('SELECT * FROM barbers WHERE is_active = 1').all() as Barber[];
   }
 
   async findById(id: number): Promise<Barber | null> {
-    return this.db.prepare('SELECT * FROM barbers WHERE id = ?').get(id) as Barber | null;
+    return this.db.prepare('SELECT * FROM barbers WHERE id = ? AND is_active = 1').get(id) as Barber | null;
   }
 
   async create(barber: Omit<Barber, 'id'>): Promise<number> {
@@ -21,6 +21,6 @@ export class SQLiteBarberRepository implements IBarberRepository {
   }
 
   async delete(id: number): Promise<void> {
-    this.db.prepare('DELETE FROM barbers WHERE id = ?').run(id);
+    this.db.prepare('UPDATE barbers SET is_active = 0 WHERE id = ?').run(id);
   }
 }

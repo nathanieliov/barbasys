@@ -29,6 +29,7 @@ db.exec(`
     service_commission_rate REAL DEFAULT 0.5,
     product_commission_rate REAL DEFAULT 0.1,
     shop_id INTEGER,
+    is_active INTEGER DEFAULT 1,
     FOREIGN KEY (shop_id) REFERENCES shops(id) ON DELETE CASCADE
   );
 
@@ -38,7 +39,8 @@ db.exec(`
     contact_name TEXT,
     email TEXT,
     phone TEXT,
-    lead_time_days INTEGER DEFAULT 7
+    lead_time_days INTEGER DEFAULT 7,
+    is_active INTEGER DEFAULT 1
   );
 
   CREATE TABLE IF NOT EXISTS products (
@@ -49,6 +51,7 @@ db.exec(`
     min_stock_threshold INTEGER DEFAULT 2,
     supplier_id INTEGER,
     shop_id INTEGER,
+    is_active INTEGER DEFAULT 1,
     FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE SET NULL,
     FOREIGN KEY (shop_id) REFERENCES shops(id) ON DELETE CASCADE
   );
@@ -70,6 +73,7 @@ db.exec(`
     price REAL NOT NULL,
     duration_minutes INTEGER DEFAULT 30,
     shop_id INTEGER,
+    is_active INTEGER DEFAULT 1,
     FOREIGN KEY (shop_id) REFERENCES shops(id) ON DELETE CASCADE
   );
 
@@ -174,6 +178,29 @@ db.exec(`
     FOREIGN KEY (shop_id) REFERENCES shops(id) ON DELETE CASCADE
   );
 `);
+
+// Migration for existing databases
+try { db.exec('ALTER TABLE barbers ADD COLUMN is_active INTEGER DEFAULT 1'); } catch (e) {}
+try { db.exec('ALTER TABLE services ADD COLUMN is_active INTEGER DEFAULT 1'); } catch (e) {}
+try { db.exec('ALTER TABLE products ADD COLUMN is_active INTEGER DEFAULT 1'); } catch (e) {}
+try { db.exec('ALTER TABLE suppliers ADD COLUMN is_active INTEGER DEFAULT 1'); } catch (e) {}
+
+// Backfill snapshotted names for existing sales
+try {
+  db.exec(`
+    UPDATE sales 
+    SET barber_name = (SELECT name FROM barbers WHERE barbers.id = sales.barber_id)
+    WHERE barber_name IS NULL AND barber_id IS NOT NULL;
+    
+    UPDATE sale_items
+    SET item_name = (SELECT name FROM services WHERE services.id = sale_items.item_id)
+    WHERE item_name IS NULL AND type = 'service';
+    
+    UPDATE sale_items
+    SET item_name = (SELECT name FROM products WHERE products.id = sale_items.item_id)
+    WHERE item_name IS NULL AND type = 'product';
+  `);
+} catch (e) {}
 
 // Seed initial data
 const shopsCount = db.prepare('SELECT count(*) as count FROM shops').get() as { count: number };

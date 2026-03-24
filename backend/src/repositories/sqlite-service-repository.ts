@@ -6,11 +6,11 @@ export class SQLiteServiceRepository implements IServiceRepository {
   constructor(private db: Database) {}
 
   async findAll(): Promise<Service[]> {
-    return this.db.prepare('SELECT * FROM services').all() as Service[];
+    return this.db.prepare('SELECT * FROM services WHERE is_active = 1').all() as Service[];
   }
 
   async findById(id: number): Promise<Service | null> {
-    const result = this.db.prepare('SELECT * FROM services WHERE id = ?').get(id);
+    const result = this.db.prepare('SELECT * FROM services WHERE id = ? AND is_active = 1').get(id);
     return (result as Service) || null;
   }
 
@@ -28,6 +28,6 @@ export class SQLiteServiceRepository implements IServiceRepository {
   }
 
   async delete(id: number): Promise<void> {
-    this.db.prepare('DELETE FROM services WHERE id = ?').run(id);
+    this.db.prepare('UPDATE services SET is_active = 0 WHERE id = ?').run(id);
   }
 }

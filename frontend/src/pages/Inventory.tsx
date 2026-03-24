@@ -1,23 +1,37 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../api/apiClient';
-import { AlertCircle, PlusCircle, X, TrendingDown, Search, Package, Filter } from 'lucide-react';
+import { AlertCircle, PlusCircle, X, TrendingDown, Search, Package, Filter, Edit2, Trash2, Tag, DollarSign, Truck } from 'lucide-react';
 
 export default function Inventory() {
   const [products, setProducts] = useState<any[]>([]);
+  const [suppliers, setSuppliers] = useState<any[]>([]);
   const [intelligence, setIntelligence] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // Modals
   const [showRestock, setShowRestock] = useState(false);
+  const [showProductModal, setShowProductModal] = useState(false);
+  
+  // Restock Form
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [restockAmount, setRestockAmount] = useState(0);
   const [restockReason, setRestockReason] = useState('Manual Restock');
 
-  const fetchProducts = () => {
+  // Product Add/Edit Form
+  const [editingProduct, setEditingProduct] = useState<any>(null);
+  const [prodName, setProdName] = useState('');
+  const [prodPrice, setProdNamePrice] = useState('');
+  const [prodThreshold, setProdThreshold] = useState('2');
+  const [prodSupplierId, setProdSupplierId] = useState('');
+
+  const fetchData = () => {
     apiClient.get('/inventory').then(res => setProducts(res.data));
     apiClient.get('/inventory/intelligence').then(res => setIntelligence(res.data));
+    apiClient.get('/suppliers').then(res => setSuppliers(res.data));
   };
 
   useEffect(() => {
-    fetchProducts();
+    fetchData();
   }, []);
 
   const handleRestock = async (e: React.FormEvent) => {
@@ -33,9 +47,59 @@ export default function Inventory() {
       setShowRestock(false);
       setRestockAmount(0);
       setRestockReason('Manual Restock');
-      fetchProducts();
+      fetchData();
     } catch (err) {
       alert('Failed to restock');
+    }
+  };
+
+  const handleProductSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const data = {
+      name: prodName,
+      price: parseFloat(prodPrice),
+      min_stock_threshold: parseInt(prodThreshold),
+      supplier_id: prodSupplierId ? parseInt(prodSupplierId) : null
+    };
+
+    try {
+      if (editingProduct) {
+        await apiClient.put(`/products/${editingProduct.id}`, data);
+      } else {
+        await apiClient.post('/products', data); // Ensure backend has this too, usually pos.ts or separate
+      }
+      resetProductForm();
+      fetchData();
+    } catch (err) {
+      alert('Failed to save product');
+    }
+  };
+
+  const resetProductForm = () => {
+    setEditingProduct(null);
+    setProdName('');
+    setProdNamePrice('');
+    setProdThreshold('2');
+    setProdSupplierId('');
+    setShowProductModal(false);
+  };
+
+  const startEditProduct = (p: any) => {
+    setEditingProduct(p);
+    setProdName(p.name);
+    setProdNamePrice(p.price.toString());
+    setProdThreshold(p.min_stock_threshold.toString());
+    setProdSupplierId(p.supplier_id?.toString() || '');
+    setShowProductModal(true);
+  };
+
+  const deleteProduct = async (id: number) => {
+    if (!window.confirm('Are you sure you want to remove this product?')) return;
+    try {
+      await apiClient.delete(`/products/${id}`);
+      fetchData();
+    } catch (err) {
+      alert('Failed to delete product');
     }
   };
 
@@ -53,9 +117,14 @@ export default function Inventory() {
           <h1>Inventory</h1>
           <p style={{ color: 'var(--text-muted)' }}>Manage your products and stock levels.</p>
         </div>
-        <button onClick={() => { setShowRestock(true); setSelectedProduct(products[0]); }} style={{ gap: '0.5rem' }}>
-          <PlusCircle size={20} /> <span className="hide-mobile">Restock Product</span>
-        </button>
+        <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <button className="secondary" onClick={() => { setEditingProduct(null); resetProductForm(); setShowProductModal(true); }} style={{ gap: '0.5rem' }}>
+            <PlusCircle size={20} /> <span className="hide-mobile">Add Product</span>
+          </button>
+          <button onClick={() => { setShowRestock(true); setSelectedProduct(products[0]); }} style={{ gap: '0.5rem' }}>
+            <TrendingDown size={20} /> <span className="hide-mobile">Quick Restock</span>
+          </button>
+        </div>
       </div>
 
       {/* Reorder Suggestions Alert */}
@@ -122,9 +191,13 @@ export default function Inventory() {
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{p.supplier_name || 'Generic Supplier'}</div>
                   </div>
                 </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontWeight: '800', fontSize: '1.1rem' }}>${p.price.toFixed(2)}</div>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Retail Price</div>
+                <div style={{ display: 'flex', gap: '0.25rem' }}>
+                  <button className="secondary" style={{ padding: '0.4rem', border: 'none' }} onClick={() => startEditProduct(p)}>
+                    <Edit2 size={16} />
+                  </button>
+                  <button className="secondary" style={{ padding: '0.4rem', color: 'var(--danger)', border: 'none' }} onClick={() => deleteProduct(p.id)}>
+                    <Trash2 size={16} />
+                  </button>
                 </div>
               </div>
 
@@ -134,19 +207,14 @@ export default function Inventory() {
                   <div style={{ fontSize: '1.25rem', fontWeight: '800', color: isLowStock ? 'var(--danger)' : 'var(--text-main)' }}>{p.stock}</div>
                 </div>
                 <div style={{ background: '#f9fafb', padding: '0.75rem', borderRadius: '0.5rem', textAlign: 'center' }}>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '700', marginBottom: '0.25rem' }}>Threshold</div>
-                  <div style={{ fontSize: '1.25rem', fontWeight: '800' }}>{p.min_stock_threshold}</div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '700', marginBottom: '0.25rem' }}>Price</div>
+                  <div style={{ fontSize: '1.25rem', fontWeight: '800' }}>${p.price.toFixed(2)}</div>
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button className="secondary" style={{ flex: 1, padding: '0.5rem' }} onClick={() => { setSelectedProduct(p); setShowRestock(true); }}>
-                  Restock
-                </button>
-                <button className="secondary" style={{ flex: 1, padding: '0.5rem' }}>
-                  Details
-                </button>
-              </div>
+              <button className="secondary" style={{ width: '100%', padding: '0.5rem' }} onClick={() => { setSelectedProduct(p); setShowRestock(true); }}>
+                Quick Restock
+              </button>
 
               {isLowStock && (
                 <div style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--danger)', fontSize: '0.75rem', fontWeight: '600', justifyContent: 'center' }}>
@@ -213,15 +281,84 @@ export default function Inventory() {
                 />
               </div>
 
-              <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '0.75rem', marginBottom: '1.5rem', border: '1px solid var(--border)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                  <span>New Predicted Stock</span>
-                  <span style={{ fontWeight: '700', color: 'var(--primary)' }}>{(selectedProduct?.stock || 0) + restockAmount}</span>
+              <button type="submit" style={{ width: '100%', padding: '1.1rem', fontSize: '1.1rem' }}>
+                Confirm Restock
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Product Add/Edit Modal */}
+      {showProductModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Tag size={20} color="var(--primary)" />
+                <h2 style={{ marginBottom: 0 }}>{editingProduct ? 'Edit Product' : 'Add New Product'}</h2>
+              </div>
+              <button className="secondary" style={{ padding: '0.5rem' }} onClick={resetProductForm}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleProductSubmit}>
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>Product Name</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. Professional Pomade" 
+                  value={prodName} 
+                  onChange={e => setProdName(e.target.value)} 
+                  required
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>Retail Price ($)</label>
+                  <div style={{ position: 'relative' }}>
+                    <DollarSign size={16} style={{ position: 'absolute', left: '0.75rem', top: '0.75rem', color: 'var(--text-muted)' }} />
+                    <input 
+                      type="number" 
+                      step="0.01" 
+                      value={prodPrice} 
+                      onChange={e => setProdNamePrice(e.target.value)} 
+                      style={{ paddingLeft: '2.25rem', marginBottom: 0 }}
+                      required
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>Min. Threshold</label>
+                  <input 
+                    type="number" 
+                    value={prodThreshold} 
+                    onChange={e => setProdThreshold(e.target.value)} 
+                    style={{ marginBottom: 0 }}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>Supplier</label>
+                <div style={{ position: 'relative' }}>
+                  <Truck size={16} style={{ position: 'absolute', left: '0.75rem', top: '0.75rem', color: 'var(--text-muted)' }} />
+                  <select 
+                    value={prodSupplierId} 
+                    onChange={e => setProdSupplierId(e.target.value)}
+                    style={{ paddingLeft: '2.25rem', marginBottom: 0 }}
+                  >
+                    <option value="">Select Supplier (Optional)</option>
+                    {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
                 </div>
               </div>
 
               <button type="submit" style={{ width: '100%', padding: '1.1rem', fontSize: '1.1rem' }}>
-                Confirm Restock
+                {editingProduct ? 'Update Product' : 'Create Product'}
               </button>
             </form>
           </div>

@@ -317,6 +317,17 @@ app.get('/api/inventory', protect, (req, res) => {
   res.json(products);
 });
 
+app.post('/api/products', protect, authorize('OWNER', 'MANAGER'), (req, res) => {
+  const shopId = req.user?.shop_id;
+  const { name, price, min_stock_threshold, supplier_id } = req.body;
+  try {
+    const result = db.prepare('INSERT INTO products (name, price, min_stock_threshold, supplier_id, shop_id, stock) VALUES (?, ?, ?, ?, ?, 0)').run(name, price, min_stock_threshold, supplier_id, shopId);
+    res.status(201).json({ id: result.lastInsertRowid });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to create product' });
+  }
+});
+
 app.get('/api/inventory/intelligence', protect, authorize('OWNER', 'MANAGER'), (req, res) => {
   // Calculate sales velocity (avg units per day over last 30 days)
   const intelligence = db.prepare(`
@@ -364,9 +375,29 @@ app.delete('/api/suppliers/:id', protect, authorize('OWNER', 'MANAGER'), (req, r
   res.json({ success: true });
 });
 
+app.put('/api/suppliers/:id', protect, authorize('OWNER', 'MANAGER'), (req, res) => {
+  const { name, contact_name, email, phone, lead_time_days } = req.body;
+  try {
+    db.prepare('UPDATE suppliers SET name = ?, contact_name = ?, email = ?, phone = ?, lead_time_days = ? WHERE id = ?').run(name, contact_name, email, phone, lead_time_days, req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update supplier' });
+  }
+});
+
 app.delete('/api/products/:id', protect, authorize('OWNER', 'MANAGER'), (req, res) => {
   db.prepare('UPDATE products SET is_active = 0 WHERE id = ?').run(req.params.id);
   res.json({ success: true });
+});
+
+app.put('/api/products/:id', protect, authorize('OWNER', 'MANAGER'), (req, res) => {
+  const { name, price, min_stock_threshold, supplier_id } = req.body;
+  try {
+    db.prepare('UPDATE products SET name = ?, price = ?, min_stock_threshold = ?, supplier_id = ? WHERE id = ?').run(name, price, min_stock_threshold, supplier_id, req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update product' });
+  }
 });
 
 app.post('/api/inventory/restock', protect, authorize('OWNER', 'MANAGER'), (req, res) => {
