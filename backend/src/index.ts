@@ -282,6 +282,18 @@ app.post('/api/barbers', protect, authorize('OWNER', 'MANAGER'), (req, res) => {
   res.json({ id: result.lastInsertRowid });
 });
 
+app.put('/api/barbers/:id', protect, authorize('OWNER', 'MANAGER'), (req, res) => {
+  const { name, service_commission_rate, product_commission_rate } = req.body;
+  const { id } = req.params;
+  
+  try {
+    db.prepare('UPDATE barbers SET name = ?, service_commission_rate = ?, product_commission_rate = ? WHERE id = ?').run(name, service_commission_rate, product_commission_rate, id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update barber' });
+  }
+});
+
 app.delete('/api/barbers/:id', protect, authorize('OWNER', 'MANAGER'), async (req, res) => {
   try {
     const deleteBarberUseCase = new DeleteBarber(barberRepo);
@@ -300,7 +312,7 @@ app.get('/api/inventory', protect, (req, res) => {
     SELECT p.*, s.name as supplier_name 
     FROM products p 
     LEFT JOIN suppliers s ON p.supplier_id = s.id
-    WHERE p.shop_id = ?
+    WHERE p.shop_id = ? AND p.is_active = 1
   `).all(shopId);
   res.json(products);
 });
@@ -337,7 +349,7 @@ app.get('/api/inventory/intelligence', protect, authorize('OWNER', 'MANAGER'), (
 
 // Suppliers
 app.get('/api/suppliers', protect, authorize('OWNER', 'MANAGER'), (req, res) => {
-  const suppliers = db.prepare('SELECT * FROM suppliers').all();
+  const suppliers = db.prepare('SELECT * FROM suppliers WHERE is_active = 1').all();
   res.json(suppliers);
 });
 
@@ -348,7 +360,12 @@ app.post('/api/suppliers', protect, authorize('OWNER', 'MANAGER'), (req, res) =>
 });
 
 app.delete('/api/suppliers/:id', protect, authorize('OWNER', 'MANAGER'), (req, res) => {
-  db.prepare('DELETE FROM suppliers WHERE id = ?').run(req.params.id);
+  db.prepare('UPDATE suppliers SET is_active = 0 WHERE id = ?').run(req.params.id);
+  res.json({ success: true });
+});
+
+app.delete('/api/products/:id', protect, authorize('OWNER', 'MANAGER'), (req, res) => {
+  db.prepare('UPDATE products SET is_active = 0 WHERE id = ?').run(req.params.id);
   res.json({ success: true });
 });
 

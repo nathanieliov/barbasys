@@ -5,6 +5,7 @@ import { UserPlus, User, X, Percent, BadgeCheck, Phone, Mail, Trash2, Edit2 } fr
 export default function Barbers() {
   const [barbers, setBarbers] = useState<any[]>([]);
   const [showModal, setShowModal] = useState(false);
+  const [editingBarber, setEditingBarber] = useState<any>(null);
   
   // Form State
   const [name, setName] = useState('');
@@ -22,23 +23,39 @@ export default function Barbers() {
   const resetForm = () => {
     setName('');
     setServiceRate('0.6');
-    setProductRate('0.1');
+    productRate === '0.1' ? setProductRate('0.1') : setProductRate('0.1'); // Keep consistent default
+    setEditingBarber(null);
     setShowModal(false);
   };
 
-  const handleAddBarber = async (e: React.FormEvent) => {
+  const startEdit = (barber: any) => {
+    setEditingBarber(barber);
+    setName(barber.name);
+    setServiceRate(barber.service_commission_rate.toString());
+    setProductRate(barber.product_commission_rate.toString());
+    setShowModal(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name) return;
+
+    const data = { 
+      name, 
+      service_commission_rate: parseFloat(serviceRate),
+      product_commission_rate: parseFloat(productRate)
+    };
+
     try {
-      await apiClient.post('/barbers', { 
-        name, 
-        service_commission_rate: parseFloat(serviceRate),
-        product_commission_rate: parseFloat(productRate)
-      });
+      if (editingBarber) {
+        await apiClient.put(`/barbers/${editingBarber.id}`, data);
+      } else {
+        await apiClient.post('/barbers', data);
+      }
       resetForm();
       fetchBarbers();
     } catch (err) {
-      alert('Failed to add barber');
+      alert('Failed to save barber');
     }
   };
 
@@ -59,7 +76,7 @@ export default function Barbers() {
           <h1>Team Management</h1>
           <p style={{ color: 'var(--text-muted)' }}>Manage your professional barbers and their commission rates.</p>
         </div>
-        <button onClick={() => setShowModal(true)} style={{ gap: '0.5rem' }}>
+        <button onClick={() => { setEditingBarber(null); setShowModal(true); }} style={{ gap: '0.5rem' }}>
           <UserPlus size={20} /> <span className="hide-mobile">Add Professional</span>
         </button>
       </div>
@@ -80,7 +97,7 @@ export default function Barbers() {
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '0.25rem' }}>
-                <button className="secondary" style={{ padding: '0.4rem', border: 'none' }}>
+                <button className="secondary" style={{ padding: '0.4rem', border: 'none' }} onClick={() => startEdit(b)}>
                   <Edit2 size={16} />
                 </button>
                 <button className="secondary" style={{ padding: '0.4rem', color: 'var(--danger)', border: 'none' }} onClick={() => deleteBarber(b.id)}>
@@ -123,21 +140,21 @@ export default function Barbers() {
         )}
       </div>
 
-      {/* Add Modal */}
+      {/* Add/Edit Modal */}
       {showModal && (
         <div className="modal-overlay">
           <div className="modal-content">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <UserPlus size={20} color="var(--primary)" />
-                <h2 style={{ marginBottom: 0 }}>Register Professional</h2>
+                <h2 style={{ marginBottom: 0 }}>{editingBarber ? 'Edit Professional' : 'Register Professional'}</h2>
               </div>
               <button className="secondary" style={{ padding: '0.5rem' }} onClick={resetForm}>
                 <X size={20} />
               </button>
             </div>
 
-            <form onSubmit={handleAddBarber}>
+            <form onSubmit={handleSubmit}>
               <div style={{ marginBottom: '1.25rem' }}>
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>Full Name</label>
                 <div style={{ position: 'relative' }}>
@@ -194,7 +211,7 @@ export default function Barbers() {
               </div>
 
               <button type="submit" style={{ width: '100%', padding: '1.1rem', fontSize: '1.1rem' }}>
-                Confirm Registration
+                {editingBarber ? 'Update Professional' : 'Confirm Registration'}
               </button>
             </form>
           </div>
