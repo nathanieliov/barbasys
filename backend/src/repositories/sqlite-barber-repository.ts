@@ -19,4 +19,8 @@ export class SQLiteBarberRepository implements IBarberRepository {
     ).run(barber.name, barber.service_commission_rate, barber.product_commission_rate, barber.shop_id);
     return Number(result.lastInsertRowid);
   }
+
+  async delete(id: number): Promise<void> {
+    this.db.prepare('DELETE FROM barbers WHERE id = ?').run(id);
+  }
 }

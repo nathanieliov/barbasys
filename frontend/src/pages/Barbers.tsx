@@ -42,14 +42,13 @@ export default function Barbers() {
     }
   };
 
-  const deleteBarber = async (_id: number) => {
+  const deleteBarber = async (id: number) => {
     if (!window.confirm('Are you sure you want to remove this barber from the team?')) return;
     try {
-      // Assuming endpoint exists or we'd handle appropriately
-      // For now, if no delete exists, we'd at least alert
-      alert('Delete functionality to be implemented in backend if not already present.');
-    } catch (err) {
-      alert('Failed to delete barber');
+      await apiClient.delete(`/barbers/${id}`);
+      fetchBarbers();
+    } catch (err: any) {
+      alert(err.response?.data?.error || 'Failed to delete barber');
     }
   };
 

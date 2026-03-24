@@ -7,6 +7,7 @@ import { SQLiteBarberRepository } from './repositories/sqlite-barber-repository.
 import { SQLiteUserRepository } from './repositories/sqlite-user-repository.js';
 import { SQLiteServiceRepository } from './repositories/sqlite-service-repository.js';
 import { ListBarbers } from './use-cases/list-barbers.js';
+import { DeleteBarber } from './use-cases/delete-barber.js';
 import { LoginUseCase } from './use-cases/login.js';
 import { RegisterUseCase } from './use-cases/register.js';
 import { CreateService } from './use-cases/create-service.js';
@@ -279,6 +280,17 @@ app.post('/api/barbers', protect, authorize('OWNER', 'MANAGER'), (req, res) => {
   const { name, service_commission_rate, product_commission_rate } = req.body;
   const result = db.prepare('INSERT INTO barbers (name, service_commission_rate, product_commission_rate, shop_id) VALUES (?, ?, ?, ?)').run(name, service_commission_rate, product_commission_rate, shopId);
   res.json({ id: result.lastInsertRowid });
+});
+
+app.delete('/api/barbers/:id', protect, authorize('OWNER', 'MANAGER'), async (req, res) => {
+  try {
+    const deleteBarberUseCase = new DeleteBarber(barberRepo);
+    const id = req.params.id as string;
+    await deleteBarberUseCase.execute(parseInt(id));
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
 });
 
 // Products & Services
