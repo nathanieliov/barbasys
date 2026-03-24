@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../api/apiClient';
-import { Search, User, Mail, Phone, Calendar, X, ShoppingBag, Scissors, Tag, Save, History } from 'lucide-react';
+import { Search, Mail, Phone, Calendar, X, ShoppingBag, Scissors, Tag, Save, History, MessageSquare, Clock } from 'lucide-react';
 
 export default function Customers() {
   const [customers, setCustomers] = useState<any[]>([]);
@@ -39,7 +39,7 @@ export default function Customers() {
       });
       setSelectedCustomer({ ...selectedCustomer, notes: editingNotes, tags: editingTags });
       fetchCustomers();
-      alert('Profile updated');
+      alert('Profile updated successfully');
     } catch (err) {
       alert('Failed to update profile');
     }
@@ -51,15 +51,30 @@ export default function Customers() {
     (c.name?.toLowerCase().includes(search.toLowerCase()))
   );
 
+  const formatVisitDate = (date: string) => {
+    return new Date(date).toLocaleDateString(undefined, { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    });
+  };
+
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <h1>Customer Directory</h1>
-        <div style={{ position: 'relative', width: '300px' }}>
-          <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
+    <div className="customers-container">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+        <div>
+          <h1>Customer Directory</h1>
+          <p style={{ color: 'var(--text-muted)' }}>Manage your client relationships and visit history.</p>
+        </div>
+      </div>
+
+      {/* Search Bar */}
+      <div className="card" style={{ padding: '1rem', marginBottom: '1.5rem' }}>
+        <div style={{ position: 'relative' }}>
+          <Search size={18} style={{ position: 'absolute', left: '1rem', top: '0.75rem', color: 'var(--text-muted)' }} />
           <input 
             type="text" 
-            placeholder="Search customers..." 
+            placeholder="Search by name, email, or phone number..." 
             value={search}
             onChange={e => setSearch(e.target.value)}
             style={{ paddingLeft: '3rem', marginBottom: 0 }}
@@ -67,130 +82,172 @@ export default function Customers() {
         </div>
       </div>
 
-      <div className="grid">
+      <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }}>
         {filtered.map(c => (
-          <div key={c.id} className="card">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-              <div style={{ background: 'var(--primary)', padding: '0.75rem', borderRadius: '50%' }}>
-                <User size={24} />
+          <div key={c.id} className="card" style={{ marginBottom: 0, padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.25rem' }}>
+              <div style={{ width: '48px', height: '48px', background: 'rgba(79, 70, 229, 0.1)', color: 'var(--primary)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', fontWeight: '800' }}>
+                {(c.name || 'A').charAt(0)}
               </div>
-              <div>
-                <h3 style={{ margin: 0 }}>{c.name || 'Anonymous Client'}</h3>
-                <p style={{ margin: 0, fontSize: '0.875rem', color: '#94a3b8' }}>Member since {new Date(c.created_at).toLocaleDateString()}</p>
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
-                    {c.tags?.split(',').filter(Boolean).map((t: string) => (
-                      <span key={t} style={{ fontSize: '0.7rem', background: 'rgba(99, 102, 241, 0.2)', color: '#6366f1', padding: '0.1rem 0.5rem', borderRadius: '4px' }}>{t.trim()}</span>
-                    ))}
-                  </div>
+              <div style={{ flex: 1 }}>
+                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '800' }}>{c.name || 'Anonymous Client'}</h3>
+                <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginTop: '0.25rem' }}>
+                  {c.tags?.split(',').filter(Boolean).map((t: string) => (
+                    <span key={t} style={{ fontSize: '0.65rem', background: '#f3f4f6', color: 'var(--text-muted)', padding: '0.15rem 0.5rem', borderRadius: '1rem', fontWeight: '600', border: '1px solid var(--border)' }}>
+                      {t.trim()}
+                    </span>
+                  ))}
+                  {!c.tags && <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>No tags</span>}
+                </div>
               </div>
             </div>
 
-            <div style={{ display: 'grid', gap: '0.75rem', color: '#cbd5e1', fontSize: '0.9rem' }}>
-              {c.email && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <Mail size={16} color="#6366f1" /> {c.email}
-                </div>
-              )}
+            <div style={{ display: 'grid', gap: '0.75rem', marginBottom: '1.5rem' }}>
               {c.phone && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <Phone size={16} color="#10b981" /> {c.phone}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.9rem' }}>
+                  <Phone size={16} color="var(--success)" /> 
+                  <a href={`tel:${c.phone}`} style={{ color: 'var(--text-main)', textDecoration: 'none', fontWeight: '500' }}>{c.phone}</a>
                 </div>
               )}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <Calendar size={16} color="#f59e0b" /> Last Visit: {c.last_visit ? new Date(c.last_visit).toLocaleDateString() : 'N/A'}
+              {c.email && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.9rem' }}>
+                  <Mail size={16} color="var(--primary)" /> 
+                  <span style={{ color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.email}</span>
+                </div>
+              )}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.9rem' }}>
+                <Calendar size={16} color="var(--warning)" /> 
+                <span style={{ color: 'var(--text-muted)' }}>Last Visit: {c.last_visit ? formatVisitDate(c.last_visit) : 'First time'}</span>
               </div>
             </div>
             
-            <button className="secondary" style={{ width: '100%', marginTop: '1.5rem' }} onClick={() => openProfile(c)}>
-              View Profile
-            </button>
+            <div style={{ marginTop: 'auto', display: 'flex', gap: '0.5rem' }}>
+              <button className="secondary" style={{ flex: 1, padding: '0.6rem', fontSize: '0.85rem' }} onClick={() => openProfile(c)}>
+                Full Profile
+              </button>
+              {c.phone && (
+                <button className="secondary" style={{ padding: '0.6rem', color: 'var(--success)' }} onClick={() => window.location.href=`tel:${c.phone}`}>
+                  <Phone size={16} />
+                </button>
+              )}
+            </div>
           </div>
         ))}
+        {filtered.length === 0 && (
+          <div className="card" style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '4rem 2rem', color: 'var(--text-muted)' }}>
+            <Search size={48} style={{ margin: '0 auto 1rem', opacity: 0.1 }} />
+            <p>No customers found matching your search.</p>
+          </div>
+        )}
       </div>
 
+      {/* Profile Modal */}
       {selectedCustomer && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '1rem' }}>
-          <div className="card" style={{ width: '100%', maxWidth: '900px', maxHeight: '90vh', overflowY: 'auto', position: 'relative', display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '2rem' }}>
-            <X size={24} style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', cursor: 'pointer', zIndex: 10 }} onClick={() => setSelectedCustomer(null)} />
-            
-            {/* Left Column: Info & Notes */}
-            <div style={{ borderRight: '1px solid var(--border)', paddingRight: '1.5rem' }}>
-              <h2 style={{ marginBottom: '1.5rem' }}>Customer Profile</h2>
-              
-              <div style={{ marginBottom: '1.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#94a3b8', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
-                  <Tag size={16} /> <span>Tags (comma-separated)</span>
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: '850px', display: 'block' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div style={{ width: '40px', height: '40px', background: 'var(--primary)', color: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800' }}>
+                  {(selectedCustomer.name || 'A').charAt(0)}
                 </div>
-                <input 
-                  type="text" 
-                  value={editingTags} 
-                  onChange={e => setEditingTags(e.target.value)} 
-                  placeholder="VIP, Regular, etc"
-                />
-              </div>
-
-              <div style={{ marginBottom: '2rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#94a3b8', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
-                  <Mail size={16} /> <span>Internal Notes</span>
+                <div>
+                  <h2 style={{ marginBottom: 0 }}>{selectedCustomer.name || 'Client Profile'}</h2>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Member since {formatVisitDate(selectedCustomer.created_at)}</div>
                 </div>
-                <textarea 
-                  rows={8} 
-                  value={editingNotes} 
-                  onChange={e => setEditingNotes(e.target.value)}
-                  placeholder="Preferences, styles, allergies..."
-                  style={{ width: '100%', resize: 'none' }}
-                />
               </div>
-
-              <button onClick={saveProfile} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                <Save size={20} /> Save Profile
+              <button className="secondary" style={{ padding: '0.5rem' }} onClick={() => setSelectedCustomer(null)}>
+                <X size={20} />
               </button>
             </div>
 
-            {/* Right Column: History */}
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem' }}>
-                <History size={24} color="#10b981" />
-                <h2 style={{ margin: 0 }}>Visit History</h2>
+            <div className="pos-grid" style={{ gap: '2rem' }}>
+              {/* Info Section */}
+              <div style={{ display: 'grid', gap: '1.5rem' }}>
+                <div>
+                  <h3 style={{ fontSize: '1rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Tag size={18} color="var(--primary)" /> Classification & Tags
+                  </h3>
+                  <input 
+                    type="text" 
+                    value={editingTags} 
+                    onChange={e => setEditingTags(e.target.value)} 
+                    placeholder="VIP, Regular, Long Hair, etc."
+                  />
+                  <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '-0.5rem' }}>Separate tags with commas.</p>
+                </div>
+
+                <div>
+                  <h3 style={{ fontSize: '1rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <MessageSquare size={18} color="var(--primary)" /> Internal Service Notes
+                  </h3>
+                  <textarea 
+                    rows={6} 
+                    value={editingNotes} 
+                    onChange={e => setEditingNotes(e.target.value)}
+                    placeholder="Document preferences, allergies, or specific hair requirements..."
+                    style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border)', fontSize: '0.9rem', resize: 'none' }}
+                  />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '0.75rem', border: '1px solid var(--border)' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Total Visits</div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: '900' }}>{history.length}</div>
+                  </div>
+                  <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '0.75rem', border: '1px solid var(--border)' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Lifetime Spend</div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: '900', color: 'var(--success)' }}>
+                      ${history.reduce((acc, v) => acc + v.total_amount, 0).toFixed(2)}
+                    </div>
+                  </div>
+                </div>
+
+                <button onClick={saveProfile} style={{ width: '100%', padding: '1rem', gap: '0.5rem' }}>
+                  <Save size={20} /> Save Client Profile
+                </button>
               </div>
-              
-              <div style={{ display: 'grid', gap: '1rem' }}>
-                {history.map((visit: any) => (
-                  <div key={visit.sale_id} style={{ background: 'rgba(255,255,255,0.03)', padding: '1.25rem', borderRadius: '0.75rem', borderLeft: '4px solid #6366f1' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                      <div style={{ fontWeight: 'bold' }}>{new Date(visit.timestamp).toLocaleDateString()}</div>
-                      <div style={{ color: '#10b981', fontWeight: 'bold' }}>${visit.total_amount.toFixed(2)}</div>
-                    </div>
-                    
-                    <div style={{ display: 'grid', gap: '0.5rem', fontSize: '0.9rem' }}>
-                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
-                        <Scissors size={14} style={{ marginTop: '0.2rem' }} color="#94a3b8" />
-                        <div>
-                          <span style={{ color: '#94a3b8' }}>Services: </span>
-                          <span>{visit.services?.split('||').join(', ') || 'None'}</span>
-                        </div>
+
+              {/* History Section */}
+              <div>
+                <h3 style={{ fontSize: '1rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <History size={18} color="var(--primary)" /> Recent Activity
+                </h3>
+                
+                <div style={{ display: 'grid', gap: '1rem', maxHeight: '500px', overflowY: 'auto', paddingRight: '0.5rem' }}>
+                  {history.map((visit: any) => (
+                    <div key={visit.sale_id} style={{ background: 'white', padding: '1rem', borderRadius: '0.75rem', border: '1px solid var(--border)', borderLeft: '4px solid var(--primary)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', alignItems: 'center' }}>
+                        <div style={{ fontWeight: '800', fontSize: '0.95rem' }}>{formatVisitDate(visit.timestamp)}</div>
+                        <div style={{ color: 'var(--success)', fontWeight: '800' }}>${visit.total_amount.toFixed(2)}</div>
                       </div>
-                      {visit.products && (
-                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
-                          <ShoppingBag size={14} style={{ marginTop: '0.2rem' }} color="#94a3b8" />
-                          <div>
-                            <span style={{ color: '#94a3b8' }}>Products: </span>
-                            <span>{visit.products.split('||').join(', ')}</span>
+                      
+                      <div style={{ display: 'grid', gap: '0.5rem' }}>
+                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start', fontSize: '0.85rem' }}>
+                          <Scissors size={14} style={{ marginTop: '0.1rem' }} color="var(--text-muted)" />
+                          <span style={{ color: 'var(--text-main)' }}>{visit.services?.split('||').join(', ') || 'No services'}</span>
+                        </div>
+                        {visit.products && (
+                          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start', fontSize: '0.85rem' }}>
+                            <ShoppingBag size={14} style={{ marginTop: '0.1rem' }} color="var(--text-muted)" />
+                            <span style={{ color: 'var(--text-main)' }}>{visit.products.split('||').join(', ')}</span>
                           </div>
+                        )}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px dashed var(--border)' }}>
+                          <div style={{ width: '18px', height: '18px', background: 'var(--primary)', color: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem' }}>
+                            {visit.barber_name?.charAt(0)}
+                          </div>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Served by <strong>{visit.barber_name}</strong></span>
                         </div>
-                      )}
-                      <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.5rem' }}>
-                        Barber: {visit.barber_name}
                       </div>
                     </div>
-                  </div>
-                ))}
-                {history.length === 0 && (
-                  <div style={{ textAlign: 'center', padding: '3rem 0', color: '#64748b' }}>
-                    <History size={48} style={{ marginBottom: '1rem', opacity: 0.2 }} />
-                    <p>No past visits recorded.</p>
-                  </div>
-                )}
+                  ))}
+                  {history.length === 0 && (
+                    <div style={{ textAlign: 'center', padding: '3rem 0', background: '#f9fafb', borderRadius: '1rem', border: '1px dashed var(--border)' }}>
+                      <Clock size={32} style={{ marginBottom: '1rem', opacity: 0.1, margin: '0 auto' }} />
+                      <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>No visit history found.</p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>

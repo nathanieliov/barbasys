@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../api/apiClient';
-import { PlusCircle, Edit2, Trash2, Clock, DollarSign, X, Save } from 'lucide-react';
+import { PlusCircle, Edit2, Trash2, Clock, DollarSign, X, Scissors } from 'lucide-react';
 
 export default function Services() {
   const [services, setServices] = useState<any[]>([]);
@@ -8,6 +8,7 @@ export default function Services() {
   const [price, setPrice] = useState('');
   const [duration, setDuration] = useState('30');
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [showModal, setShowModal] = useState(false);
 
   const fetchServices = () => {
     apiClient.get('/services').then(res => setServices(res.data)).catch(() => {});
@@ -22,6 +23,7 @@ export default function Services() {
     setPrice('');
     setDuration('30');
     setEditingId(null);
+    setShowModal(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -54,6 +56,7 @@ export default function Services() {
     setName(service.name);
     setPrice(service.price.toString());
     setDuration(service.duration_minutes.toString());
+    setShowModal(true);
   };
 
   const deleteService = async (id: number) => {
@@ -67,94 +70,134 @@ export default function Services() {
   };
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <h1>Service Catalog</h1>
+    <div className="services-container">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+        <div>
+          <h1>Service Catalog</h1>
+          <p style={{ color: 'var(--text-muted)' }}>Configure your available shop services.</p>
+        </div>
+        <button onClick={() => setShowModal(true)} style={{ gap: '0.5rem' }}>
+          <PlusCircle size={20} /> <span className="hide-mobile">Add New Service</span>
+        </button>
       </div>
 
-      <div className="grid">
-        <div className="card">
-          <h2>{editingId ? 'Edit Service' : 'Add New Service'}</h2>
-          <form onSubmit={handleSubmit}>
-            <div style={{ marginBottom: '1rem' }}>
-              <p style={{ marginBottom: '0.5rem', color: '#94a3b8' }}>Service Name</p>
-              <input 
-                type="text" 
-                placeholder="e.g., Haircut, Beard Trim" 
-                value={name} 
-                onChange={e => setName(e.target.value)} 
-              />
-            </div>
-            <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
-              <div style={{ flex: 1 }}>
-                <p style={{ marginBottom: '0.5rem', color: '#94a3b8', fontSize: '0.875rem' }}>Price ($)</p>
-                <div style={{ position: 'relative' }}>
-                  <DollarSign size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-                  <input 
-                    type="number" 
-                    step="0.01" 
-                    min="0" 
-                    placeholder="0.00"
-                    value={price} 
-                    onChange={e => setPrice(e.target.value)} 
-                    style={{ paddingLeft: '2.5rem' }}
-                  />
-                </div>
+      <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
+        {services.map(s => (
+          <div key={s.id} className="card" style={{ marginBottom: 0, padding: '1.25rem', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+              <div style={{ width: '44px', height: '44px', background: 'rgba(79, 70, 229, 0.1)', color: 'var(--primary)', borderRadius: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Scissors size={20} />
               </div>
-              <div style={{ flex: 1 }}>
-                <p style={{ marginBottom: '0.5rem', color: '#94a3b8', fontSize: '0.875rem' }}>Duration (min)</p>
-                <div style={{ position: 'relative' }}>
-                  <Clock size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-                  <input 
-                    type="number" 
-                    min="1" 
-                    value={duration} 
-                    onChange={e => setDuration(e.target.value)} 
-                    style={{ paddingLeft: '2.5rem' }}
-                  />
-                </div>
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              <button type="submit" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                {editingId ? <Save size={20} /> : <PlusCircle size={20} />} 
-                {editingId ? 'Update Service' : 'Add Service'}
-              </button>
-              {editingId && (
-                <button type="button" className="secondary" onClick={resetForm} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <X size={20} /> Cancel
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button className="secondary" style={{ padding: '0.4rem', border: 'none' }} onClick={() => startEdit(s)}>
+                  <Edit2 size={16} />
                 </button>
-              )}
+                <button className="secondary" style={{ padding: '0.4rem', color: 'var(--danger)', border: 'none' }} onClick={() => deleteService(s.id)}>
+                  <Trash2 size={16} />
+                </button>
+              </div>
             </div>
-          </form>
-        </div>
 
-        <div className="card">
-          <h2>Available Services</h2>
-          <div style={{ display: 'grid', gap: '1rem' }}>
-            {services.map(s => (
-              <div key={s.id} style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 'bold', fontSize: '1.1rem', marginBottom: '0.25rem' }}>{s.name}</div>
-                  <div style={{ display: 'flex', gap: '1.5rem', color: '#94a3b8', fontSize: '0.875rem' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><DollarSign size={14} /> {s.price.toFixed(2)}</span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><Clock size={14} /> {s.duration_minutes} min</span>
+            <div style={{ flex: 1 }}>
+              <h2 style={{ fontSize: '1.1rem', marginBottom: '0.25rem' }}>{s.name}</h2>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>Standard professional service</p>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginTop: 'auto' }}>
+              <div style={{ background: '#f9fafb', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <DollarSign size={16} color="var(--success)" />
+                <span style={{ fontWeight: '800', fontSize: '1rem' }}>{s.price.toFixed(2)}</span>
+              </div>
+              <div style={{ background: '#f9fafb', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Clock size={16} color="var(--primary)" />
+                <span style={{ fontWeight: '700', fontSize: '0.9rem' }}>{s.duration_minutes}m</span>
+              </div>
+            </div>
+          </div>
+        ))}
+        {services.length === 0 && (
+          <div className="card" style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '4rem 2rem', color: 'var(--text-muted)' }}>
+            <Scissors size={48} style={{ margin: '0 auto 1rem', opacity: 0.1 }} />
+            <p>No services in your catalog yet.</p>
+            <button className="secondary" style={{ marginTop: '1rem' }} onClick={() => setShowModal(true)}>Create your first service</button>
+          </div>
+        )}
+      </div>
+
+      {/* Add/Edit Modal */}
+      {showModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Scissors size={20} color="var(--primary)" />
+                <h2 style={{ marginBottom: 0 }}>{editingId ? 'Edit Service' : 'Add New Service'}</h2>
+              </div>
+              <button className="secondary" style={{ padding: '0.5rem' }} onClick={resetForm}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit}>
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Service Name</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. Executive Haircut, Beard Trim" 
+                  value={name} 
+                  onChange={e => setName(e.target.value)} 
+                  required
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Price ($)</label>
+                  <div style={{ position: 'relative' }}>
+                    <DollarSign size={18} style={{ position: 'absolute', left: '0.75rem', top: '0.75rem', color: 'var(--text-muted)' }} />
+                    <input 
+                      type="number" 
+                      step="0.01" 
+                      min="0" 
+                      placeholder="0.00"
+                      value={price} 
+                      onChange={e => setPrice(e.target.value)} 
+                      style={{ paddingLeft: '2.25rem', fontWeight: '700', marginBottom: 0 }}
+                      required
+                    />
                   </div>
                 </div>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button className="secondary" style={{ padding: '0.5rem' }} onClick={() => startEdit(s)}>
-                    <Edit2 size={18} />
-                  </button>
-                  <button className="secondary" style={{ padding: '0.5rem', color: '#ef4444' }} onClick={() => deleteService(s.id)}>
-                    <Trash2 size={18} />
-                  </button>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Duration (min)</label>
+                  <div style={{ position: 'relative' }}>
+                    <Clock size={18} style={{ position: 'absolute', left: '0.75rem', top: '0.75rem', color: 'var(--text-muted)' }} />
+                    <input 
+                      type="number" 
+                      min="1" 
+                      value={duration} 
+                      onChange={e => setDuration(e.target.value)} 
+                      style={{ paddingLeft: '2.25rem', fontWeight: '700', marginBottom: 0 }}
+                      required
+                    />
+                  </div>
                 </div>
               </div>
-            ))}
-            {services.length === 0 && <p style={{ color: '#94a3b8' }}>No services in catalog.</p>}
+
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <button type="submit" style={{ flex: 1, padding: '1rem', fontSize: '1.1rem' }}>
+                  {editingId ? 'Update Service' : 'Confirm Service'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
-      </div>
+      )}
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        @media (max-width: 640px) {
+          .hide-mobile { display: none; }
+        }
+      `}} />
     </div>
   );
 }

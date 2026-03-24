@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../api/apiClient';
-import { Calendar, DollarSign, TrendingUp, Receipt } from 'lucide-react';
+import { Calendar, DollarSign, TrendingUp, Receipt, Users, PieChart, ArrowUpRight, ArrowDownRight, Briefcase } from 'lucide-react';
 
 export default function Reports() {
   const [report, setReport] = useState<any>(null);
@@ -15,8 +15,8 @@ export default function Reports() {
       const d = new Date(date);
       const day = d.getDay();
       const diff = d.getDate() - day; // Adjust to Sunday
-      const start = new Date(d.setDate(diff));
-      const end = new Date(d.setDate(diff + 6));
+      const start = new Date(new Date(date).setDate(diff));
+      const end = new Date(new Date(date).setDate(diff + 6));
       startDate = start.toISOString().split('T')[0];
       endDate = end.toISOString().split('T')[0];
     } else if (rangeType === 'month') {
@@ -35,22 +35,32 @@ export default function Reports() {
   const maxTotalPay = report?.commissions?.reduce((max: number, c: any) => 
     Math.max(max, c.service_commission + c.product_commission + c.tips), 0) || 1;
 
+  const netProfit = (report?.revenue || 0) - (report?.expenses || 0);
+  const profitMargin = report?.revenue ? (netProfit / report.revenue) * 100 : 0;
+
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <h1>{rangeType.charAt(0).toUpperCase() + rangeType.slice(1)} Reports</h1>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '0.5rem', padding: '0.25rem' }}>
+    <div className="reports-container">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+        <div>
+          <h1>Business Insights</h1>
+          <p style={{ color: 'var(--text-muted)' }}>Analyze your shop's financial performance and team productivity.</p>
+        </div>
+        
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', background: '#f3f4f6', borderRadius: '0.75rem', padding: '0.25rem', border: '1px solid var(--border)' }}>
             {(['day', 'week', 'month'] as const).map(type => (
               <button 
                 key={type}
                 className="secondary"
                 style={{ 
-                  padding: '0.4rem 1rem', 
-                  fontSize: '0.875rem', 
+                  padding: '0.4rem 0.85rem', 
+                  fontSize: '0.75rem', 
+                  fontWeight: '700',
                   border: 'none',
-                  background: rangeType === type ? 'var(--primary)' : 'transparent',
-                  color: rangeType === type ? '#fff' : '#94a3b8'
+                  background: rangeType === type ? 'white' : 'transparent',
+                  color: rangeType === type ? 'var(--primary)' : 'var(--text-muted)',
+                  boxShadow: rangeType === type ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                  borderRadius: '0.5rem'
                 }}
                 onClick={() => setRangeType(type)}
               >
@@ -58,113 +68,145 @@ export default function Reports() {
               </button>
             ))}
           </div>
-          <Calendar size={20} />
-          <input 
-            type={rangeType === 'month' ? 'month' : 'date'} 
-            value={date} 
-            onChange={e => setDate(e.target.value)}
-            style={{ marginBottom: 0, width: 'auto' }}
-          />
-        </div>
-      </div>
-
-      <div className="grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginBottom: '2rem' }}>
-        <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-          <div style={{ background: 'rgba(16, 185, 129, 0.2)', padding: '1rem', borderRadius: '50%', color: '#10b981' }}>
-            <TrendingUp size={32} />
-          </div>
-          <div>
-            <h2 style={{ margin: 0, color: '#94a3b8', fontSize: '1rem' }}>Total Revenue</h2>
-            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--text)' }}>
-              ${report?.revenue?.toFixed(2) || '0.00'}
-            </div>
-          </div>
-        </div>
-
-        <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-          <div style={{ background: 'rgba(239, 68, 68, 0.2)', padding: '1rem', borderRadius: '50%', color: '#ef4444' }}>
-            <Receipt size={32} />
-          </div>
-          <div>
-            <h2 style={{ margin: 0, color: '#94a3b8', fontSize: '1rem' }}>Total Expenses</h2>
-            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--text)' }}>
-              ${report?.expenses?.toFixed(2) || '0.00'}
-            </div>
-          </div>
-        </div>
-
-        <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-          <div style={{ background: 'rgba(99, 102, 241, 0.2)', padding: '1rem', borderRadius: '50%', color: '#6366f1' }}>
-            <DollarSign size={32} />
-          </div>
-          <div>
-            <h2 style={{ margin: 0, color: '#94a3b8', fontSize: '1rem' }}>Net Profit</h2>
-            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--text)' }}>
-              ${((report?.revenue || 0) - (report?.expenses || 0)).toFixed(2)}
-            </div>
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <Calendar size={16} style={{ position: 'absolute', left: '0.75rem', color: 'var(--text-muted)', pointerEvents: 'none' }} />
+            <input 
+              type={rangeType === 'month' ? 'month' : 'date'} 
+              value={date} 
+              onChange={e => setDate(e.target.value)}
+              style={{ marginBottom: 0, width: 'auto', paddingLeft: '2.25rem', fontSize: '0.85rem', fontWeight: '600' }}
+            />
           </div>
         </div>
       </div>
 
-      <div className="grid" style={{ marginBottom: '2rem' }}>
+      {/* KPI Cards */}
+      <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', marginBottom: '2rem' }}>
+        <div className="card" style={{ padding: '1.5rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+            <div style={{ background: 'rgba(16, 185, 129, 0.1)', color: 'var(--success)', padding: '0.75rem', borderRadius: '0.75rem' }}>
+              <TrendingUp size={24} />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--success)', fontSize: '0.75rem', fontWeight: '700', background: 'rgba(16, 185, 129, 0.05)', padding: '0.25rem 0.5rem', borderRadius: '1rem' }}>
+              <ArrowUpRight size={14} /> Gross Revenue
+            </div>
+          </div>
+          <h2 style={{ marginBottom: '0.25rem', fontSize: '1.75rem', fontWeight: '900' }}>
+            ${report?.revenue?.toFixed(2) || '0.00'}
+          </h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: '600' }}>Total collections for selected period</p>
+        </div>
+
+        <div className="card" style={{ padding: '1.5rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+            <div style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', padding: '0.75rem', borderRadius: '0.75rem' }}>
+              <Receipt size={24} />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--danger)', fontSize: '0.75rem', fontWeight: '700', background: 'rgba(239, 68, 68, 0.05)', padding: '0.25rem 0.5rem', borderRadius: '1rem' }}>
+              <ArrowDownRight size={14} /> Operational Cost
+            </div>
+          </div>
+          <h2 style={{ marginBottom: '0.25rem', fontSize: '1.75rem', fontWeight: '900' }}>
+            ${report?.expenses?.toFixed(2) || '0.00'}
+          </h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: '600' }}>Includes supplies and overheads</p>
+        </div>
+
+        <div className="card" style={{ padding: '1.5rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+            <div style={{ background: 'rgba(79, 70, 229, 0.1)', color: 'var(--primary)', padding: '0.75rem', borderRadius: '0.75rem' }}>
+              <DollarSign size={24} />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--primary)', fontSize: '0.75rem', fontWeight: '700', background: 'rgba(79, 70, 229, 0.05)', padding: '0.25rem 0.5rem', borderRadius: '1rem' }}>
+              <PieChart size={14} /> {profitMargin.toFixed(0)}% Margin
+            </div>
+          </div>
+          <h2 style={{ marginBottom: '0.25rem', fontSize: '1.75rem', fontWeight: '900' }}>
+            ${netProfit.toFixed(2)}
+          </h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: '600' }}>Net take-home after expenses</p>
+        </div>
+      </div>
+
+      <div className="pos-grid" style={{ marginBottom: '2rem' }}>
+        {/* Barber Performance */}
         <div className="card">
-          <h2>Barber Performance (Total Earnings)</h2>
-          <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
+            <Users size={20} color="var(--primary)" />
+            <h2 style={{ marginBottom: 0 }}>Team Performance</h2>
+          </div>
+          
+          <div style={{ display: 'grid', gap: '1.5rem' }}>
             {report?.commissions?.map((c: any) => {
               const totalPay = c.service_commission + c.product_commission + c.tips;
-              const percentage = Math.max(0, (totalPay / maxTotalPay) * 100);
+              const percentage = Math.max(2, (totalPay / maxTotalPay) * 100);
               return (
                 <div key={c.name}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.875rem' }}>
-                    <span>{c.name}</span>
-                    <span style={{ fontWeight: 'bold' }}>${totalPay.toFixed(2)}</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <div style={{ width: '32px', height: '32px', background: 'var(--primary)', color: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: '800' }}>
+                        {c.name.charAt(0)}
+                      </div>
+                      <span style={{ fontWeight: '700' }}>{c.name}</span>
+                    </div>
+                    <span style={{ fontWeight: '800', color: 'var(--text-main)' }}>${totalPay.toFixed(2)}</span>
                   </div>
-                  <div style={{ width: '100%', background: 'rgba(255,255,255,0.05)', borderRadius: '999px', height: '12px', overflow: 'hidden' }}>
-                    <div style={{ width: `${percentage}%`, background: 'var(--primary)', height: '100%', borderRadius: '999px', transition: 'width 0.5s ease' }}></div>
+                  <div style={{ width: '100%', background: '#f3f4f6', borderRadius: '999px', height: '10px', overflow: 'hidden', border: '1px solid var(--border)' }}>
+                    <div style={{ width: `${percentage}%`, background: 'linear-gradient(to right, var(--primary), #818cf8)', height: '100%', borderRadius: '999px', transition: 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)' }}></div>
                   </div>
                 </div>
               );
             })}
             {(!report?.commissions || report.commissions.length === 0) && (
-              <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>No data for this date.</p>
+              <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+                <Users size={40} style={{ margin: '0 auto 1rem', opacity: 0.1 }} />
+                <p>No activity recorded for this period.</p>
+              </div>
             )}
           </div>
         </div>
-      </div>
 
-      <div className="card">
-        <h2>Detailed Earnings Breakdown</h2>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
-            <thead>
-              <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--border)' }}>
-                <th style={{ padding: '1rem' }}>Barber</th>
-                <th style={{ padding: '1rem' }}>Service Comm.</th>
-                <th style={{ padding: '1rem' }}>Product Comm.</th>
-                <th style={{ padding: '1rem' }}>Tips</th>
-                <th style={{ padding: '1rem' }}>Total Pay</th>
-              </tr>
-            </thead>
-            <tbody>
-              {report?.commissions?.map((c: any) => {
-                const totalPay = c.service_commission + c.product_commission + c.tips;
-                return (
-                  <tr key={c.name} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                    <td style={{ padding: '1rem' }}>{c.name}</td>
-                    <td style={{ padding: '1rem' }}>${c.service_commission.toFixed(2)}</td>
-                    <td style={{ padding: '1rem' }}>${c.product_commission.toFixed(2)}</td>
-                    <td style={{ padding: '1rem' }}>${c.tips.toFixed(2)}</td>
-                    <td style={{ padding: '1rem', fontWeight: 'bold', color: '#6366f1' }}>
-                      ${totalPay.toFixed(2)}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          {(!report?.commissions || report.commissions.length === 0) && (
-            <p style={{ padding: '1rem', textAlign: 'center', color: '#94a3b8' }}>No data for this date</p>
-          )}
+        {/* Detailed Breakdown */}
+        <div className="card">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
+            <Briefcase size={20} color="var(--primary)" />
+            <h2 style={{ marginBottom: 0 }}>Earnings Breakdown</h2>
+          </div>
+          
+          <div style={{ display: 'grid', gap: '1rem' }}>
+            {report?.commissions?.map((c: any) => {
+              const totalPay = c.service_commission + c.product_commission + c.tips;
+              return (
+                <div key={c.name} style={{ background: '#f9fafb', padding: '1rem', borderRadius: '0.75rem', border: '1px solid var(--border)' }}>
+                  <div style={{ fontWeight: '800', marginBottom: '0.75rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>{c.name}</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
+                    <div>
+                      <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase' }}>Services</div>
+                      <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>${c.service_commission.toFixed(2)}</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase' }}>Products</div>
+                      <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>${c.product_commission.toFixed(2)}</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase' }}>Tips</div>
+                      <div style={{ fontWeight: '700', fontSize: '0.9rem', color: 'var(--success)' }}>${c.tips.toFixed(2)}</div>
+                    </div>
+                  </div>
+                  <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px dashed var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: '600' }}>Total Payout</span>
+                    <span style={{ fontWeight: '900', color: 'var(--primary)' }}>${totalPay.toFixed(2)}</span>
+                  </div>
+                </div>
+              );
+            })}
+            {(!report?.commissions || report.commissions.length === 0) && (
+              <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+                <Receipt size={40} style={{ margin: '0 auto 1rem', opacity: 0.1 }} />
+                <p>Detailed data unavailable.</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

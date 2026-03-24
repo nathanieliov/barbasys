@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../api/apiClient';
-import { AlertCircle, PlusCircle, X, TrendingDown, Clock } from 'lucide-react';
+import { AlertCircle, PlusCircle, X, TrendingDown, Search, Package, Filter } from 'lucide-react';
 
 export default function Inventory() {
   const [products, setProducts] = useState<any[]>([]);
   const [intelligence, setIntelligence] = useState<any[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [showRestock, setShowRestock] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [restockAmount, setRestockAmount] = useState(0);
@@ -38,101 +39,200 @@ export default function Inventory() {
     }
   };
 
+  const filteredProducts = products.filter(p => 
+    p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (p.supplier_name && p.supplier_name.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
+  const reorderSuggestions = intelligence.filter(i => i.reorder_suggested);
+
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <h1>Inventory Management</h1>
-        <button onClick={() => { setShowRestock(true); setSelectedProduct(products[0]); }}>
-          <PlusCircle size={20} style={{ marginRight: '0.5rem' }} /> Restock
+    <div className="inventory-container">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+        <div>
+          <h1>Inventory</h1>
+          <p style={{ color: 'var(--text-muted)' }}>Manage your products and stock levels.</p>
+        </div>
+        <button onClick={() => { setShowRestock(true); setSelectedProduct(products[0]); }} style={{ gap: '0.5rem' }}>
+          <PlusCircle size={20} /> <span className="hide-mobile">Restock Product</span>
         </button>
       </div>
 
-      {intelligence.some(i => i.reorder_suggested) && (
-        <div className="card" style={{ border: '1px solid #f59e0b', background: 'rgba(245, 158, 11, 0.05)', marginBottom: '2rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem', color: '#f59e0b' }}>
+      {/* Reorder Suggestions Alert */}
+      {reorderSuggestions.length > 0 && (
+        <div className="card" style={{ border: '1px solid var(--warning)', background: 'rgba(245, 158, 11, 0.05)', marginBottom: '2rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem', color: 'var(--warning)' }}>
             <TrendingDown size={24} />
-            <h2 style={{ margin: 0, color: '#f59e0b' }}>Reorder Suggestions</h2>
+            <h2 style={{ margin: 0, color: 'var(--warning)', fontSize: '1.1rem' }}>Smart Reorder Suggestions</h2>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1rem' }}>
-            {intelligence.filter(i => i.reorder_suggested).map(i => (
-              <div key={i.id} style={{ background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '0.5rem' }}>
-                <div style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>{i.name}</div>
-                <div style={{ fontSize: '0.875rem', color: '#94a3b8' }}>
-                  {i.days_remaining <= 7 ? (
-                    <span style={{ color: '#ef4444', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <Clock size={14} /> Out of stock in ~{i.days_remaining} days
-                    </span>
-                  ) : (
-                    <span>Current stock: {i.stock} (Min: {i.min_stock_threshold})</span>
-                  )}
+          <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
+            {reorderSuggestions.map(i => (
+              <div key={i.id} style={{ background: 'white', padding: '1rem', borderRadius: '0.75rem', border: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>{i.name}</div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                    {i.days_remaining <= 7 ? (
+                      <span style={{ color: 'var(--danger)', fontWeight: '600' }}>Out of stock in ~{i.days_remaining} days</span>
+                    ) : (
+                      <span>Current stock: {i.stock}</span>
+                    )}
+                  </div>
                 </div>
+                <button className="secondary" style={{ padding: '0.4rem 0.75rem', fontSize: '0.75rem' }} onClick={() => { setSelectedProduct(products.find(p => p.id === i.id)); setShowRestock(true); }}>
+                  Restock
+                </button>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      <div className="card">
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--border)' }}>
-              <th style={{ padding: '1rem' }}>Product</th>
-              <th style={{ padding: '1rem' }}>Price</th>
-              <th style={{ padding: '1rem' }}>Stock</th>
-              <th style={{ padding: '1rem' }}>Threshold</th>
-              <th style={{ padding: '1rem' }}>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {products.map(p => (
-              <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                <td style={{ padding: '1rem' }}>
-                  <div style={{ fontWeight: 'bold' }}>{p.name}</div>
-                  <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Supplier: {p.supplier_name || 'Not set'}</div>
-                </td>
-                <td style={{ padding: '1rem' }}>${p.price.toFixed(2)}</td>
-                <td style={{ padding: '1rem' }}>{p.stock}</td>
-                <td style={{ padding: '1rem', color: '#94a3b8' }}>{p.min_stock_threshold}</td>
-                <td style={{ padding: '1rem' }}>
-                  {p.stock <= p.min_stock_threshold ? (
-                    <span style={{ color: '#ef4444', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                      <AlertCircle size={16} /> Low Stock
-                    </span>
-                  ) : (
-                    <span style={{ color: '#10b981' }}>In Stock</span>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {/* Search and Filters */}
+      <div className="card" style={{ padding: '1rem', marginBottom: '1.5rem' }}>
+        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, position: 'relative', minWidth: '250px' }}>
+            <Search size={18} style={{ position: 'absolute', left: '0.85rem', top: '0.75rem', color: 'var(--text-muted)' }} />
+            <input 
+              type="text" 
+              placeholder="Search products or suppliers..." 
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              style={{ paddingLeft: '2.5rem', marginBottom: 0 }}
+            />
+          </div>
+          <button className="secondary" style={{ gap: '0.5rem' }}>
+            <Filter size={18} /> Filters
+          </button>
+        </div>
       </div>
 
+      {/* Product Grid */}
+      <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }}>
+        {filteredProducts.map(p => {
+          const isLowStock = p.stock <= p.min_stock_threshold;
+          return (
+            <div key={p.id} className="card" style={{ marginBottom: 0, padding: '1.25rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                  <div style={{ width: '48px', height: '48px', background: isLowStock ? 'rgba(239, 68, 68, 0.1)' : 'rgba(79, 70, 229, 0.1)', color: isLowStock ? 'var(--danger)' : 'var(--primary)', borderRadius: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Package size={24} />
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: '700', fontSize: '1rem' }}>{p.name}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{p.supplier_name || 'Generic Supplier'}</div>
+                  </div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontWeight: '800', fontSize: '1.1rem' }}>${p.price.toFixed(2)}</div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Retail Price</div>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.25rem' }}>
+                <div style={{ background: '#f9fafb', padding: '0.75rem', borderRadius: '0.5rem', textAlign: 'center' }}>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '700', marginBottom: '0.25rem' }}>Current Stock</div>
+                  <div style={{ fontSize: '1.25rem', fontWeight: '800', color: isLowStock ? 'var(--danger)' : 'var(--text-main)' }}>{p.stock}</div>
+                </div>
+                <div style={{ background: '#f9fafb', padding: '0.75rem', borderRadius: '0.5rem', textAlign: 'center' }}>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '700', marginBottom: '0.25rem' }}>Threshold</div>
+                  <div style={{ fontSize: '1.25rem', fontWeight: '800' }}>{p.min_stock_threshold}</div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button className="secondary" style={{ flex: 1, padding: '0.5rem' }} onClick={() => { setSelectedProduct(p); setShowRestock(true); }}>
+                  Restock
+                </button>
+                <button className="secondary" style={{ flex: 1, padding: '0.5rem' }}>
+                  Details
+                </button>
+              </div>
+
+              {isLowStock && (
+                <div style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--danger)', fontSize: '0.75rem', fontWeight: '600', justifyContent: 'center' }}>
+                  <AlertCircle size={14} /> Critical stock level reached
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Restock Modal */}
       {showRestock && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-          <div className="card" style={{ width: '100%', maxWidth: '400px', position: 'relative' }}>
-            <X size={24} style={{ position: 'absolute', top: '1rem', right: '1rem', cursor: 'pointer' }} onClick={() => setShowRestock(false)} />
-            <h2>Restock Product</h2>
-            <form onSubmit={handleRestock} style={{ marginTop: '1.5rem' }}>
-              <div style={{ marginBottom: '1rem' }}>
-                <p style={{ marginBottom: '0.5rem', color: '#94a3b8' }}>Select Product</p>
-                <select value={selectedProduct?.id} onChange={e => setSelectedProduct(products.find(p => p.id === parseInt(e.target.value)))}>
-                  {products.map(p => <option key={p.id} value={p.id}>{p.name} (Current: {p.stock})</option>)}
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Package size={20} color="var(--primary)" />
+                <h2 style={{ marginBottom: 0 }}>Restock Product</h2>
+              </div>
+              <button className="secondary" style={{ padding: '0.5rem' }} onClick={() => setShowRestock(false)}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleRestock}>
+              <div style={{ marginBottom: '1.25rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Product</label>
+                <select 
+                  value={selectedProduct?.id} 
+                  onChange={e => setSelectedProduct(products.find(p => p.id === parseInt(e.target.value)))}
+                  style={{ fontWeight: '600' }}
+                >
+                  {products.map(p => <option key={p.id} value={p.id}>{p.name} (In Stock: {p.stock})</option>)}
                 </select>
               </div>
-              <div style={{ marginBottom: '1rem' }}>
-                <p style={{ marginBottom: '0.5rem', color: '#94a3b8' }}>Amount to Add</p>
-                <input type="number" min="1" value={restockAmount} onChange={e => setRestockAmount(parseInt(e.target.value) || 0)} />
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.25rem' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Amount to Add</label>
+                  <input 
+                    type="number" 
+                    min="1" 
+                    value={restockAmount} 
+                    onChange={e => setRestockAmount(parseInt(e.target.value) || 0)}
+                    style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: 0 }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Current Stock</label>
+                  <div style={{ padding: '0.625rem 0.875rem', background: '#f3f4f6', borderRadius: '0.5rem', fontWeight: '700', fontSize: '1.1rem', border: '1px solid var(--border)' }}>
+                    {selectedProduct?.stock || 0}
+                  </div>
+                </div>
               </div>
+
               <div style={{ marginBottom: '1.5rem' }}>
-                <p style={{ marginBottom: '0.5rem', color: '#94a3b8' }}>Reason</p>
-                <input type="text" value={restockReason} onChange={e => setRestockReason(e.target.value)} />
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Reason / Reference</label>
+                <input 
+                  type="text" 
+                  value={restockReason} 
+                  onChange={e => setRestockReason(e.target.value)} 
+                  placeholder="e.g. Weekly Restock, Manual Correction"
+                />
               </div>
-              <button type="submit" style={{ width: '100%' }}>Confirm Restock</button>
+
+              <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '0.75rem', marginBottom: '1.5rem', border: '1px solid var(--border)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                  <span>New Predicted Stock</span>
+                  <span style={{ fontWeight: '700', color: 'var(--primary)' }}>{(selectedProduct?.stock || 0) + restockAmount}</span>
+                </div>
+              </div>
+
+              <button type="submit" style={{ width: '100%', padding: '1.1rem', fontSize: '1.1rem' }}>
+                Confirm Restock
+              </button>
             </form>
           </div>
         </div>
       )}
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        @media (max-width: 640px) {
+          .hide-mobile { display: none; }
+        }
+      `}} />
     </div>
   );
 }

@@ -27,13 +27,13 @@ A comprehensive management system for barbershops, featuring a robust backend fo
 - **Inventory (Functional)**: Stock tracking, low-stock alerts, manual restocking, and audit logs.
 - **Barber Management (Functional)**: Team management and commission rate configuration.
 
-## Development Workflow
+## Development Workflow (MANDATORY)
 
-We follow a structured SDLC workflow using specialized roles:
-1. **Architect** (`architect.toml`): System design and ADRs.
-2. **Engineer** (`engineer.toml`): Implementation and strategy.
-3. **QA** (`qa.toml`): Validation and testing.
-4. **Reviewer** (`reviewer.toml`): Style and consistency check.
+Every task must follow this sequential lifecycle:
+1. **Architect Phase**: Research requirements, analyze existing code, and define the technical strategy/design. Document changes in an ADR if structural.
+2. **Engineer Phase**: Implement the design using surgical, idiomatic code changes. Follow project style and responsiveness requirements.
+3. **QA Phase**: Validate changes via automated tests and manual verification of requirements (e.g., mobile responsiveness).
+4. **Reviewer Phase**: Perform a final pass for consistency, naming conventions, and adherence to "Clean Architecture" or local patterns.
 
 Handoff criteria are defined in `workflow.toml`.
 

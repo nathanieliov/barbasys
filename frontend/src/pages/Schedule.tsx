@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../api/apiClient';
-import { Calendar as CalendarIcon, Clock, Scissors, User, X, PlusCircle, CheckCircle } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, Scissors, User, X, PlusCircle, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function Schedule() {
@@ -54,7 +54,6 @@ export default function Schedule() {
   };
 
   const handleCheckIn = (appointment: any) => {
-    // Navigate to POS with pre-filled state
     navigate('/pos', { 
       state: { 
         appointmentId: appointment.id,
@@ -70,112 +69,139 @@ export default function Schedule() {
     });
   };
 
+  const changeDate = (days: number) => {
+    const current = new Date(date);
+    current.setDate(current.getDate() + days);
+    setDate(current.toISOString().split('T')[0]);
+  };
+
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <h1>Daily Schedule</h1>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <button onClick={() => setShowBook(true)}>
-            <PlusCircle size={18} style={{ marginRight: '0.5rem' }} /> Book Appointment
-          </button>
-          <CalendarIcon size={20} />
-          <input 
-            type="date" 
-            value={date} 
-            onChange={e => setDate(e.target.value)}
-            style={{ marginBottom: 0, width: 'auto' }}
-          />
+    <div className="schedule-container">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+        <h1>Schedule</h1>
+        <button onClick={() => setShowBook(true)} style={{ gap: '0.5rem' }}>
+          <PlusCircle size={20} /> <span className="hide-mobile">Book New</span>
+        </button>
+      </div>
+
+      <div className="card" style={{ padding: '0.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', gap: '0.25rem' }}>
+            <button className="secondary" onClick={() => changeDate(-1)} style={{ padding: '0.5rem' }}><ChevronLeft size={20} /></button>
+            <button className="secondary" onClick={() => changeDate(1)} style={{ padding: '0.5rem' }}><ChevronRight size={20} /></button>
+          </div>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, justifyContent: 'center' }}>
+            <CalendarIcon size={18} color="var(--primary)" />
+            <input 
+              type="date" 
+              value={date} 
+              onChange={e => setDate(e.target.value)}
+              style={{ marginBottom: 0, border: 'none', fontWeight: '700', fontSize: '1rem', width: 'auto', background: 'transparent', padding: 0 }}
+            />
+          </div>
+
+          <button className="secondary hide-mobile" onClick={() => setDate(new Date().toISOString().split('T')[0])}>Today</button>
         </div>
       </div>
 
-      <div className="card">
+      <div className="appointments-list" style={{ display: 'grid', gap: '1rem' }}>
         {appointments.length === 0 ? (
-          <p style={{ textAlign: 'center', color: '#94a3b8', padding: '2rem' }}>No appointments scheduled for this day.</p>
+          <div className="card" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '4rem 2rem' }}>
+            <CalendarIcon size={48} style={{ margin: '0 auto 1rem', opacity: 0.1 }} />
+            <p>No appointments scheduled for this date.</p>
+            <button className="secondary" style={{ marginTop: '1rem' }} onClick={() => setShowBook(true)}>Book someone now</button>
+          </div>
         ) : (
-          <div style={{ display: 'grid', gap: '1rem' }}>
-            {appointments.map(a => (
-              <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: '2rem', background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '0.75rem', borderLeft: `4px solid ${a.status === 'completed' ? '#10b981' : 'var(--primary)'}` }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: '100px', fontWeight: 'bold' }}>
-                  <Clock size={18} color="#6366f1" />
+          appointments.map(a => (
+            <div key={a.id} className="card" style={{ marginBottom: 0, padding: '1rem', borderLeft: `4px solid ${a.status === 'completed' ? 'var(--success)' : 'var(--primary)'}` }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '800', color: 'var(--primary)', fontSize: '1.1rem' }}>
+                  <Clock size={18} />
                   {new Date(a.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </div>
-                
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
-                  <User size={18} color="#10b981" />
+                <span className={`status-badge ${a.status === 'completed' ? 'status-completed' : 'status-scheduled'}`}>
+                  {a.status}
+                </span>
+              </div>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.25rem' }}>
+                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                  <div style={{ width: '40px', height: '40px', background: '#f3f4f6', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
+                    <User size={20} />
+                  </div>
                   <div>
-                    <div style={{ fontWeight: '600' }}>{a.customer_name || 'Anonymous Client'}</div>
-                    <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Customer</div>
+                    <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>{a.customer_name || 'Guest Client'}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Customer</div>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
-                  <Scissors size={18} color="#f59e0b" />
-                  <div>
-                    <div style={{ fontWeight: '600' }}>{a.service_name}</div>
-                    <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>with {a.barber_name}</div>
+                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                  <div style={{ width: '40px', height: '40px', background: 'rgba(79, 70, 229, 0.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
+                    <Scissors size={20} />
                   </div>
-                </div>
-
-                <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <span style={{ 
-                    padding: '0.25rem 0.75rem', 
-                    borderRadius: '999px', 
-                    fontSize: '0.75rem', 
-                    background: a.status === 'completed' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(99, 102, 241, 0.2)',
-                    color: a.status === 'completed' ? '#10b981' : '#6366f1',
-                    textTransform: 'capitalize'
-                  }}>
-                    {a.status}
-                  </span>
-                  {a.status === 'scheduled' && (
-                    <button className="secondary" style={{ padding: '0.5rem 1rem' }} onClick={() => handleCheckIn(a)}>
-                      <CheckCircle size={16} style={{ marginRight: '0.4rem' }} /> Check-in
-                    </button>
-                  )}
+                  <div>
+                    <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>{a.service_name}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>with {a.barber_name}</div>
+                  </div>
                 </div>
               </div>
-            ))}
-          </div>
+
+              {a.status === 'scheduled' && (
+                <button style={{ width: '100%', gap: '0.5rem' }} onClick={() => handleCheckIn(a)}>
+                  <CheckCircle size={18} /> Start Check-in
+                </button>
+              )}
+            </div>
+          ))
         )}
       </div>
 
       {showBook && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-          <div className="card" style={{ width: '100%', maxWidth: '450px', position: 'relative' }}>
-            <X size={24} style={{ position: 'absolute', top: '1rem', right: '1rem', cursor: 'pointer' }} onClick={() => setShowBook(false)} />
-            <h2>Book Appointment</h2>
-            <form onSubmit={handleBook} style={{ marginTop: '1.5rem' }}>
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h2>Book Appointment</h2>
+              <button className="secondary" style={{ padding: '0.5rem' }} onClick={() => setShowBook(false)}>
+                <X size={20} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleBook}>
               <div style={{ marginBottom: '1rem' }}>
-                <p style={{ marginBottom: '0.5rem', color: '#94a3b8' }}>Barber</p>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Select Professional</label>
                 <select value={selectedBarber} onChange={e => setSelectedBarber(e.target.value)} required>
                   <option value="">Select Barber</option>
                   {barbers.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                 </select>
               </div>
+              
               <div style={{ marginBottom: '1rem' }}>
-                <p style={{ marginBottom: '0.5rem', color: '#94a3b8' }}>Customer (Optional)</p>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Customer (Optional)</label>
                 <select value={selectedCustomer} onChange={e => setSelectedCustomer(e.target.value)}>
-                  <option value="">Guest</option>
+                  <option value="">Guest / New Customer</option>
                   {customers.map(c => <option key={c.id} value={c.id}>{c.name || c.email || c.phone}</option>)}
                 </select>
               </div>
+
               <div style={{ marginBottom: '1rem' }}>
-                <p style={{ marginBottom: '0.5rem', color: '#94a3b8' }}>Service</p>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Service</label>
                 <select value={selectedService} onChange={e => setSelectedService(e.target.value)} required>
                   <option value="">Select Service</option>
-                  {services.map(s => <option key={s.id} value={s.id}>{s.name} ({s.duration_minutes}m)</option>)}
+                  {services.map(s => <option key={s.id} value={s.id}>{s.name} ({s.duration_minutes}m) - ${s.price}</option>)}
                 </select>
               </div>
+
               <div style={{ marginBottom: '1.5rem' }}>
-                <p style={{ marginBottom: '0.5rem', color: '#94a3b8' }}>Time</p>
-                <input type="time" value={selectedTime} onChange={e => setSelectedTime(e.target.value)} required />
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Time</label>
+                <input type="time" value={selectedTime} onChange={e => setSelectedTime(e.target.value)} required style={{ fontSize: '1.1rem', fontWeight: '600' }} />
               </div>
 
-              <div style={{ marginBottom: '1rem', padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '0.5rem' }}>
-                <p style={{ marginBottom: '0.5rem', color: '#94a3b8', fontSize: '0.875rem' }}>Repeat Appointment</p>
-                <div style={{ display: 'flex', gap: '1rem' }}>
-                  <select value={recurringRule} onChange={e => setRecurringRule(e.target.value)} style={{ flex: 1.5 }}>
-                    <option value="">No Repeat</option>
+              <div style={{ marginBottom: '1.5rem', padding: '1rem', background: '#f3f4f6', borderRadius: '0.75rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.75rem', color: 'var(--text-main)', fontSize: '0.875rem', fontWeight: '600' }}>Recurring Appointment</label>
+                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                  <select value={recurringRule} onChange={e => setRecurringRule(e.target.value)} style={{ flex: 1.5, marginBottom: 0 }}>
+                    <option value="">Does not repeat</option>
                     <option value="weekly">Weekly</option>
                     <option value="biweekly">Bi-weekly</option>
                     <option value="monthly">Monthly</option>
@@ -187,18 +213,26 @@ export default function Schedule() {
                       max="12" 
                       value={occurrences} 
                       onChange={e => setOccurrences(parseInt(e.target.value) || 2)} 
-                      style={{ flex: 1 }}
-                      placeholder="Times"
+                      style={{ flex: 1, marginBottom: 0 }}
+                      placeholder="Count"
                     />
                   )}
                 </div>
               </div>
 
-              <button type="submit" style={{ width: '100%' }}>Create Appointment{recurringRule ? 's' : ''}</button>
+              <button type="submit" style={{ width: '100%', padding: '1rem', fontSize: '1.1rem' }}>
+                Confirm Booking
+              </button>
             </form>
           </div>
         </div>
       )}
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        @media (max-width: 640px) {
+          .hide-mobile { display: none; }
+        }
+      `}} />
     </div>
   );
 }
