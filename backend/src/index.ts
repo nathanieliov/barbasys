@@ -456,6 +456,7 @@ app.post('/api/settings', protect, authorize('OWNER', 'MANAGER'), (req, res) => 
 app.post('/api/sales', protect, (req, res) => {
   const shopId = req.user?.shop_id;
   const { barber_id, items, customer_email, customer_phone, tip_amount = 0, discount_amount = 0 } = req.body;
+  const barber = db.prepare('SELECT name FROM barbers WHERE id = ?').get(barber_id) as { name: string };
   
   const total_items_amount = items.reduce((sum: number, item: any) => sum + item.price, 0);
   const total_amount = total_items_amount + tip_amount - discount_amount;
@@ -477,11 +478,11 @@ app.post('/api/sales', protect, (req, res) => {
       }
     }
 
-    const saleResult = db.prepare('INSERT INTO sales (barber_id, customer_id, total_amount, tip_amount, discount_amount, customer_email, customer_phone, shop_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(barber_id, customerId, total_amount, tip_amount, discount_amount, customer_email, customer_phone, shopId);
+    const saleResult = db.prepare('INSERT INTO sales (barber_id, barber_name, customer_id, total_amount, tip_amount, discount_amount, customer_email, customer_phone, shop_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)').run(barber_id, barber?.name || 'Unknown', customerId, total_amount, tip_amount, discount_amount, customer_email, customer_phone, shopId);
     const saleId = Number(saleResult.lastInsertRowid);
 
     for (const item of items) {
-      db.prepare('INSERT INTO sale_items (sale_id, item_id, type, price) VALUES (?, ?, ?, ?)').run(saleId, item.id, item.type, item.price);
+      db.prepare('INSERT INTO sale_items (sale_id, item_id, item_name, type, price) VALUES (?, ?, ?, ?, ?)').run(saleId, item.id, item.name, item.type, item.price);
       
       if (item.type === 'product') {
         db.prepare('UPDATE products SET stock = stock - 1 WHERE id = ?').run(item.id);
@@ -501,7 +502,6 @@ app.post('/api/sales', protect, (req, res) => {
     const saleId = transaction();
     
     // Send receipt asynchronously
-    const barber = db.prepare('SELECT name FROM barbers WHERE id = ?').get(barber_id) as { name: string };
     sendReceipt({
       id: saleId,
       customer_email,
@@ -510,7 +510,7 @@ app.post('/api/sales', protect, (req, res) => {
       tip_amount,
       discount_amount,
       items,
-      barber_name: barber.name
+      barber_name: barber?.name || 'Professional'
     });
 
     res.json({ success: true, saleId });
@@ -525,8 +525,7 @@ app.get('/api/sales', protect, (req, res) => {
   const { startDate, endDate } = req.query;
 
   let query = `
-    SELECT s.*, b.name as barber_name,
-    (SELECT GROUP_CONCAT(type || ':' || price) FROM sale_items WHERE sale_id = s.id) as items_summary
+    SELECT s.*, COALESCE(s.barber_name, b.name) as barber_name
     FROM sales s
     LEFT JOIN barbers b ON s.barber_id = b.id
     WHERE s.shop_id = ?
@@ -545,6 +544,32 @@ app.get('/api/sales', protect, (req, res) => {
     res.json(sales);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch sales history' });
+  }
+});
+
+app.get('/api/sales/:id', protect, (req, res) => {
+  const shopId = req.user?.shop_id;
+  const { id } = req.params;
+
+  try {
+    const sale = db.prepare(`
+      SELECT s.*, COALESCE(s.barber_name, b.name) as barber_name
+      FROM sales s
+      LEFT JOIN barbers b ON s.barber_id = b.id
+      WHERE s.id = ? AND s.shop_id = ?
+    `).get(id, shopId) as any;
+
+    if (!sale) return res.status(404).json({ error: 'Sale not found' });
+
+    const items = db.prepare(`
+      SELECT si.*, COALESCE(si.item_name, 'Unknown Item') as item_name
+      FROM sale_items si
+      WHERE si.sale_id = ?
+    `).all(id);
+
+    res.json({ ...sale, items });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch sale details' });
   }
 });
 

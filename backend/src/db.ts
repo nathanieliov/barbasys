@@ -104,8 +104,9 @@ db.exec(`
     total_amount REAL NOT NULL,
     tip_amount REAL DEFAULT 0,
     discount_amount REAL DEFAULT 0,
-    customer_email TEXT, -- Keep for legacy/external tracking
+    customer_email TEXT,
     customer_phone TEXT,
+    barber_name TEXT, -- SNAPSHOT: Name of the barber at time of sale
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
     shop_id INTEGER,
     FOREIGN KEY (barber_id) REFERENCES barbers(id) ON DELETE SET NULL,
@@ -117,6 +118,7 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     sale_id INTEGER,
     item_id INTEGER,
+    item_name TEXT, -- SNAPSHOT: Name of service/product at time of sale
     type TEXT CHECK(type IN ('service', 'product')),
     price REAL NOT NULL,
     FOREIGN KEY (sale_id) REFERENCES sales(id) ON DELETE CASCADE

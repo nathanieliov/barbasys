@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../api/apiClient';
-import { ShoppingBag, Calendar, User, ChevronRight, Clock } from 'lucide-react';
+import { ShoppingBag, Calendar, User, Clock, X, Receipt, Scissors, Tag } from 'lucide-react';
 
 export default function SalesHistory() {
   const [sales, setSales] = useState<any[]>([]);
@@ -9,6 +9,7 @@ export default function SalesHistory() {
     startDate: new Date().toISOString().split('T')[0],
     endDate: new Date().toISOString().split('T')[0]
   });
+  const [selectedSale, setSelectedSale] = useState<any>(null);
 
   const fetchSales = () => {
     setLoading(true);
@@ -21,10 +22,20 @@ export default function SalesHistory() {
     fetchSales();
   }, [dateRange]);
 
+  const fetchSaleDetail = async (id: number) => {
+    try {
+      const res = await apiClient.get(`/sales/${id}`);
+      setSelectedSale(res.data);
+    } catch (err) {
+      alert('Failed to load sale details');
+    }
+  };
+
   const formatDate = (timestamp: string) => {
     return new Date(timestamp).toLocaleString(undefined, {
       month: 'short',
       day: 'numeric',
+      year: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
     });
@@ -75,7 +86,7 @@ export default function SalesHistory() {
         ) : (
           <div style={{ display: 'grid', gap: '1rem' }}>
             {sales.map(sale => (
-              <div key={sale.id} className="card" style={{ marginBottom: 0, padding: '1rem' }}>
+              <div key={sale.id} className="card" style={{ marginBottom: 0, padding: '1rem', cursor: 'pointer' }} onClick={() => fetchSaleDetail(sale.id)}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
                   <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                     <div style={{ width: '48px', height: '48px', background: 'rgba(79, 70, 229, 0.1)', color: 'var(--primary)', borderRadius: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -111,27 +122,87 @@ export default function SalesHistory() {
                     </div>
                   </div>
                 </div>
-
-                <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px dashed var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                    {sale.items_summary?.split(',').map((item: string, idx: number) => {
-                      const [type, price] = item.split(':');
-                      return (
-                        <span key={idx} style={{ fontSize: '0.7rem', background: '#f3f4f6', padding: '0.2rem 0.5rem', borderRadius: '0.5rem', color: 'var(--text-muted)', border: '1px solid var(--border)', textTransform: 'capitalize' }}>
-                          {type} (${parseFloat(price).toFixed(2)})
-                        </span>
-                      );
-                    })}
-                  </div>
-                  <button className="secondary" style={{ padding: '0.4rem 0.75rem', fontSize: '0.75rem', border: 'none' }}>
-                    Receipt <ChevronRight size={14} />
-                  </button>
-                </div>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Sale Detail Modal */}
+      {selectedSale && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: '500px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <Receipt size={24} color="var(--primary)" />
+                <h2 style={{ marginBottom: 0 }}>Transaction Details</h2>
+              </div>
+              <button className="secondary" style={{ padding: '0.5rem' }} onClick={() => setSelectedSale(null)}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ background: '#f9fafb', padding: '1.25rem', borderRadius: '1rem', border: '1px solid var(--border)', marginBottom: '1.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Transaction ID</span>
+                <span style={{ fontWeight: '700' }}>#{selectedSale.id}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Date & Time</span>
+                <span style={{ fontWeight: '700' }}>{formatDate(selectedSale.timestamp)}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Served By</span>
+                <span style={{ fontWeight: '700', color: 'var(--primary)' }}>{selectedSale.barber_name}</span>
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '1.5rem' }}>
+              <h3 style={{ fontSize: '0.9rem', marginBottom: '1rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Itemized Summary</h3>
+              <div style={{ display: 'grid', gap: '0.75rem' }}>
+                {selectedSale.items?.map((item: any, idx: number) => (
+                  <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <div style={{ background: item.type === 'service' ? 'rgba(79, 70, 229, 0.1)' : 'rgba(16, 185, 129, 0.1)', color: item.type === 'service' ? 'var(--primary)' : 'var(--success)', padding: '0.4rem', borderRadius: '0.5rem' }}>
+                        {item.type === 'service' ? <Scissors size={14} /> : <Tag size={14} />}
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>{item.item_name}</div>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'capitalize' }}>{item.type}</div>
+                      </div>
+                    </div>
+                    <span style={{ fontWeight: '700' }}>${item.price.toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1.25rem', marginTop: '1rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', color: 'var(--text-muted)' }}>
+                <span>Subtotal</span>
+                <span>${(selectedSale.total_amount - selectedSale.tip_amount + selectedSale.discount_amount).toFixed(2)}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', color: 'var(--success)', fontSize: '0.9rem' }}>
+                <span>Gratuity (Tip)</span>
+                <span>+${selectedSale.tip_amount.toFixed(2)}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', color: 'var(--danger)', fontSize: '0.9rem' }}>
+                <span>Discount</span>
+                <span>-${selectedSale.discount_amount.toFixed(2)}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: 'var(--primary)', color: 'white', borderRadius: '0.75rem' }}>
+                <span style={{ fontWeight: '600' }}>Total Paid</span>
+                <span style={{ fontSize: '1.5rem', fontWeight: '900' }}>${selectedSale.total_amount.toFixed(2)}</span>
+              </div>
+            </div>
+
+            <div style={{ marginTop: '1.5rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              <button className="secondary" style={{ padding: '0.75rem' }}>Print Receipt</button>
+              <button className="secondary" style={{ padding: '0.75rem' }}>Email Receipt</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
