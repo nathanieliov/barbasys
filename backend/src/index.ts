@@ -520,6 +520,34 @@ app.post('/api/sales', protect, (req, res) => {
   }
 });
 
+app.get('/api/sales', protect, (req, res) => {
+  const shopId = req.user?.shop_id;
+  const { startDate, endDate } = req.query;
+
+  let query = `
+    SELECT s.*, b.name as barber_name,
+    (SELECT GROUP_CONCAT(type || ':' || price) FROM sale_items WHERE sale_id = s.id) as items_summary
+    FROM sales s
+    LEFT JOIN barbers b ON s.barber_id = b.id
+    WHERE s.shop_id = ?
+  `;
+  const params: any[] = [shopId];
+
+  if (startDate && endDate) {
+    query += " AND s.timestamp BETWEEN ? AND ?";
+    params.push(`${startDate} 00:00:00`, `${endDate} 23:59:59`);
+  }
+
+  query += " ORDER BY s.timestamp DESC LIMIT 100";
+
+  try {
+    const sales = db.prepare(query).all(...params);
+    res.json(sales);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch sales history' });
+  }
+});
+
 // Reports
 app.get('/api/reports', protect, authorize('OWNER', 'MANAGER', 'BARBER'), (req, res) => {
   const shopId = req.user?.shop_id;

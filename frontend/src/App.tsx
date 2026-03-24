@@ -7,6 +7,7 @@ import POS from './pages/POS';
 import Inventory from './pages/Inventory';
 import Services from './pages/Services';
 import Reports from './pages/Reports';
+import SalesHistory from './pages/SalesHistory';
 import Barbers from './pages/Barbers';
 import Settings from './pages/Settings';
 import Customers from './pages/Customers';
@@ -43,6 +44,7 @@ const Sidebar = ({ isOpen, toggleSidebar }: { isOpen: boolean, toggleSidebar: ()
   const navItems = [
     { to: "/", icon: <LayoutDashboard size={20} />, label: "Dashboard" },
     { to: "/pos", icon: <ShoppingCart size={20} />, label: "POS (Sales)" },
+    { to: "/sales", icon: <Receipt size={20} />, label: "Sales Log" },
     { to: "/schedule", icon: <CalendarIcon size={20} />, label: "Schedule" },
     { to: "/shifts", icon: <Clock size={20} />, label: "Shifts" },
     { to: "/inventory", icon: <Package size={20} />, label: "Inventory" },
@@ -137,6 +139,7 @@ function App() {
             <Route element={<ProtectedRoute />}>
               <Route path="/" element={<Dashboard />} />
               <Route path="/pos" element={<POS />} />
+              <Route path="/sales" element={<SalesHistory />} />
               <Route path="/schedule" element={<Schedule />} />
               <Route path="/shifts" element={<Shifts />} />
               <Route path="/inventory" element={<Inventory />} />
