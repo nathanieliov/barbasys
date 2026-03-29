@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { ExportSalesCSV } from './ExportSalesCSV';
-import { ISaleRepository } from '../../repositories/sale-repository.interface';
+import { ExportSalesCSV } from './ExportSalesCSV.js';
+import { ISaleRepository } from '../../repositories/sale-repository.interface.js';
 
 describe('ExportSalesCSV', () => {
   const mockSaleRepo = {

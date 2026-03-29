@@ -1,5 +1,5 @@
 import jwt, { SignOptions } from 'jsonwebtoken';
-import { UserRepository } from '../../repositories/user-repository.interface.js';
+import { UserRepository } from '../repositories/user-repository.interface.js';
 
 export interface SwitchShopRequest {
   userId: number;
