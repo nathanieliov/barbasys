@@ -588,7 +588,8 @@ app.post('/api/expenses', protect, authorize('OWNER', 'MANAGER'), (req, res) => 
 });
 
 app.delete('/api/expenses/:id', protect, authorize('OWNER', 'MANAGER'), (req, res) => {
-  db.prepare('DELETE FROM expenses WHERE id = ?').run(req.params.id);
+  const shopId = req.user?.shop_id;
+  db.prepare('DELETE FROM expenses WHERE id = ? AND shop_id = ?').run(req.params.id, shopId);
   res.json({ success: true });
 });
 
