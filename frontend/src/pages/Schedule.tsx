@@ -22,6 +22,7 @@ export default function Schedule() {
   const [selectedTime, setSelectedTime] = useState('10:00');
   const [recurringRule, setRecurringRule] = useState('');
   const [occurrences, setOccurrences] = useState(1);
+  const [sendConfirmation, setSendConfirmation] = useState(true);
 
   const fetchData = () => {
     apiClient.get(`/appointments?date=${date}`).then(res => setAppointments(res.data));
@@ -45,7 +46,8 @@ export default function Schedule() {
         service_id: parseInt(selectedService),
         start_time,
         recurring_rule: recurringRule || null,
-        occurrences: recurringRule ? occurrences : 1
+        occurrences: recurringRule ? occurrences : 1,
+        send_confirmation: sendConfirmation
       });
       setBookingSuccess(true);
       fetchData();
@@ -60,6 +62,7 @@ export default function Schedule() {
     setBookingSuccess(false);
     setRecurringRule('');
     setOccurrences(1);
+    setSendConfirmation(true);
   };
 
   const handleCheckIn = (appointment: any) => {
@@ -246,6 +249,19 @@ export default function Schedule() {
                         />
                       )}
                     </div>
+                  </div>
+
+                  <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <input 
+                      type="checkbox" 
+                      id="sendConfirmation" 
+                      checked={sendConfirmation} 
+                      onChange={e => setSendConfirmation(e.target.checked)}
+                      style={{ width: 'auto', marginBottom: 0 }}
+                    />
+                    <label htmlFor="sendConfirmation" style={{ fontSize: '0.9rem', color: 'var(--text-main)', fontWeight: '600', cursor: 'pointer' }}>
+                      Send booking confirmation (Email/SMS)
+                    </label>
                   </div>
 
                   <button type="submit" style={{ width: '100%', padding: '1rem', fontSize: '1.1rem' }}>

@@ -262,8 +262,12 @@ export default function POS() {
                       value={customerPhone}
                       onChange={e => setCustomerPhone(e.target.value)}
                     />
-                  </div>
-
+                    {(customerEmail || customerPhone) && (
+                      <p style={{ fontSize: '0.75rem', color: 'var(--success)', marginTop: '0.5rem', fontWeight: '600' }}>
+                        ✓ Digital receipt will be sent automatically.
+                      </p>
+                    )}
+                    </div>
                   <div style={{ background: 'var(--primary)', color: 'white', padding: '1.5rem', borderRadius: '1rem', textAlign: 'center', marginTop: '1rem' }}>
                     <div style={{ opacity: 0.8, fontSize: '0.9rem' }}>Amount Due</div>
                     <div style={{ fontSize: '2.5rem', fontWeight: '900' }}>${total.toFixed(2)}</div>

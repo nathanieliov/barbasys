@@ -217,8 +217,30 @@ app.get('/api/appointments', protect, (req, res) => {
 
 app.post('/api/appointments', protect, async (req, res) => {
   const shopId = req.user?.shop_id;
+  const { send_confirmation, barber_id, customer_id, service_id, start_time } = req.body;
+  
   try {
     const result = await createAppointment.execute({ ...req.body, shop_id: shopId });
+    
+    // Send confirmation if requested
+    if (send_confirmation && result.ids.length > 0) {
+      const barber = db.prepare('SELECT name FROM barbers WHERE id = ?').get(barber_id) as any;
+      const service = db.prepare('SELECT name FROM services WHERE id = ?').get(service_id) as any;
+      const customer = customer_id ? db.prepare('SELECT name, email, phone FROM customers WHERE id = ?').get(customer_id) as any : null;
+
+      if (barber && service) {
+        sendAppointmentNotification({
+          customer_name: customer?.name,
+          customer_email: customer?.email,
+          customer_phone: customer?.phone,
+          start_time,
+          service_name: service.name,
+          barber_name: barber.name,
+          type: 'confirmation'
+        });
+      }
+    }
+
     res.json(result);
   } catch (err: any) {
     res.status(400).json({ error: err.message });
