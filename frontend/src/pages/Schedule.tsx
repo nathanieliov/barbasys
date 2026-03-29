@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../api/apiClient';
-import { Calendar as CalendarIcon, Clock, Scissors, User, X, PlusCircle, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, Scissors, User, X, PlusCircle, CheckCircle, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function Schedule() {
@@ -12,6 +12,8 @@ export default function Schedule() {
   
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [showBook, setShowBook] = useState(false);
+  const [bookingError, setBookingError] = useState('');
+  const [bookingSuccess, setBookingSuccess] = useState(false);
   
   // Booking Form State
   const [selectedBarber, setSelectedBarber] = useState('');
@@ -34,6 +36,7 @@ export default function Schedule() {
 
   const handleBook = async (e: React.FormEvent) => {
     e.preventDefault();
+    setBookingError('');
     const start_time = `${date}T${selectedTime}:00`;
     try {
       await apiClient.post('/appointments', {
@@ -44,13 +47,19 @@ export default function Schedule() {
         recurring_rule: recurringRule || null,
         occurrences: recurringRule ? occurrences : 1
       });
-      setShowBook(false);
-      setRecurringRule('');
-      setOccurrences(1);
+      setBookingSuccess(true);
       fetchData();
     } catch (err: any) {
-      alert(err.response?.data?.error || 'Failed to book appointment');
+      setBookingError(err.response?.data?.error || 'Failed to book appointment');
     }
+  };
+
+  const resetBookingForm = () => {
+    setShowBook(false);
+    setBookingError('');
+    setBookingSuccess(false);
+    setRecurringRule('');
+    setOccurrences(1);
   };
 
   const handleCheckIn = (appointment: any) => {
@@ -160,70 +169,91 @@ export default function Schedule() {
       {showBook && (
         <div className="modal-overlay">
           <div className="modal-content">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h2>Book Appointment</h2>
-              <button className="secondary" style={{ padding: '0.5rem' }} onClick={() => setShowBook(false)}>
-                <X size={20} />
-              </button>
-            </div>
-            
-            <form onSubmit={handleBook}>
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Select Professional</label>
-                <select value={selectedBarber} onChange={e => setSelectedBarber(e.target.value)} required>
-                  <option value="">Select Barber</option>
-                  {barbers.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                </select>
-              </div>
-              
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Customer (Optional)</label>
-                <select value={selectedCustomer} onChange={e => setSelectedCustomer(e.target.value)}>
-                  <option value="">Guest / New Customer</option>
-                  {customers.map(c => <option key={c.id} value={c.id}>{c.name || c.email || c.phone}</option>)}
-                </select>
-              </div>
-
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Service</label>
-                <select value={selectedService} onChange={e => setSelectedService(e.target.value)} required>
-                  <option value="">Select Service</option>
-                  {services.map(s => <option key={s.id} value={s.id}>{s.name} ({s.duration_minutes}m) - ${s.price}</option>)}
-                </select>
-              </div>
-
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Time</label>
-                <input type="time" value={selectedTime} onChange={e => setSelectedTime(e.target.value)} required style={{ fontSize: '1.1rem', fontWeight: '600' }} />
-              </div>
-
-              <div style={{ marginBottom: '1.5rem', padding: '1rem', background: '#f3f4f6', borderRadius: '0.75rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.75rem', color: 'var(--text-main)', fontSize: '0.875rem', fontWeight: '600' }}>Recurring Appointment</label>
-                <div style={{ display: 'flex', gap: '0.75rem' }}>
-                  <select value={recurringRule} onChange={e => setRecurringRule(e.target.value)} style={{ flex: 1.5, marginBottom: 0 }}>
-                    <option value="">Does not repeat</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="biweekly">Bi-weekly</option>
-                    <option value="monthly">Monthly</option>
-                  </select>
-                  {recurringRule && (
-                    <input 
-                      type="number" 
-                      min="2" 
-                      max="12" 
-                      value={occurrences} 
-                      onChange={e => setOccurrences(parseInt(e.target.value) || 2)} 
-                      style={{ flex: 1, marginBottom: 0 }}
-                      placeholder="Count"
-                    />
-                  )}
+            {bookingSuccess ? (
+              <div style={{ textAlign: 'center', padding: '2rem 0' }}>
+                <div style={{ background: 'var(--success)', color: 'white', width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
+                  <CalendarIcon size={32} />
                 </div>
+                <h2>Booking Confirmed!</h2>
+                <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>Your appointment has been successfully scheduled.</p>
+                <button onClick={resetBookingForm} style={{ width: '100%', padding: '1rem' }}>
+                  Done
+                </button>
               </div>
+            ) : (
+              <>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                  <h2>Book Appointment</h2>
+                  <button className="secondary" style={{ padding: '0.5rem' }} onClick={resetBookingForm}>
+                    <X size={20} />
+                  </button>
+                </div>
+                
+                {bookingError && (
+                  <div style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', padding: '1rem', borderRadius: '0.5rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.9rem', fontWeight: '600' }}>
+                    <AlertCircle size={18} /> {bookingError}
+                  </div>
+                )}
+                
+                <form onSubmit={handleBook}>
+                  <div style={{ marginBottom: '1rem' }}>
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Select Professional</label>
+                    <select value={selectedBarber} onChange={e => setSelectedBarber(e.target.value)} required>
+                      <option value="">Select Barber</option>
+                      {barbers.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                    </select>
+                  </div>
+                  
+                  <div style={{ marginBottom: '1rem' }}>
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Customer (Optional)</label>
+                    <select value={selectedCustomer} onChange={e => setSelectedCustomer(e.target.value)}>
+                      <option value="">Guest / New Customer</option>
+                      {customers.map(c => <option key={c.id} value={c.id}>{c.name || c.email || c.phone}</option>)}
+                    </select>
+                  </div>
 
-              <button type="submit" style={{ width: '100%', padding: '1rem', fontSize: '1.1rem' }}>
-                Confirm Booking
-              </button>
-            </form>
+                  <div style={{ marginBottom: '1rem' }}>
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Service</label>
+                    <select value={selectedService} onChange={e => setSelectedService(e.target.value)} required>
+                      <option value="">Select Service</option>
+                      {services.map(s => <option key={s.id} value={s.id}>{s.name} ({s.duration_minutes}m) - ${s.price}</option>)}
+                    </select>
+                  </div>
+
+                  <div style={{ marginBottom: '1.5rem' }}>
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Time</label>
+                    <input type="time" value={selectedTime} onChange={e => setSelectedTime(e.target.value)} required style={{ fontSize: '1.1rem', fontWeight: '600' }} />
+                  </div>
+
+                  <div style={{ marginBottom: '1.5rem', padding: '1rem', background: '#f3f4f6', borderRadius: '0.75rem' }}>
+                    <label style={{ display: 'block', marginBottom: '0.75rem', color: 'var(--text-main)', fontSize: '0.875rem', fontWeight: '600' }}>Recurring Appointment</label>
+                    <div style={{ display: 'flex', gap: '0.75rem' }}>
+                      <select value={recurringRule} onChange={e => setRecurringRule(e.target.value)} style={{ flex: 1.5, marginBottom: 0 }}>
+                        <option value="">Does not repeat</option>
+                        <option value="weekly">Weekly</option>
+                        <option value="biweekly">Bi-weekly</option>
+                        <option value="monthly">Monthly</option>
+                      </select>
+                      {recurringRule && (
+                        <input 
+                          type="number" 
+                          min="2" 
+                          max="12" 
+                          value={occurrences} 
+                          onChange={e => setOccurrences(parseInt(e.target.value) || 2)} 
+                          style={{ flex: 1, marginBottom: 0 }}
+                          placeholder="Count"
+                        />
+                      )}
+                    </div>
+                  </div>
+
+                  <button type="submit" style={{ width: '100%', padding: '1rem', fontSize: '1.1rem' }}>
+                    Confirm Booking
+                  </button>
+                </form>
+              </>
+            )}
           </div>
         </div>
       )}

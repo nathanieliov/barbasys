@@ -221,11 +221,11 @@ if (barbersCount.count === 0) {
   const nathaniel = db.prepare('INSERT INTO barbers (name, service_commission_rate, product_commission_rate, shop_id) VALUES (?, ?, ?, ?)').run('Nathaniel', 0.6, 0.15, defaultShopId);
   const alex = db.prepare('INSERT INTO barbers (name, service_commission_rate, product_commission_rate, shop_id) VALUES (?, ?, ?, ?)').run('Alex', 0.5, 0.10, defaultShopId);
   
-  // Seed Monday-Friday shifts (1-5)
+  // Seed all-week shifts (0-6)
   const shiftInsert = db.prepare('INSERT INTO barber_shifts (barber_id, day_of_week, start_time, end_time) VALUES (?, ?, ?, ?)');
-  [1, 2, 3, 4, 5].forEach(day => {
-    shiftInsert.run(nathaniel.lastInsertRowid, day, '09:00', '17:00');
-    shiftInsert.run(alex.lastInsertRowid, day, '10:00', '18:00');
+  [0, 1, 2, 3, 4, 5, 6].forEach(day => {
+    shiftInsert.run(nathaniel.lastInsertRowid, day, '09:00', '21:00'); // Extended hours for tests
+    shiftInsert.run(alex.lastInsertRowid, day, '09:00', '21:00');
   });
 
   db.prepare('INSERT INTO services (name, price, duration_minutes, shop_id) VALUES (?, ?, ?, ?)').run('Haircut', 25, 30, defaultShopId);

@@ -22,6 +22,10 @@ test.describe('Advanced Scheduling', () => {
 
     await page.click('button:has-text("Confirm Booking")');
 
+    // Handle Success Modal
+    await expect(page.locator('.modal-content')).toContainText('Booking Confirmed');
+    await page.click('button:has-text("Done")');
+
     // Verify first one appears in the main schedule card
     const appointmentCard = page.locator('.card', { hasText: 'Nathaniel' });
     await expect(appointmentCard).toBeVisible();

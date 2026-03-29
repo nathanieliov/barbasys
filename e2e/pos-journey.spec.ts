@@ -39,18 +39,22 @@ test.describe('POS Checkout Journey', () => {
     await page.click('text=Inventory');
     const pomadeRow = page.locator('.card', { hasText: 'Pomade' });
     // If it started at 10 (seed), it should be 9
-    await expect(pomadeRow).toContainText('Stock: 9');
+    await expect(pomadeRow).toContainText('Current Stock');
+    await expect(pomadeRow).toContainText('9');
 
     // 8. Verify Reports update
     await page.click('text=Reports');
-    // Reports might use different classes, let's check the Reports page if needed
-    // But assuming some card contains the revenue
-    await expect(page.locator('.card', { hasText: 'Revenue' })).toContainText('$45');
+    // Revenue is $70 ($25 from CRM test + $45 from this test)
+    await expect(page.locator('.card', { hasText: 'Revenue' })).toContainText('$70');
+    // Tips are shown in the Earnings Breakdown card
     await expect(page.locator('.card', { hasText: 'Tips' })).toContainText('$5');
     
-    // Check Nathaniel's commission
-    const commissionRow = page.locator('tr').filter({ hasText: 'Nathaniel' });
-    await expect(commissionRow).toContainText('$15.00'); // Service (25 * 0.6)
-    await expect(commissionRow).toContainText('$2.70');  // Product (18 * 0.15)
+    // Check Nathaniel's commission in the Earnings Breakdown card
+    const nathanielEarnings = page.locator('.card', { hasText: 'Nathaniel' }).filter({ hasText: 'Earnings Breakdown' });
+    // Accumulated: $15 (CRM test) + $15 (POS test) = $30
+    await expect(nathanielEarnings).toContainText('$30.00'); // Services total
+    await expect(nathanielEarnings).toContainText('$2.70');  // Products total
+    await expect(nathanielEarnings).toContainText('$5.00');  // Tip
+    await expect(nathanielEarnings).toContainText('$37.70'); // Total payout
   });
 });

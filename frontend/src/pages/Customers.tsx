@@ -152,7 +152,11 @@ export default function Customers() {
                 </div>
                 <div>
                   <h2 style={{ marginBottom: 0 }}>{selectedCustomer.name || 'Client Profile'}</h2>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Member since {formatVisitDate(selectedCustomer.created_at)}</div>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'flex', gap: '1rem', marginTop: '0.25rem' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><Mail size={14} /> {selectedCustomer.email || 'No email'}</span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><Phone size={14} /> {selectedCustomer.phone || 'No phone'}</span>
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Member since {formatVisitDate(selectedCustomer.created_at)}</div>
                 </div>
               </div>
               <button className="secondary" style={{ padding: '0.5rem' }} onClick={() => setSelectedCustomer(null)}>

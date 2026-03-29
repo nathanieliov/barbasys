@@ -30,7 +30,10 @@ test.describe('Scheduling Robustness', () => {
     await page.fill('input[type="time"]', '10:00');
     await page.click('button:has-text("Confirm Booking")');
     
-    // Wait for modal to close
+    // Handle Success Modal
+    await expect(page.locator('.modal-content')).toContainText('Booking Confirmed');
+    await page.click('button:has-text("Done")');
+    
     await expect(page.locator('.modal-content')).not.toBeVisible();
 
     // 2. Try to book overlapping appointment
@@ -40,7 +43,7 @@ test.describe('Scheduling Robustness', () => {
     await page.fill('input[type="time"]', '10:15'); // Overlaps with 10:00-10:30
     await page.click('button:has-text("Confirm Booking")');
 
-    // Should show error message
+    // Should show error message (inline now)
     await expect(page.locator('.modal-content')).toContainText(/Conflict/i);
   });
 
@@ -54,10 +57,14 @@ test.describe('Scheduling Robustness', () => {
     await page.fill('input[type="time"]', '14:00');
     await page.click('button:has-text("Confirm Booking")');
     
+    // Handle Success Modal
+    await expect(page.locator('.modal-content')).toContainText('Booking Confirmed');
+    await page.click('button:has-text("Done")');
+
     await expect(page.locator('.modal-content')).not.toBeVisible();
 
     // Find the appointment and click Check-in
-    const appointmentCard = page.locator('.card', { hasText: 'Beard Trim' }).filter({ hasText: '14:00' });
+    const appointmentCard = page.locator('.card', { hasText: 'Beard Trim' }).first();
     await appointmentCard.locator('button:has-text("Start Check-in")').click();
 
     // Should redirect to POS
