@@ -65,4 +65,44 @@ describe('Inventory Professional Audit System', () => {
     const finalStock = db.prepare('SELECT stock FROM products WHERE id = ?').get(productId) as any;
     expect(finalStock.stock).toBe(0); // Should remain 0
   });
+
+  it('should create and list suppliers', async () => {
+    const res = await request(app)
+      .post('/api/suppliers')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        name: 'Test Supplier',
+        contact_name: 'John Doe',
+        email: 'john@example.com'
+      });
+
+    expect(res.status).toBe(201);
+    const supplierId = res.body.id;
+
+    const listRes = await request(app)
+      .get('/api/suppliers')
+      .set('Authorization', `Bearer ${token}`);
+    
+    expect(listRes.body.find((s: any) => s.id === supplierId)).toBeDefined();
+  });
+
+  it('should create and list products via standard CRUD', async () => {
+    const res = await request(app)
+      .post('/api/products')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        name: 'New Product',
+        price: 30,
+        min_stock_threshold: 5
+      });
+
+    expect(res.status).toBe(201);
+    const newId = res.body.id;
+
+    const getRes = await request(app)
+      .get('/api/inventory')
+      .set('Authorization', `Bearer ${token}`);
+    
+    expect(getRes.body.find((p: any) => p.id === newId)).toBeDefined();
+  });
 });

@@ -286,7 +286,7 @@ app.post('/api/barbers', protect, authorize('OWNER', 'MANAGER'), (req, res) => {
   const shopId = req.user?.shop_id;
   const { name, service_commission_rate, product_commission_rate } = req.body;
   const result = db.prepare('INSERT INTO barbers (name, service_commission_rate, product_commission_rate, shop_id) VALUES (?, ?, ?, ?)').run(name, service_commission_rate, product_commission_rate, shopId);
-  res.json({ id: result.lastInsertRowid });
+  res.status(201).json({ id: result.lastInsertRowid });
 });
 
 app.put('/api/barbers/:id', protect, authorize('OWNER', 'MANAGER'), (req, res) => {
@@ -324,6 +324,13 @@ app.get('/api/inventory', protect, (req, res) => {
   res.json(products);
 });
 
+app.post('/api/inventory', protect, authorize('OWNER', 'MANAGER'), (req, res) => {
+  const shopId = req.user?.shop_id;
+  const { name, price, min_stock_threshold, supplier_id } = req.body;
+  const result = db.prepare('INSERT INTO products (name, price, min_stock_threshold, supplier_id, shop_id) VALUES (?, ?, ?, ?, ?)').run(name, price, min_stock_threshold, supplier_id || null, shopId);
+  res.status(201).json({ id: result.lastInsertRowid });
+});
+
 app.post('/api/products', protect, authorize('OWNER', 'MANAGER'), (req, res) => {
   const shopId = req.user?.shop_id;
   const { name, price, min_stock_threshold, supplier_id } = req.body;
@@ -355,7 +362,7 @@ app.get('/api/suppliers', protect, authorize('OWNER', 'MANAGER'), (req, res) => 
 app.post('/api/suppliers', protect, authorize('OWNER', 'MANAGER'), (req, res) => {
   const { name, contact_name, email, phone, lead_time_days } = req.body;
   const result = db.prepare('INSERT INTO suppliers (name, contact_name, email, phone, lead_time_days) VALUES (?, ?, ?, ?, ?)').run(name, contact_name, email, phone, lead_time_days);
-  res.json({ id: result.lastInsertRowid });
+  res.status(201).json({ id: result.lastInsertRowid });
 });
 
 app.delete('/api/suppliers/:id', protect, authorize('OWNER', 'MANAGER'), (req, res) => {
