@@ -164,18 +164,6 @@ export default function Reports() {
       </div>
 
       <div className="pos-grid" style={{ marginBottom: '2rem' }}>
-...
-      <style dangerouslySetInnerHTML={{ __html: `
-        @media (max-width: 640px) {
-          .kpi-grid { display: flex !important; overflow-x: auto !important; padding-bottom: 1rem !important; margin: 0 -1rem 1.5rem !important; padding: 0 1rem !important; scroll-snap-type: x mandatory; }
-          .kpi-grid .card { min-width: 280px !important; scroll-snap-align: start; }
-          .report-controls { width: 100% !important; justify-content: space-between !important; position: sticky; top: 3.5rem; z-index: 40; background: var(--bg); padding: 0.75rem 0; }
-          .reports-container { padding-top: 0.5rem; }
-        }
-      `}} />
-    </div>
-  );
-}
         {/* Barber Performance */}
         <div className="card">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
@@ -256,6 +244,15 @@ export default function Reports() {
           </div>
         </div>
       </div>
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        @media (max-width: 640px) {
+          .kpi-grid { display: flex !important; overflow-x: auto !important; padding-bottom: 1rem !important; margin: 0 -1rem 1.5rem !important; padding: 0 1rem !important; scroll-snap-type: x mandatory; }
+          .kpi-grid .card { min-width: 280px !important; scroll-snap-align: start; }
+          .report-controls { width: 100% !important; justify-content: space-between !important; position: sticky; top: 3.5rem; z-index: 40; background: var(--bg); padding: 0.75rem 0; }
+          .reports-container { padding-top: 0.5rem; }
+        }
+      `}} />
     </div>
   );
 }
