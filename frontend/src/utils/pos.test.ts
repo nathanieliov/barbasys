@@ -1,29 +1,30 @@
-// @ts-ignore
-import assert from 'assert';
-import { calculatePOSTotals } from './pos.js'; // Use .js extension for ts-node esm
+import { describe, it, expect } from 'vitest';
+import { calculatePOSTotals } from './pos';
 
-function runTests() {
-  console.log('Running POS Calculation Tests...');
-  
-  // Test 1: Standard calculation with tip and discount
-  const cart1 = [{ price: 25 }, { price: 18 }]; // $43
-  const res1 = calculatePOSTotals(cart1, 5, 3);
-  assert.strictEqual(res1.subtotal, 43, 'Subtotal should be 43');
-  assert.strictEqual(res1.total, 45, 'Total should be 45 (43 + 5 - 3)');
+describe('POS Calculation Utils', () => {
+  it('should calculate standard total with tip and discount', () => {
+    const cart = [{ price: 25 }, { price: 18 }]; // $43
+    const { subtotal, total } = calculatePOSTotals(cart, 5, 3);
+    expect(subtotal).toBe(43);
+    expect(total).toBe(45); // 43 + 5 - 3
+  });
 
-  // Test 2: Discount greater than subtotal (should floor at 0 if no tip, or calculate correctly)
-  // Wait, if total goes below 0, calculatePOSTotals uses Math.max(0, ...)
-  const cart2 = [{ price: 20 }];
-  const res2 = calculatePOSTotals(cart2, 0, 25);
-  assert.strictEqual(res2.subtotal, 20, 'Subtotal should be 20');
-  assert.strictEqual(res2.total, 0, 'Total should be clamped to 0');
+  it('should floor total at 0 if discount is greater than subtotal', () => {
+    const cart = [{ price: 20 }];
+    const { subtotal, total } = calculatePOSTotals(cart, 0, 25);
+    expect(subtotal).toBe(20);
+    expect(total).toBe(0);
+  });
 
-  // Test 3: Empty cart
-  const res3 = calculatePOSTotals([], 0, 0);
-  assert.strictEqual(res3.subtotal, 0, 'Subtotal should be 0');
-  assert.strictEqual(res3.total, 0, 'Total should be 0');
+  it('should handle empty cart correctly', () => {
+    const { subtotal, total } = calculatePOSTotals([], 0, 0);
+    expect(subtotal).toBe(0);
+    expect(total).toBe(0);
+  });
 
-  console.log('All tests passed successfully! ✅');
-}
-
-runTests();
+  it('should handle only tip', () => {
+    const cart = [{ price: 10 }];
+    const { total } = calculatePOSTotals(cart, 5, 0);
+    expect(total).toBe(15);
+  });
+});
