@@ -1,0 +1,13 @@
+{
+  "name": "@barbasys/shared",
+  "version": "1.0.0",
+  "description": "Shared contracts and types for Barbasys",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

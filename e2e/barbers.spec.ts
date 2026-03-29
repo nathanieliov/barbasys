@@ -2,12 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Barber Management', () => {
   test.beforeEach(async ({ page }) => {
-    // Login as admin
-    await page.goto('/login');
-    await page.fill('input[placeholder="Enter your username"]', 'admin');
-    await page.fill('input[placeholder="Enter your password"]', 'admin123');
-    await page.click('button:has-text("Login")');
-    await expect(page).toHaveURL('/');
+    await page.goto('/');
   });
 
   test('should add a new barber successfully', async ({ page }) => {

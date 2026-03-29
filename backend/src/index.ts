@@ -6,6 +6,13 @@ import { sendReceipt, alertLowStock, sendAppointmentNotification } from './commu
 import { SQLiteBarberRepository } from './repositories/sqlite-barber-repository.js';
 import { SQLiteUserRepository } from './repositories/sqlite-user-repository.js';
 import { SQLiteServiceRepository } from './repositories/sqlite-service-repository.js';
+import { SQLiteAppointmentRepository } from './repositories/sqlite-appointment-repository.js';
+import { SQLiteBarberShiftRepository } from './repositories/sqlite-barber-shift-repository.js';
+import { SQLiteSaleRepository } from './repositories/sqlite-sale-repository.js';
+import { SQLiteCustomerRepository } from './repositories/sqlite-customer-repository.js';
+import { SQLiteProductRepository } from './repositories/sqlite-product-repository.js';
+import { SQLiteExpenseRepository } from './repositories/sqlite-expense-repository.js';
+
 import { ListBarbers } from './use-cases/list-barbers.js';
 import { DeleteBarber } from './use-cases/delete-barber.js';
 import { LoginUseCase } from './use-cases/login.js';
@@ -15,17 +22,28 @@ import { ListServices } from './use-cases/list-services.js';
 import { UpdateService } from './use-cases/update-service.js';
 import { DeleteService } from './use-cases/delete-service.js';
 import { GetService } from './use-cases/get-service.js';
+import { CreateAppointment } from './use-cases/booking/create-appointment.js';
+import { ProcessSale } from './use-cases/pos/ProcessSale.js';
+import { GetCommissionsReport } from './use-cases/reports/GetCommissionsReport.js';
+import { GetInventoryIntelligence } from './use-cases/inventory/get-inventory-intelligence.js';
+
 import { protect, authorize } from './middleware/auth-middleware.js';
 
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000;
 
 // Initialize repositories and use cases
 const barberRepo = new SQLiteBarberRepository(db);
 const userRepo = new SQLiteUserRepository();
 const serviceRepo = new SQLiteServiceRepository(db);
+const appointmentRepo = new SQLiteAppointmentRepository(db);
+const shiftRepo = new SQLiteBarberShiftRepository(db);
+const saleRepo = new SQLiteSaleRepository(db);
+const customerRepo = new SQLiteCustomerRepository(db);
+const productRepo = new SQLiteProductRepository(db);
+const expenseRepo = new SQLiteExpenseRepository(db);
 
 const listBarbers = new ListBarbers(barberRepo);
 const loginUseCase = new LoginUseCase(userRepo);
@@ -35,6 +53,10 @@ const listServices = new ListServices(serviceRepo);
 const updateService = new UpdateService(serviceRepo);
 const deleteService = new DeleteService(serviceRepo);
 const getService = new GetService(serviceRepo);
+const createAppointment = new CreateAppointment(appointmentRepo, shiftRepo, serviceRepo);
+const processSale = new ProcessSale(saleRepo, customerRepo, barberRepo, productRepo);
+const getCommissionsReport = new GetCommissionsReport(saleRepo, barberRepo, expenseRepo);
+const getInventoryIntelligence = new GetInventoryIntelligence(productRepo);
 
 app.use(cors());
 app.use(express.json());
@@ -42,10 +64,13 @@ app.use(express.json());
 // Auth
 app.post('/api/auth/login', async (req, res) => {
   const { username, password } = req.body;
+  console.log(`Login attempt: ${username}`);
   try {
     const result = await loginUseCase.execute(username, password);
+    console.log(`Login success: ${username}`);
     res.json(result);
   } catch (err: any) {
+    console.log(`Login failed: ${username} - ${err.message}`);
     res.status(401).json({ error: err.message });
   }
 });
@@ -190,55 +215,11 @@ app.get('/api/appointments', protect, (req, res) => {
   res.json(appointments);
 });
 
-app.post('/api/appointments', protect, (req, res) => {
+app.post('/api/appointments', protect, async (req, res) => {
   const shopId = req.user?.shop_id;
-  const { barber_id, customer_id, service_id, start_time, recurring_rule, occurrences = 1 } = req.body;
-  const recurring_id = recurring_rule ? Math.random().toString(36).substring(2, 15) : null;
-  
-  const service = db.prepare('SELECT duration_minutes FROM services WHERE id = ?').get(service_id) as { duration_minutes: number };
-  const insert = db.prepare('INSERT INTO appointments (barber_id, customer_id, service_id, start_time, recurring_id, recurring_rule, shop_id) VALUES (?, ?, ?, ?, ?, ?, ?)');
-  
-  const createdIds: number[] = [];
-
-  const transaction = db.transaction(() => {
-    for (let i = 0; i < occurrences; i++) {
-      const currentStart = new Date(start_time);
-      if (recurring_rule === 'weekly') currentStart.setDate(currentStart.getDate() + (i * 7));
-      if (recurring_rule === 'biweekly') currentStart.setDate(currentStart.getDate() + (i * 14));
-      if (recurring_rule === 'monthly') currentStart.setMonth(currentStart.getMonth() + i);
-
-      const startTimeStr = currentStart.toISOString().replace('T', ' ').substring(0, 19);
-      const endTimeDate = new Date(currentStart.getTime() + service.duration_minutes * 60000);
-      const endTimeStr = endTimeDate.toISOString().replace('T', ' ').substring(0, 19);
-
-      const dayOfWeek = currentStart.getDay();
-      const timeStr = currentStart.toTimeString().split(' ')[0].substring(0, 5);
-
-      // Validation
-      const shift = db.prepare('SELECT id FROM barber_shifts WHERE barber_id = ? AND day_of_week = ? AND ? >= start_time AND ? <= end_time').get(barber_id, dayOfWeek, timeStr, timeStr);
-      if (!shift) throw new Error(`Barber not working on ${currentStart.toLocaleDateString()} at ${timeStr}`);
-
-      const conflict = db.prepare(`
-        SELECT a.id FROM appointments a
-        JOIN services s ON a.service_id = s.id
-        WHERE a.barber_id = ? AND a.status != 'cancelled'
-        AND ((datetime(a.start_time) < datetime(?)) AND (datetime(a.start_time, '+' || s.duration_minutes || ' minutes') > datetime(?)))
-      `).get(barber_id, endTimeStr, startTimeStr);
-      if (conflict) throw new Error(`Conflict on ${currentStart.toLocaleDateString()} at ${timeStr}`);
-
-      const result = insert.run(barber_id, customer_id, service_id, startTimeStr, recurring_id, recurring_rule, shopId);
-      createdIds.push(Number(result.lastInsertRowid));
-    }
-  });
-
   try {
-    transaction();
-    
-    // Send confirmation (only for the first one for brevity)
-    const firstApt = db.prepare('SELECT a.*, b.name as barber_name, s.name as service_name, c.name as customer_name, c.email, c.phone FROM appointments a JOIN barbers b ON a.barber_id = b.id JOIN services s ON a.service_id = s.id LEFT JOIN customers c ON a.customer_id = c.id WHERE a.id = ?').get(createdIds[0]) as any;
-    sendAppointmentNotification({ ...firstApt, type: 'confirmation', customer_name: firstApt.customer_name || 'Valued Client' });
-
-    res.json({ ids: createdIds, recurring_id });
+    const result = await createAppointment.execute({ ...req.body, shop_id: shopId });
+    res.json(result);
   } catch (err: any) {
     res.status(400).json({ error: err.message });
   }
@@ -328,34 +309,15 @@ app.post('/api/products', protect, authorize('OWNER', 'MANAGER'), (req, res) => 
   }
 });
 
-app.get('/api/inventory/intelligence', protect, authorize('OWNER', 'MANAGER'), (req, res) => {
-  // Calculate sales velocity (avg units per day over last 30 days)
-  const intelligence = db.prepare(`
-    SELECT 
-      p.id, p.name, p.stock, p.min_stock_threshold,
-      IFNULL(AVG(daily_sales.units), 0) as avg_daily_velocity
-    FROM products p
-    LEFT JOIN (
-      SELECT product_id, date(timestamp) as sale_date, COUNT(*) as units
-      FROM stock_logs
-      WHERE type = 'SALE' AND timestamp > date('now', '-30 days')
-      GROUP BY product_id, sale_date
-    ) daily_sales ON p.id = daily_sales.product_id
-    GROUP BY p.id
-  `).all();
-
-  const results = (intelligence as any[]).map(item => {
-    const daysRemaining = item.avg_daily_velocity > 0 
-      ? Math.floor(item.stock / item.avg_daily_velocity) 
-      : 999;
-    return {
-      ...item,
-      days_remaining: daysRemaining,
-      reorder_suggested: daysRemaining <= 7 || item.stock <= item.min_stock_threshold
-    };
-  });
-
-  res.json(results);
+app.get('/api/inventory/intelligence', protect, authorize('OWNER', 'MANAGER'), async (req, res) => {
+  const shopId = req.user?.shop_id;
+  if (!shopId) return res.status(401).json({ error: 'Shop not assigned' });
+  try {
+    const results = await getInventoryIntelligence.execute(shopId);
+    res.json(results);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch inventory intelligence' });
+  }
 });
 
 // Suppliers
@@ -501,82 +463,13 @@ app.post('/api/settings', protect, authorize('OWNER', 'MANAGER'), (req, res) => 
 });
 
 // Sales (POS)
-app.post('/api/sales', protect, (req, res) => {
+app.post('/api/sales', protect, async (req, res) => {
   const shopId = req.user?.shop_id;
-  let { barber_id, items, customer_email, customer_phone, tip_amount, discount_amount } = req.body;
-  
-  // Normalize numeric values to ensure valid math
-  tip_amount = parseFloat(tip_amount) || 0;
-  discount_amount = parseFloat(discount_amount) || 0;
-  
-  // Normalize customer strings (empty strings should be treated as NULL)
-  customer_email = customer_email?.trim() || null;
-  customer_phone = customer_phone?.trim() || null;
-
-  if (!barber_id || !items || !Array.isArray(items)) {
-    return res.status(400).json({ error: 'Missing required sale data' });
-  }
-
-  const barber = db.prepare('SELECT name FROM barbers WHERE id = ?').get(barber_id) as { name: string };
-  
-  const total_items_amount = items.reduce((sum: number, item: any) => sum + (parseFloat(item.price) || 0), 0);
-  const total_amount = Math.max(0, total_items_amount + tip_amount - discount_amount);
-
-  const transaction = db.transaction(() => {
-    let customerId = null;
-    
-    // Upsert Customer only if identifying info is provided
-    if (customer_email || customer_phone) {
-      let customer = db.prepare('SELECT id FROM customers WHERE (email = ? AND email IS NOT NULL) OR (phone = ? AND phone IS NOT NULL)').get(customer_email, customer_phone) as { id: number };
-      
-      if (customer) {
-        customerId = customer.id;
-        db.prepare('UPDATE customers SET last_visit = CURRENT_TIMESTAMP WHERE id = ?').run(customerId);
-      } else {
-        const res = db.prepare('INSERT INTO customers (email, phone, last_visit) VALUES (?, ?, CURRENT_TIMESTAMP)').run(customer_email, customer_phone);
-        customerId = Number(res.lastInsertRowid);
-      }
-    }
-
-    const saleResult = db.prepare('INSERT INTO sales (barber_id, barber_name, customer_id, total_amount, tip_amount, discount_amount, customer_email, customer_phone, shop_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)').run(barber_id, barber?.name || 'Unknown', customerId, total_amount, tip_amount, discount_amount, customer_email, customer_phone, shopId);
-    const saleId = Number(saleResult.lastInsertRowid);
-
-    for (const item of items) {
-      db.prepare('INSERT INTO sale_items (sale_id, item_id, item_name, type, price) VALUES (?, ?, ?, ?, ?)').run(saleId, item.id, item.name, item.type, item.price);
-      
-      if (item.type === 'product') {
-        db.prepare('UPDATE products SET stock = stock - 1 WHERE id = ?').run(item.id);
-        db.prepare('INSERT INTO stock_logs (product_id, change_amount, type, reference_id) VALUES (?, ?, ?, ?)').run(item.id, -1, 'SALE', saleId);
-        
-        // Check for low stock alert
-        const product = db.prepare('SELECT name, stock, min_stock_threshold FROM products WHERE id = ?').get(item.id) as { name: string, stock: number, min_stock_threshold: number };
-        if (product.stock <= product.min_stock_threshold) {
-          alertLowStock({ name: product.name, stock: product.stock, threshold: product.min_stock_threshold });
-        }
-      }
-    }
-    return saleId;
-  });
-
   try {
-    const saleId = transaction();
-    
-    // Send receipt asynchronously
-    sendReceipt({
-      id: saleId,
-      customer_email,
-      customer_phone,
-      total_amount,
-      tip_amount,
-      discount_amount,
-      items,
-      barber_name: barber?.name || 'Professional'
-    });
-
-    res.json({ success: true, saleId });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Failed to process sale' });
+    const result = await processSale.execute({ ...req.body, shop_id: shopId });
+    res.json(result);
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
   }
 });
 
@@ -634,7 +527,7 @@ app.get('/api/sales/:id', protect, (req, res) => {
 });
 
 // Reports
-app.get('/api/reports', protect, authorize('OWNER', 'MANAGER', 'BARBER'), (req, res) => {
+app.get('/api/reports', protect, authorize('OWNER', 'MANAGER', 'BARBER'), async (req, res) => {
   const shopId = req.user?.shop_id;
   const startDate = (req.query.startDate as string) || (req.query.date as string) || new Date().toISOString().split('T')[0];
   const endDate = (req.query.endDate as string) || startDate;
@@ -642,45 +535,20 @@ app.get('/api/reports', protect, authorize('OWNER', 'MANAGER', 'BARBER'), (req, 
   const isBarber = req.user?.role === 'BARBER';
   const barberId = req.user?.barber_id;
 
-  // Revenue and tips in range
-  let revenueQuery = 'SELECT SUM(total_amount) as total, SUM(tip_amount) as tips FROM sales WHERE date(timestamp) BETWEEN @startDate AND @endDate AND shop_id = @shopId';
-  if (isBarber) {
-    revenueQuery += ' AND barber_id = @barberId';
+  if (!shopId) return res.status(401).json({ error: 'Shop not assigned' });
+
+  try {
+    const result = await getCommissionsReport.execute({
+      startDate,
+      endDate,
+      shop_id: shopId,
+      barber_id: barberId || undefined,
+      isBarber
+    });
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
   }
-  const revenueData = db.prepare(revenueQuery).get({ startDate, endDate, barberId, shopId }) as { total: number, tips: number };
-
-  // Barber commissions in range
-  let commissionsQuery = `
-    SELECT b.id as barber_id, b.name, 
-           IFNULL(SUM(CASE WHEN si.type = 'service' THEN si.price * b.service_commission_rate ELSE 0 END), 0) as service_commission,
-           IFNULL(SUM(CASE WHEN si.type = 'product' THEN si.price * b.product_commission_rate ELSE 0 END), 0) as product_commission,
-           IFNULL((SELECT SUM(tip_amount) FROM sales WHERE barber_id = b.id AND date(timestamp) BETWEEN @startDate AND @endDate), 0) as tips
-    FROM barbers b
-    LEFT JOIN sales s ON s.barber_id = b.id AND date(s.timestamp) BETWEEN @startDate AND @endDate
-    LEFT JOIN sale_items si ON si.sale_id = s.id
-    WHERE b.shop_id = @shopId
-  `;
-  
-  if (isBarber) {
-    commissionsQuery += ' AND b.id = @barberId';
-  }
-  
-  commissionsQuery += ' GROUP BY b.id';
-  
-  const commissions = db.prepare(commissionsQuery).all({ startDate, endDate, barberId, shopId });
-
-  // Total Expenses in range
-  let expensesQuery = 'SELECT SUM(amount) as total FROM expenses WHERE date(date) BETWEEN @startDate AND @endDate AND shop_id = @shopId';
-  const expenseData = db.prepare(expensesQuery).get({ startDate, endDate, shopId }) as { total: number };
-
-  res.json({
-    startDate,
-    endDate,
-    revenue: revenueData?.total || 0,
-    tips: revenueData?.tips || 0,
-    expenses: expenseData?.total || 0,
-    commissions
-  });
 });
 
 // Expenses

@@ -1,0 +1,14 @@
+[engineer-frontend]
+role = "Frontend Software Engineer"
+focus = ["React Components", "UI/UX", "MSW Mocking", "Contract-Driven Development", "frontend/ workspace"]
+
+[engineer-frontend.responsibilities]
+strategy = "Plan React implementation strictly using MSW and `@barbasys/shared` contracts."
+act = "Apply surgical changes only within the `frontend/` directory. Do not alter backend logic."
+contracts = "Never assume API structures; strictly adhere to types defined in `shared/`."
+
+[engineer-frontend.criteria]
+domain_isolation = true
+contract_compliant = true
+react_best_practices = true
+ui_responsive = true

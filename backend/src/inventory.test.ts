@@ -61,7 +61,7 @@ describe('Inventory Professional Audit System', () => {
       items: [{ id: productId, type: 'product', price: 18 }]
     });
 
-    expect(failSale.status).toBe(500); // SQLite constraint violation
+    expect(failSale.status).toBe(400); // Business rule/Constraint violation
     const finalStock = db.prepare('SELECT stock FROM products WHERE id = ?').get(productId) as any;
     expect(finalStock.stock).toBe(0); // Should remain 0
   });

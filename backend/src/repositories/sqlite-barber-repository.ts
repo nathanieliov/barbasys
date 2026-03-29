@@ -23,4 +23,27 @@ export class SQLiteBarberRepository implements IBarberRepository {
   async delete(id: number): Promise<void> {
     this.db.prepare('UPDATE barbers SET is_active = 0 WHERE id = ?').run(id);
   }
+
+  async getCommissions(startDate: string, endDate: string, shopId: number, barberId?: number): Promise<any[]> {
+    let commissionsQuery = `
+      SELECT b.id as barber_id, b.name, 
+             IFNULL(SUM(CASE WHEN si.type = 'service' THEN si.price * b.service_commission_rate ELSE 0 END), 0) as service_commission,
+             IFNULL(SUM(CASE WHEN si.type = 'product' THEN si.price * b.product_commission_rate ELSE 0 END), 0) as product_commission,
+             IFNULL((SELECT SUM(tip_amount) FROM sales WHERE barber_id = b.id AND date(timestamp) BETWEEN ? AND ?), 0) as tips
+      FROM barbers b
+      LEFT JOIN sales s ON s.barber_id = b.id AND date(s.timestamp) BETWEEN ? AND ?
+      LEFT JOIN sale_items si ON si.sale_id = s.id
+      WHERE b.shop_id = ?
+    `;
+    const params: any[] = [startDate, endDate, startDate, endDate, shopId];
+
+    if (barberId) {
+      commissionsQuery += ' AND b.id = ?';
+      params.push(barberId);
+    }
+
+    commissionsQuery += ' GROUP BY b.id';
+
+    return this.db.prepare(commissionsQuery).all(...params);
+  }
 }

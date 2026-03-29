@@ -1,25 +1,27 @@
 [workflow]
 name = "SDLC-Gemini-Workflow"
-version = "1.0.0"
-description = "Structured SDLC workflow from Architecture to Review."
+version = "2.0.0"
+description = "Structured SDLC workflow emphasizing Parallel Execution and Contract-Driven Development."
 
 [workflow.phases]
 1 = "architect"
-2 = "engineer"
-3 = "qa"
-4 = "reviewer"
+2 = "engineer-frontend"
+3 = "engineer-backend"
+4 = "qa-unit"
+5 = "qa-e2e"
+6 = "reviewer"
 
 [workflow.handoff.architect_to_engineer]
-required_artifacts = ["ADR (Architecture Decision Record)", "Impact Analysis", "Component Map"]
-exit_criteria = ["No unresolved architectural smells", "Dependency rule respected", "Interface definitions complete"]
+required_artifacts = ["ADR (Architecture Decision Record)", "Shared TypeScript Contracts/Interfaces in `shared/` directory", "Component Map"]
+exit_criteria = ["No unresolved architectural smells", "Dependency rule respected", "Interface definitions in `shared/` complete"]
 
 [workflow.handoff.engineer_to_qa]
-required_artifacts = ["Implementation Code", "Unit Tests", "Refactored Logic"]
-exit_criteria = ["Types are safe and idiomatic", "Code reflects the approved architecture", "Documentation is updated"]
+required_artifacts = ["Domain Implementation Code", "Compiled Shared Types"]
+exit_criteria = ["Types are safe and idiomatic", "Strict adherence to `@barbasys/shared`", "No cross-domain modifications"]
 
 [workflow.handoff.qa_to_reviewer]
-required_artifacts = ["Test Reports", "Bug Reproduction Scripts", "Validation Results"]
-exit_criteria = ["No regressions found", "Edge cases covered", "Behavioral correctness verified"]
+required_artifacts = ["Domain Test Reports (Unit/E2E)", "Validation Results"]
+exit_criteria = ["No regressions found", "Edge cases covered", "Isolated and E2E behavior verified"]
 
 [workflow.handoff.reviewer_to_done]
 required_artifacts = ["Final Codebase", "Passing Lint/Type Check", "Signed-off ADR"]

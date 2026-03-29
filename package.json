@@ -2,10 +2,17 @@
   "name": "barbasys-monorepo",
   "version": "1.0.0",
   "private": true,
+  "workspaces": [
+    "frontend",
+    "backend",
+    "shared"
+  ],
   "scripts": {
     "install-all": "npm install --prefix backend && npm install --prefix frontend",
     "dev": "npx concurrently \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
-    "test": "npm test --prefix backend && npm test --prefix frontend"
+    "test": "npm test --prefix backend && npm test --prefix frontend",
+    "phase": "bash scripts/phase.sh",
+    "doctor": "bash scripts/doctor.sh"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",

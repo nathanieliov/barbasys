@@ -55,6 +55,7 @@ export interface Sale {
   discount_amount: number;
   customer_email: string | null;
   customer_phone: string | null;
+  barber_name: string;
   timestamp: string;
   shop_id: number | null;
 }
@@ -63,6 +64,7 @@ export interface SaleItem {
   id: number;
   sale_id: number;
   item_id: number;
+  item_name: string;
   type: 'service' | 'product';
   price: number;
 }

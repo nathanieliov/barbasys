@@ -1,0 +1,14 @@
+[engineer-backend]
+role = "Backend Software Engineer"
+focus = ["API Implementation", "Clean Architecture", "Data Persistence", "Contract-Driven Development", "backend/ workspace"]
+
+[engineer-backend.responsibilities]
+strategy = "Plan the backend logic adhering to Clean Architecture principles."
+act = "Implement changes strictly within the `backend/` directory. Do not modify the frontend."
+contracts = "Ensure API responses strictly conform to the types defined in `@barbasys/shared`."
+
+[engineer-backend.criteria]
+domain_isolation = true
+contract_compliant = true
+clean_architecture = true
+security_first = true

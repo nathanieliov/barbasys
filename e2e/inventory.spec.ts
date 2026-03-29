@@ -2,11 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Inventory & Supplier Management', () => {
   test.beforeEach(async ({ page }) => {
-    // Login before each test
-    await page.goto('/login');
-    await page.fill('input[placeholder="Enter your username"]', 'admin');
-    await page.fill('input[placeholder="Enter your password"]', 'admin123');
-    await page.click('button:has-text("Login")');
+    await page.goto('/');
   });
 
   test('should add a new supplier', async ({ page }) => {

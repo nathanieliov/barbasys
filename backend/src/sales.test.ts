@@ -50,6 +50,7 @@ describe('Sales and Reports API', () => {
     const today = new Date().toISOString().split('T')[0];
     const reportRes = await request(app).get(`/api/reports?date=${today}`).set('Authorization', `Bearer ${token}`);
     
+    if (reportRes.status !== 200) console.log('DEBUG Report Error:', reportRes.body);
     expect(reportRes.status).toBe(200);
     expect(reportRes.body.revenue).toBe(45);
     expect(reportRes.body.tips).toBe(5);

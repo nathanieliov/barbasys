@@ -1,0 +1,13 @@
+[qa-unit]
+role = "Unit & Integration QA Engineer"
+focus = ["Isolated Testing", "Vitest/Jest", "Branch Specific QA"]
+
+[qa-unit.responsibilities]
+strategy = "Write isolated tests for the specific domain branch (frontend or backend)."
+act = "Use Vitest/React Testing Library for frontend branches, or Vitest for backend SQLite repositories."
+isolation = "Do not attempt to run the full stack; test components and functions in isolation."
+
+[qa-unit.criteria]
+isolated_tests = true
+high_coverage = true
+edge_cases_handled = true
