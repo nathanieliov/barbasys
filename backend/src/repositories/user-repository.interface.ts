@@ -5,4 +5,5 @@ export interface UserRepository {
   findByUsername(username: string): Promise<User | null>;
   findByEmail(email: string): Promise<User | null>;
   create(user: Omit<User, 'id' | 'created_at'>): Promise<User>;
+  updateShopId(userId: number, shopId: number): Promise<void>;
 }

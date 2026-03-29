@@ -25,12 +25,27 @@ const Sidebar = ({ isOpen, toggleSidebar }: { isOpen: boolean, toggleSidebar: ()
   const navigate = useNavigate();
   const location = useLocation();
   const [shopName, setShopName] = useState('BarbaSys');
+  const [shops, setShops] = useState<any[]>([]);
 
   useEffect(() => {
     if (user?.shop_id) {
       apiClient.get(`/shops/${user.shop_id}`).then(res => setShopName(res.data.name));
     }
+    if (user?.role === 'OWNER' || user?.role === 'MANAGER') {
+      apiClient.get('/shops').then(res => setShops(res.data));
+    }
   }, [user]);
+
+  const handleShopSwitch = async (shopId: string) => {
+    try {
+      const res = await apiClient.post('/shops/switch', { shopId });
+      localStorage.setItem('token', res.data.token);
+      localStorage.setItem('user', JSON.stringify(res.data.user));
+      window.location.reload();
+    } catch (err) {
+      alert('Failed to switch shop');
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -70,6 +85,19 @@ const Sidebar = ({ isOpen, toggleSidebar }: { isOpen: boolean, toggleSidebar: ()
               <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 'normal' }}>Professional Management</span>
             </div>
           </div>
+          
+          {isAdmin && shops.length > 1 && (
+            <div style={{ marginTop: '1.25rem' }}>
+              <label style={{ fontSize: '0.65rem', textTransform: 'uppercase', fontWeight: '800', color: 'var(--text-muted)', display: 'block', marginBottom: '0.5rem', marginLeft: '0.25rem' }}>Active Location</label>
+              <select 
+                value={user?.shop_id || ''} 
+                onChange={e => handleShopSwitch(e.target.value)}
+                style={{ marginBottom: 0, fontSize: '0.85rem', fontWeight: '600', padding: '0.5rem', background: '#f3f4f6' }}
+              >
+                {shops.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
+            </div>
+          )}
         </div>
         
         <ul className="nav-links">

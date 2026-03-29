@@ -27,6 +27,7 @@ import { ProcessSale } from './use-cases/pos/ProcessSale.js';
 import { GetCommissionsReport } from './use-cases/reports/GetCommissionsReport.js';
 import { ExportSalesCSV } from './use-cases/reports/ExportSalesCSV.js';
 import { GetInventoryIntelligence } from './use-cases/inventory/get-inventory-intelligence.js';
+import { SwitchShop } from './use-cases/switch-shop.js';
 
 import { protect, authorize } from './middleware/auth-middleware.js';
 
@@ -59,6 +60,7 @@ const processSale = new ProcessSale(saleRepo, customerRepo, barberRepo, productR
 const getCommissionsReport = new GetCommissionsReport(saleRepo, barberRepo, expenseRepo);
 const exportSalesCSV = new ExportSalesCSV(saleRepo);
 const getInventoryIntelligence = new GetInventoryIntelligence(productRepo);
+const switchShop = new SwitchShop(userRepo);
 
 app.use(cors());
 app.use(express.json());
@@ -453,6 +455,24 @@ app.delete('/api/services/:id', protect, authorize('OWNER', 'MANAGER'), async (r
 });
 
 // Shop Settings
+// Shops
+app.get('/api/shops', protect, authorize('OWNER', 'MANAGER'), (req, res) => {
+  const shops = db.prepare('SELECT * FROM shops').all();
+  res.json(shops);
+});
+
+app.post('/api/shops/switch', protect, authorize('OWNER', 'MANAGER'), async (req, res) => {
+  const { shopId } = req.body;
+  const userId = req.user?.id;
+
+  try {
+    const result = await switchShop.execute({ userId: userId!, shopId: parseInt(shopId) });
+    res.json(result);
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
 app.get('/api/shops/:id', protect, (req, res) => {
   const shop = db.prepare('SELECT * FROM shops WHERE id = ?').get(req.params.id);
   if (!shop) return res.status(404).json({ error: 'Shop not found' });

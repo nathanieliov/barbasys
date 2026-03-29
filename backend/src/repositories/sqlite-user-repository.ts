@@ -29,4 +29,8 @@ export class SQLiteUserRepository implements UserRepository {
       created_at: new Date().toISOString()
     };
   }
+
+  async updateShopId(userId: number, shopId: number): Promise<void> {
+    db.prepare('UPDATE users SET shop_id = ? WHERE id = ?').run(shopId, userId);
+  }
 }

@@ -209,6 +209,7 @@ try {
 const shopsCount = db.prepare('SELECT count(*) as count FROM shops').get() as { count: number };
 if (shopsCount.count === 0) {
   db.prepare('INSERT INTO shops (name, address) VALUES (?, ?)').run('Main Street Shop', '123 Main St');
+  db.prepare('INSERT INTO shops (name, address) VALUES (?, ?)').run('Downtown Studio', '456 Center Ave');
 }
 const defaultShopId = (db.prepare('SELECT id FROM shops LIMIT 1').get() as { id: number }).id;
 
