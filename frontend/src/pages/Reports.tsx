@@ -46,7 +46,7 @@ export default function Reports() {
           <p style={{ color: 'var(--text-muted)' }}>Analyze your shop's financial performance and team productivity.</p>
         </div>
         
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+        <div className="report-controls" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', background: '#f3f4f6', borderRadius: '0.75rem', padding: '0.25rem', border: '1px solid var(--border)' }}>
             {(['day', 'week', 'month'] as const).map(type => (
               <button 
@@ -81,8 +81,8 @@ export default function Reports() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', marginBottom: '2rem' }}>
-        <div className="card" style={{ padding: '1.5rem' }}>
+      <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+        <div className="card" style={{ padding: '1.5rem', marginBottom: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
             <div style={{ background: 'rgba(16, 185, 129, 0.1)', color: 'var(--success)', padding: '0.75rem', borderRadius: '0.75rem' }}>
               <TrendingUp size={24} />
@@ -94,25 +94,25 @@ export default function Reports() {
           <h2 style={{ marginBottom: '0.25rem', fontSize: '1.75rem', fontWeight: '900' }}>
             ${report?.revenue?.toFixed(2) || '0.00'}
           </h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: '600' }}>Total collections for selected period</p>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: '600' }}>Total collections</p>
         </div>
 
-        <div className="card" style={{ padding: '1.5rem' }}>
+        <div className="card" style={{ padding: '1.5rem', marginBottom: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
             <div style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', padding: '0.75rem', borderRadius: '0.75rem' }}>
               <Receipt size={24} />
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--danger)', fontSize: '0.75rem', fontWeight: '700', background: 'rgba(239, 68, 68, 0.05)', padding: '0.25rem 0.5rem', borderRadius: '1rem' }}>
-              <ArrowDownRight size={14} /> Operational Cost
+              <ArrowDownRight size={14} /> Expenses
             </div>
           </div>
           <h2 style={{ marginBottom: '0.25rem', fontSize: '1.75rem', fontWeight: '900' }}>
             ${report?.expenses?.toFixed(2) || '0.00'}
           </h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: '600' }}>Includes supplies and overheads</p>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: '600' }}>Supplies & overheads</p>
         </div>
 
-        <div className="card" style={{ padding: '1.5rem' }}>
+        <div className="card" style={{ padding: '1.5rem', marginBottom: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
             <div style={{ background: 'rgba(79, 70, 229, 0.1)', color: 'var(--primary)', padding: '0.75rem', borderRadius: '0.75rem' }}>
               <DollarSign size={24} />
@@ -124,11 +124,23 @@ export default function Reports() {
           <h2 style={{ marginBottom: '0.25rem', fontSize: '1.75rem', fontWeight: '900' }}>
             ${netProfit.toFixed(2)}
           </h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: '600' }}>Net take-home after expenses</p>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: '600' }}>Net take-home</p>
         </div>
       </div>
 
       <div className="pos-grid" style={{ marginBottom: '2rem' }}>
+...
+      <style dangerouslySetInnerHTML={{ __html: `
+        @media (max-width: 640px) {
+          .kpi-grid { display: flex !important; overflow-x: auto !important; padding-bottom: 1rem !important; margin: 0 -1rem 1.5rem !important; padding: 0 1rem !important; scroll-snap-type: x mandatory; }
+          .kpi-grid .card { min-width: 280px !important; scroll-snap-align: start; }
+          .report-controls { width: 100% !important; justify-content: space-between !important; position: sticky; top: 3.5rem; z-index: 40; background: var(--bg); padding: 0.75rem 0; }
+          .reports-container { padding-top: 0.5rem; }
+        }
+      `}} />
+    </div>
+  );
+}
         {/* Barber Performance */}
         <div className="card">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>

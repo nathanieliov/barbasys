@@ -96,7 +96,7 @@ export default function Schedule() {
         </button>
       </div>
 
-      <div className="card" style={{ padding: '0.75rem' }}>
+      <div className="card date-nav-card" style={{ padding: '0.75rem', position: 'sticky', top: '4.5rem', zIndex: 40, background: 'var(--card)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
           <div style={{ display: 'flex', gap: '0.25rem' }}>
             <button className="secondary" onClick={() => changeDate(-1)} style={{ padding: '0.5rem' }}><ChevronLeft size={20} /></button>
@@ -126,7 +126,7 @@ export default function Schedule() {
           </div>
         ) : (
           appointments.map(a => (
-            <div key={a.id} className="card" style={{ marginBottom: 0, padding: '1rem', borderLeft: `4px solid ${a.status === 'completed' ? 'var(--success)' : 'var(--primary)'}` }}>
+            <div key={a.id} className="card appointment-card" style={{ marginBottom: 0, padding: '1rem', borderLeft: `4px solid ${a.status === 'completed' ? 'var(--success)' : 'var(--primary)'}` }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '800', color: 'var(--primary)', fontSize: '1.1rem' }}>
                   <Clock size={18} />
@@ -137,7 +137,7 @@ export default function Schedule() {
                 </span>
               </div>
               
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.25rem' }}>
+              <div className="appointment-details" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.25rem' }}>
                 <div style={{ display: 'flex', gap: '0.75rem' }}>
                   <div style={{ width: '40px', height: '40px', background: '#f3f4f6', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
                     <User size={20} />
@@ -160,7 +160,7 @@ export default function Schedule() {
               </div>
 
               {a.status === 'scheduled' && (
-                <button style={{ width: '100%', gap: '0.5rem' }} onClick={() => handleCheckIn(a)}>
+                <button style={{ width: '100%', gap: '0.5rem', padding: '0.875rem' }} onClick={() => handleCheckIn(a)}>
                   <CheckCircle size={18} /> Start Check-in
                 </button>
               )}
@@ -276,7 +276,10 @@ export default function Schedule() {
 
       <style dangerouslySetInnerHTML={{ __html: `
         @media (max-width: 640px) {
-          .hide-mobile { display: none; }
+          .hide-mobile { display: none !important; }
+          .appointment-details { grid-template-columns: 1fr !important; gap: 0.75rem !important; }
+          .date-nav-card { top: 3.5rem !important; margin: 0 -1rem 1.5rem !important; border-radius: 0 !important; border-left: none !important; border-right: none !important; }
+          .schedule-container { padding-top: 0.5rem; }
         }
       `}} />
     </div>

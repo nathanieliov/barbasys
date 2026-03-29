@@ -116,30 +116,34 @@ export default function POS() {
           </div>
 
           <div className="card">
-            <h2>2. Services</h2>
+            <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              2. Services
+            </h2>
             <div className="item-list-grid">
               {services.map(s => (
-                <button key={s.id} className="secondary" onClick={() => addToCart(s, 'service')} style={{ flexDirection: 'column', alignItems: 'flex-start', padding: '1rem', height: 'auto', textAlign: 'left' }}>
+                <button key={s.id} className="secondary" onClick={() => addToCart(s, 'service')} style={{ flexDirection: 'column', alignItems: 'flex-start', padding: '1rem', height: 'auto', textAlign: 'left', minHeight: '100px' }}>
                   <span style={{ fontWeight: '700', fontSize: '0.9rem', marginBottom: '0.25rem' }}>{s.name}</span>
                   <span style={{ color: 'var(--primary)', fontWeight: '700' }}>${s.price.toFixed(2)}</span>
-                  <div style={{ marginTop: '0.5rem', alignSelf: 'flex-end', background: 'var(--primary)', color: 'white', borderRadius: '50%', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Plus size={16} />
+                  <div style={{ marginTop: 'auto', alignSelf: 'flex-end', background: 'var(--primary)', color: 'white', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 4px rgba(79, 70, 229, 0.3)' }}>
+                    <Plus size={18} />
                   </div>
                 </button>
               ))}
             </div>
 
-            <h2 style={{ marginTop: '2rem' }}>3. Products</h2>
+            <h2 style={{ marginTop: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              3. Products
+            </h2>
             <div className="item-list-grid">
               {products.map(p => (
-                <button key={p.id} className="secondary" onClick={() => addToCart(p, 'product')} style={{ flexDirection: 'column', alignItems: 'flex-start', padding: '1rem', height: 'auto', textAlign: 'left' }}>
+                <button key={p.id} className="secondary" onClick={() => addToCart(p, 'product')} style={{ flexDirection: 'column', alignItems: 'flex-start', padding: '1rem', height: 'auto', textAlign: 'left', minHeight: '100px' }}>
                   <span style={{ fontWeight: '700', fontSize: '0.9rem', marginBottom: '0.25rem' }}>{p.name}</span>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center', marginTop: 'auto' }}>
                     <span style={{ color: 'var(--primary)', fontWeight: '700' }}>${p.price.toFixed(2)}</span>
-                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Stock: {p.stock}</span>
+                    <span style={{ fontSize: '0.7rem', color: p.stock < 5 ? 'var(--danger)' : 'var(--text-muted)', fontWeight: '600' }}>Stock: {p.stock}</span>
                   </div>
-                  <div style={{ marginTop: '0.5rem', alignSelf: 'flex-end', background: 'var(--primary)', color: 'white', borderRadius: '50%', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Plus size={16} />
+                  <div style={{ marginTop: '0.5rem', alignSelf: 'flex-end', background: 'var(--primary)', color: 'white', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 4px rgba(79, 70, 229, 0.3)' }}>
+                    <Plus size={18} />
                   </div>
                 </button>
               ))}
@@ -147,42 +151,43 @@ export default function POS() {
           </div>
         </div>
 
-        <div className="summary-section">
+        <div className="summary-section hide-mobile">
           <div className="card" style={{ position: 'sticky', top: '2rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
               <ShoppingCart size={24} color="var(--primary)" />
               <h2 style={{ marginBottom: 0 }}>Cart Summary</h2>
             </div>
 
-            <div style={{ minHeight: '100px', maxHeight: '300px', overflowY: 'auto' }}>
+            <div style={{ minHeight: '100px', maxHeight: '400px', overflowY: 'auto', paddingRight: '0.5rem' }}>
               {cart.map(item => (
-                <div key={item.cartId} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid var(--border)' }}>
+                <div key={item.cartId} style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 0', borderBottom: '1px solid var(--border)' }}>
                   <div>
-                    <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>{item.name}</div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'capitalize' }}>{item.type}</div>
+                    <div style={{ fontWeight: '700', fontSize: '0.95rem' }}>{item.name}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.025em' }}>{item.type}</div>
                   </div>
                   <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                    <span style={{ fontWeight: '600' }}>${item.price.toFixed(2)}</span>
-                    <button className="secondary" style={{ padding: '0.4rem', color: 'var(--danger)', borderColor: 'transparent' }} onClick={() => removeFromCart(item.cartId)}>
+                    <span style={{ fontWeight: '700' }}>${item.price.toFixed(2)}</span>
+                    <button className="secondary" style={{ padding: '0.5rem', color: 'var(--danger)', borderColor: 'transparent', borderRadius: '0.5rem' }} onClick={() => removeFromCart(item.cartId)}>
                       <Trash2 size={16} />
                     </button>
                   </div>
                 </div>
               ))}
               {cart.length === 0 && (
-                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
-                  <ShoppingCart size={40} style={{ margin: '0 auto 1rem', opacity: 0.2 }} />
-                  <p>Your cart is empty</p>
+                <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-muted)' }}>
+                  <ShoppingCart size={48} style={{ margin: '0 auto 1.5rem', opacity: 0.1 }} />
+                  <p style={{ fontWeight: '600' }}>Your cart is empty</p>
+                  <p style={{ fontSize: '0.8rem', marginTop: '0.5rem' }}>Select services or products to begin checkout.</p>
                 </div>
               )}
             </div>
             
-            <div style={{ marginTop: '1.5rem', background: '#f9fafb', padding: '1rem', borderRadius: '0.5rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', color: 'var(--text-muted)' }}>
+            <div style={{ marginTop: '2rem', background: '#f9fafb', padding: '1.25rem', borderRadius: '1rem', border: '1px solid var(--border)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', color: 'var(--text-muted)', fontWeight: '600', fontSize: '0.9rem' }}>
                 <span>Subtotal</span>
                 <span>${subtotal.toFixed(2)}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.25rem', fontWeight: '800', color: 'var(--text-main)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.5rem', fontWeight: '900', color: 'var(--text-main)', borderTop: '1px dashed var(--border)', paddingTop: '0.75rem', marginTop: '0.25rem' }}>
                 <span>Total</span>
                 <span>${total.toFixed(2)}</span>
               </div>
@@ -191,13 +196,63 @@ export default function POS() {
             <button 
               disabled={cart.length === 0}
               onClick={() => setShowCheckout(true)}
-              style={{ width: '100%', marginTop: '1rem', padding: '1rem', fontSize: '1.1rem' }}
+              style={{ width: '100%', marginTop: '1.5rem', padding: '1.1rem', fontSize: '1.1rem', borderRadius: '1rem', boxShadow: '0 4px 6px -1px rgba(79, 70, 229, 0.2)' }}
             >
-              Checkout Now
+              Review & Checkout
             </button>
           </div>
         </div>
       </div>
+
+      {/* Mobile Floating Cart Bar */}
+      <div className="mobile-cart-bar show-mobile">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div style={{ position: 'relative', background: 'white', color: 'var(--primary)', padding: '0.75rem', borderRadius: '0.75rem' }}>
+              <ShoppingCart size={24} />
+              {cart.length > 0 && (
+                <span style={{ position: 'absolute', top: '-8px', right: '-8px', background: 'var(--danger)', color: 'white', fontSize: '0.7rem', width: '20px', height: '20px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', border: '2px solid var(--primary)' }}>
+                  {cart.length}
+                </span>
+              )}
+            </div>
+            <div>
+              <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', fontWeight: '800', opacity: 0.8 }}>Current Total</div>
+              <div style={{ fontSize: '1.25rem', fontWeight: '900' }}>${total.toFixed(2)}</div>
+            </div>
+          </div>
+          <button 
+            disabled={cart.length === 0}
+            onClick={() => setShowCheckout(true)}
+            style={{ background: 'white', color: 'var(--primary)', padding: '0.75rem 1.25rem', borderRadius: '0.75rem', fontWeight: '800' }}
+          >
+            Checkout
+          </button>
+        </div>
+      </div>
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        @media (max-width: 1023px) {
+          .hide-mobile { display: none !important; }
+          .pos-container { padding-bottom: 80px; }
+        }
+        @media (min-width: 1024px) {
+          .show-mobile { display: none !important; }
+        }
+        .mobile-cart-bar {
+          position: fixed;
+          bottom: 1.5rem;
+          left: 1.5rem;
+          right: 1.5rem;
+          background: var(--primary);
+          color: white;
+          padding: 1rem 1.25rem;
+          border-radius: 1.25rem;
+          box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.5);
+          z-index: 100;
+          display: flex;
+        }
+      `}} />
 
       {/* Checkout Modal (Full screen on mobile) */}
       {showCheckout && (
