@@ -460,7 +460,8 @@ app.get('/api/shops/:id', protect, (req, res) => {
 });
 
 app.get('/api/settings', protect, (req, res) => {
-  const settings = db.prepare('SELECT * FROM shop_settings').all();
+  const shopId = req.user?.shop_id;
+  const settings = db.prepare('SELECT * FROM shop_settings WHERE shop_id = ?').all(shopId);
   const settingsMap = (settings as any[]).reduce((acc, curr) => {
     acc[curr.key] = curr.value;
     return acc;
@@ -469,12 +470,13 @@ app.get('/api/settings', protect, (req, res) => {
 });
 
 app.post('/api/settings', protect, authorize('OWNER', 'MANAGER'), (req, res) => {
+  const shopId = req.user?.shop_id;
   const settings = req.body;
-  const upsert = db.prepare('INSERT OR REPLACE INTO shop_settings (key, value) VALUES (?, ?)');
+  const upsert = db.prepare('INSERT OR REPLACE INTO shop_settings (shop_id, key, value) VALUES (?, ?, ?)');
   
   const transaction = db.transaction((settings: any) => {
     for (const [key, value] of Object.entries(settings)) {
-      upsert.run(key, String(value));
+      upsert.run(shopId, key, String(value));
     }
   });
 

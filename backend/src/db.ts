@@ -164,8 +164,11 @@ db.exec(`
   );
 
   CREATE TABLE IF NOT EXISTS shop_settings (
-    key TEXT PRIMARY KEY,
-    value TEXT NOT NULL
+    shop_id INTEGER NOT NULL,
+    key TEXT NOT NULL,
+    value TEXT NOT NULL,
+    PRIMARY KEY (shop_id, key),
+    FOREIGN KEY (shop_id) REFERENCES shops(id) ON DELETE CASCADE
   );
 
   CREATE TABLE IF NOT EXISTS expenses (
