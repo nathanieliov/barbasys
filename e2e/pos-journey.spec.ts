@@ -13,22 +13,23 @@ test.describe('POS Checkout Journey', () => {
     await page.selectOption('select:near(:text("Select Professional"))', { label: 'Nathaniel' });
 
     // 2. Add Service
-    await page.click('button:has-text("Haircut")');
+    await page.locator('button', { hasText: 'Haircut' }).first().click();
     
     // 3. Add Product
-    await page.click('button:has-text("Pomade")');
+    await page.locator('button', { hasText: 'Pomade' }).first().click();
 
-    // 4. Add Tip
-    await page.fill('input[placeholder="Tip Amount"]', '5');
+    // 4. Open Checkout
+    await page.click('button:has-text("Checkout Now")');
 
-    // 5. Apply Discount
-    await page.fill('input[placeholder="Discount"]', '3');
+    // 5. Add Tip & Discount in modal
+    await page.fill('label:has-text("Tip ($)") + input', '5');
+    await page.fill('label:has-text("Discount ($)") + input', '3');
 
     // Cart Total: 25 (Haircut) + 18 (Pomade) + 5 (Tip) - 3 (Discount) = 45
-    await expect(page.locator('.pos-cart')).toContainText('Total: $45');
+    await expect(page.locator('.modal-content')).toContainText('$45.00');
 
     // 6. Complete Checkout
-    await page.click('button:has-text("Checkout $45.00")');
+    await page.click('button:has-text("Complete Payment")');
     
     // Verify Success Modal
     await expect(page.locator('.modal-content')).toContainText('Sale Completed');
@@ -36,14 +37,16 @@ test.describe('POS Checkout Journey', () => {
 
     // 7. Verify Inventory reduction
     await page.click('text=Inventory');
-    const pomadeRow = page.locator('tr').filter({ hasText: 'Pomade' });
+    const pomadeRow = page.locator('.card', { hasText: 'Pomade' });
     // If it started at 10 (seed), it should be 9
-    await expect(pomadeRow).toContainText('9');
+    await expect(pomadeRow).toContainText('Stock: 9');
 
     // 8. Verify Reports update
     await page.click('text=Reports');
-    await expect(page.locator('.revenue-card')).toContainText('$45');
-    await expect(page.locator('.tips-card')).toContainText('$5');
+    // Reports might use different classes, let's check the Reports page if needed
+    // But assuming some card contains the revenue
+    await expect(page.locator('.card', { hasText: 'Revenue' })).toContainText('$45');
+    await expect(page.locator('.card', { hasText: 'Tips' })).toContainText('$5');
     
     // Check Nathaniel's commission
     const commissionRow = page.locator('tr').filter({ hasText: 'Nathaniel' });

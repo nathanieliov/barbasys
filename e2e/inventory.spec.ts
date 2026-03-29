@@ -9,12 +9,19 @@ test.describe('Inventory & Supplier Management', () => {
     await page.click('text=Suppliers');
     await expect(page).toHaveURL('/suppliers');
 
-    await page.fill('input:below(:text("Company Name"))', 'E2E Supplier');
-    await page.fill('input:below(:text("Contact Person"))', 'Test Agent');
+    // Open modal
     await page.click('button:has-text("Add Supplier")');
 
-    const partnersList = page.locator('.card', { hasText: 'Current Partners' });
-    await expect(partnersList).toContainText('E2E Supplier');
-    await expect(partnersList).toContainText('Test Agent');
+    await page.fill('input[placeholder*="Grooming Essentials"]', 'E2E Supplier');
+    await page.fill('input[placeholder*="Jane Smith"]', 'Test Agent');
+    await page.fill('input[type="number"]', '5');
+    
+    await page.click('button:has-text("Confirm Registration")');
+
+    // Check if the new supplier is in the list
+    const supplierCard = page.locator('.card', { hasText: 'E2E Supplier' });
+    await expect(supplierCard).toBeVisible();
+    await expect(supplierCard).toContainText('Test Agent');
+    await expect(supplierCard).toContainText('5 days');
   });
 });

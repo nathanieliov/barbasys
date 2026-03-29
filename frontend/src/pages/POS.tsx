@@ -20,6 +20,7 @@ export default function POS() {
   const [tipAmount, setTipAmount] = useState<number>(0);
   const [discountAmount, setDiscountAmount] = useState<number>(0);
   const [showCheckout, setShowCheckout] = useState(false);
+  const [saleSuccess, setSaleSuccess] = useState(false);
 
   useEffect(() => {
     apiClient.get('/barbers').then(res => setBarbers(res.data)).catch(() => {});
@@ -68,16 +69,20 @@ export default function POS() {
         await apiClient.patch(`/appointments/${appointmentData.appointmentId}`, { status: 'completed' });
       }
 
-      setCart([]);
-      setCustomerEmail('');
-      setCustomerPhone('');
-      setTipAmount(0);
-      setDiscountAmount(0);
-      setShowCheckout(false);
-      alert('Sale completed successfully!');
+      setSaleSuccess(true);
     } catch (err: any) {
       alert(err.response?.data?.error || 'Error processing sale. Please check values.');
     }
+  };
+
+  const resetPOS = () => {
+    setCart([]);
+    setCustomerEmail('');
+    setCustomerPhone('');
+    setTipAmount(0);
+    setDiscountAmount(0);
+    setSaleSuccess(false);
+    setShowCheckout(false);
   };
 
   const { subtotal, total } = calculatePOSTotals(cart, tipAmount || 0, discountAmount || 0);
@@ -198,63 +203,78 @@ export default function POS() {
       {showCheckout && (
         <div className="modal-overlay">
           <div className="modal-content">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h2>Finalize Sale</h2>
-              <button className="secondary" style={{ padding: '0.5rem' }} onClick={() => setShowCheckout(false)}>
-                <X size={20} />
-              </button>
-            </div>
-
-            <div style={{ display: 'grid', gap: '1rem' }}>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Discount ($)</label>
-                <input 
-                  type="number" 
-                  min="0"
-                  step="0.01"
-                  value={discountAmount || ''}
-                  onChange={e => setDiscountAmount(parseFloat(e.target.value) || 0)}
-                  placeholder="0.00"
-                />
+            {saleSuccess ? (
+              <div style={{ textAlign: 'center', padding: '2rem 0' }}>
+                <div style={{ background: 'var(--success)', color: 'white', width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
+                  <ShoppingCart size={32} />
+                </div>
+                <h2>Sale Completed!</h2>
+                <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>The transaction has been recorded successfully.</p>
+                <button onClick={resetPOS} style={{ width: '100%', padding: '1rem' }}>
+                  New Sale
+                </button>
               </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Tip ($)</label>
-                <input 
-                  type="number" 
-                  min="0"
-                  step="0.01"
-                  value={tipAmount || ''}
-                  onChange={e => setTipAmount(parseFloat(e.target.value) || 0)}
-                  placeholder="0.00"
-                />
-              </div>
+            ) : (
+              <>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                  <h2>Finalize Sale</h2>
+                  <button className="secondary" style={{ padding: '0.5rem' }} onClick={() => setShowCheckout(false)}>
+                    <X size={20} />
+                  </button>
+                </div>
 
-              <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1rem', marginTop: '0.5rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Customer Email (Receipt)</label>
-                <input 
-                  type="email" 
-                  placeholder="name@example.com" 
-                  value={customerEmail}
-                  onChange={e => setCustomerEmail(e.target.value)}
-                />
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Customer Phone</label>
-                <input 
-                  type="tel" 
-                  placeholder="+1 (555) 000-0000" 
-                  value={customerPhone}
-                  onChange={e => setCustomerPhone(e.target.value)}
-                />
-              </div>
+                <div style={{ display: 'grid', gap: '1rem' }}>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Discount ($)</label>
+                    <input 
+                      type="number" 
+                      min="0"
+                      step="0.01"
+                      value={discountAmount || ''}
+                      onChange={e => setDiscountAmount(parseFloat(e.target.value) || 0)}
+                      placeholder="0.00"
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Tip ($)</label>
+                    <input 
+                      type="number" 
+                      min="0"
+                      step="0.01"
+                      value={tipAmount || ''}
+                      onChange={e => setTipAmount(parseFloat(e.target.value) || 0)}
+                      placeholder="0.00"
+                    />
+                  </div>
 
-              <div style={{ background: 'var(--primary)', color: 'white', padding: '1.5rem', borderRadius: '1rem', textAlign: 'center', marginTop: '1rem' }}>
-                <div style={{ opacity: 0.8, fontSize: '0.9rem' }}>Amount Due</div>
-                <div style={{ fontSize: '2.5rem', fontWeight: '900' }}>${total.toFixed(2)}</div>
-              </div>
+                  <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1rem', marginTop: '0.5rem' }}>
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Customer Email (Receipt)</label>
+                    <input 
+                      type="email" 
+                      placeholder="name@example.com" 
+                      value={customerEmail}
+                      onChange={e => setCustomerEmail(e.target.value)}
+                    />
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Customer Phone</label>
+                    <input 
+                      type="tel" 
+                      placeholder="+1 (555) 000-0000" 
+                      value={customerPhone}
+                      onChange={e => setCustomerPhone(e.target.value)}
+                    />
+                  </div>
 
-              <button onClick={submitSale} style={{ width: '100%', padding: '1.25rem', fontSize: '1.25rem', marginTop: '0.5rem' }}>
-                Complete Payment
-              </button>
-            </div>
+                  <div style={{ background: 'var(--primary)', color: 'white', padding: '1.5rem', borderRadius: '1rem', textAlign: 'center', marginTop: '1rem' }}>
+                    <div style={{ opacity: 0.8, fontSize: '0.9rem' }}>Amount Due</div>
+                    <div style={{ fontSize: '2.5rem', fontWeight: '900' }}>${total.toFixed(2)}</div>
+                  </div>
+
+                  <button onClick={submitSale} style={{ width: '100%', padding: '1.25rem', fontSize: '1.25rem', marginTop: '0.5rem' }}>
+                    Complete Payment
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
