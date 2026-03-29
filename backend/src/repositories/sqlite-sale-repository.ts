@@ -60,4 +60,28 @@ export class SQLiteSaleRepository implements ISaleRepository {
       tips: result?.tips || 0
     };
   }
+
+  async findDetailedInRange(startDate: string, endDate: string, shopId: number, barberId?: number): Promise<(Sale & { items: SaleItem[] })[]> {
+    let query = 'SELECT * FROM sales WHERE date(timestamp) BETWEEN ? AND ? AND shop_id = ?';
+    const params: any[] = [startDate, endDate, shopId];
+
+    if (barberId) {
+      query += ' AND barber_id = ?';
+      params.push(barberId);
+    }
+
+    query += ' ORDER BY timestamp DESC';
+
+    const sales = this.db.prepare(query).all(...params) as Sale[];
+    const salesWithItems: (Sale & { items: SaleItem[] })[] = [];
+
+    const itemQuery = this.db.prepare('SELECT * FROM sale_items WHERE sale_id = ?');
+
+    for (const sale of sales) {
+      const items = itemQuery.all(sale.id) as SaleItem[];
+      salesWithItems.push({ ...sale, items });
+    }
+
+    return salesWithItems;
+  }
 }

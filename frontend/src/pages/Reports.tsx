@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../api/apiClient';
-import { Calendar, DollarSign, TrendingUp, Receipt, Users, PieChart, ArrowUpRight, ArrowDownRight, Briefcase } from 'lucide-react';
+import { Calendar, DollarSign, TrendingUp, Receipt, Users, PieChart, ArrowUpRight, ArrowDownRight, Briefcase, Download } from 'lucide-react';
 
 export default function Reports() {
   const [report, setReport] = useState<any>(null);
@@ -32,6 +32,38 @@ export default function Reports() {
       .catch(() => setReport(null));
   }, [date, rangeType]);
 
+  const exportData = async () => {
+    let startDate = date;
+    let endDate = date;
+
+    if (rangeType === 'week') {
+      const d = new Date(date);
+      const day = d.getDay();
+      const diff = d.getDate() - day;
+      startDate = new Date(new Date(date).setDate(diff)).toISOString().split('T')[0];
+      endDate = new Date(new Date(date).setDate(diff + 6)).toISOString().split('T')[0];
+    } else if (rangeType === 'month') {
+      const d = new Date(date);
+      startDate = new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split('T')[0];
+      endDate = new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().split('T')[0];
+    }
+
+    try {
+      const response = await apiClient.get(`/reports/export/sales?startDate=${startDate}&endDate=${endDate}`, {
+        responseType: 'blob'
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `sales-report-${startDate}-to-${endDate}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      alert('Failed to export report');
+    }
+  };
+
   const maxTotalPay = report?.commissions?.reduce((max: number, c: any) => 
     Math.max(max, c.service_commission + c.product_commission + c.tips), 0) || 1;
 
@@ -47,6 +79,9 @@ export default function Reports() {
         </div>
         
         <div className="report-controls" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <button onClick={exportData} className="secondary" style={{ gap: '0.5rem', fontWeight: '700' }}>
+            <Download size={18} /> <span className="hide-mobile">Export CSV</span>
+          </button>
           <div style={{ display: 'flex', background: '#f3f4f6', borderRadius: '0.75rem', padding: '0.25rem', border: '1px solid var(--border)' }}>
             {(['day', 'week', 'month'] as const).map(type => (
               <button 

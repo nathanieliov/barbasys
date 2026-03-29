@@ -25,6 +25,7 @@ import { GetService } from './use-cases/get-service.js';
 import { CreateAppointment } from './use-cases/booking/create-appointment.js';
 import { ProcessSale } from './use-cases/pos/ProcessSale.js';
 import { GetCommissionsReport } from './use-cases/reports/GetCommissionsReport.js';
+import { ExportSalesCSV } from './use-cases/reports/ExportSalesCSV.js';
 import { GetInventoryIntelligence } from './use-cases/inventory/get-inventory-intelligence.js';
 
 import { protect, authorize } from './middleware/auth-middleware.js';
@@ -56,6 +57,7 @@ const getService = new GetService(serviceRepo);
 const createAppointment = new CreateAppointment(appointmentRepo, shiftRepo, serviceRepo);
 const processSale = new ProcessSale(saleRepo, customerRepo, barberRepo, productRepo);
 const getCommissionsReport = new GetCommissionsReport(saleRepo, barberRepo, expenseRepo);
+const exportSalesCSV = new ExportSalesCSV(saleRepo);
 const getInventoryIntelligence = new GetInventoryIntelligence(productRepo);
 
 app.use(cors());
@@ -570,6 +572,28 @@ app.get('/api/reports', protect, authorize('OWNER', 'MANAGER', 'BARBER'), async 
     res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/reports/export/sales', protect, authorize('OWNER', 'MANAGER'), async (req, res) => {
+  const shopId = req.user?.shop_id;
+  const startDate = (req.query.startDate as string) || new Date().toISOString().split('T')[0];
+  const endDate = (req.query.endDate as string) || startDate;
+  const barberId = req.query.barberId ? parseInt(req.query.barberId as string) : undefined;
+
+  try {
+    const csv = await exportSalesCSV.execute({
+      startDate,
+      endDate,
+      shop_id: shopId!,
+      barber_id: barberId
+    });
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename=sales-report-${startDate}-to-${endDate}.csv`);
+    res.status(200).send(csv);
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
   }
 });
 
