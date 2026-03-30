@@ -3,13 +3,13 @@ import path from 'path';
 
 export default defineConfig({
   testDir: './e2e',
-  fullyParallel: false,
+  fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: 1, 
+  workers: process.env.CI ? 1 : undefined, 
   reporter: 'html',
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: 'http://localhost:4173', // Vite preview port
     trace: 'on-first-retry',
   },
   projects: [
@@ -27,10 +27,9 @@ export default defineConfig({
     },
   ],
   webServer: {
-    // Run the built backend (fast) and the frontend dev server (fast)
-    command: 'rm -f test_e2e.db && DATABASE_URL="/Users/nathaniel/dev/workspace/projects/barbasys/test_e2e.db" concurrently "npm run start --prefix backend" "npm run dev --prefix frontend"',
-    url: 'http://localhost:5173',
+    command: 'rm -f test_e2e.db && DATABASE_URL="/Users/nathaniel/dev/workspace/projects/barbasys/test_e2e.db" concurrently "npm run start --prefix backend" "npm run build --prefix frontend && npm run preview --prefix frontend"',
+    url: 'http://localhost:4173',
     reuseExistingServer: !process.env.CI,
-    timeout: 60 * 1000, // Reduced timeout now that backend is built
+    timeout: 120 * 1000,
   },
 });

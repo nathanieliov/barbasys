@@ -65,7 +65,7 @@ export default function Reports() {
   };
 
   const maxTotalPay = report?.commissions?.reduce((max: number, c: any) => 
-    Math.max(max, c.service_commission + c.product_commission + c.tips), 0) || 1;
+    Math.max(max, c.total_payout), 0) || 1;
 
   const netProfit = (report?.revenue || 0) - (report?.expenses || 0);
   const profitMargin = report?.revenue ? (netProfit / report.revenue) * 100 : 0;
@@ -173,8 +173,7 @@ export default function Reports() {
           
           <div style={{ display: 'grid', gap: '1.5rem' }}>
             {report?.commissions?.map((c: any) => {
-              const totalPay = c.service_commission + c.product_commission + c.tips;
-              const percentage = Math.max(2, (totalPay / maxTotalPay) * 100);
+              const percentage = Math.max(2, (c.total_payout / maxTotalPay) * 100);
               return (
                 <div key={c.name}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
@@ -184,7 +183,7 @@ export default function Reports() {
                       </div>
                       <span style={{ fontWeight: '700' }}>{c.name}</span>
                     </div>
-                    <span style={{ fontWeight: '800', color: 'var(--text-main)' }}>${totalPay.toFixed(2)}</span>
+                    <span style={{ fontWeight: '800', color: 'var(--text-main)' }}>${c.total_payout.toFixed(2)}</span>
                   </div>
                   <div style={{ width: '100%', background: '#f3f4f6', borderRadius: '999px', height: '10px', overflow: 'hidden', border: '1px solid var(--border)' }}>
                     <div style={{ width: `${percentage}%`, background: 'linear-gradient(to right, var(--primary), #818cf8)', height: '100%', borderRadius: '999px', transition: 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)' }}></div>
@@ -210,7 +209,6 @@ export default function Reports() {
           
           <div style={{ display: 'grid', gap: '1rem' }}>
             {report?.commissions?.map((c: any) => {
-              const totalPay = c.service_commission + c.product_commission + c.tips;
               return (
                 <div key={c.name} style={{ background: '#f9fafb', padding: '1rem', borderRadius: '0.75rem', border: '1px solid var(--border)' }}>
                   <div style={{ fontWeight: '800', marginBottom: '0.75rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>{c.name}</div>
@@ -230,7 +228,7 @@ export default function Reports() {
                   </div>
                   <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px dashed var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: '600' }}>Total Payout</span>
-                    <span style={{ fontWeight: '900', color: 'var(--primary)' }}>${totalPay.toFixed(2)}</span>
+                    <span style={{ fontWeight: '900', color: 'var(--primary)' }}>${c.total_payout.toFixed(2)}</span>
                   </div>
                 </div>
               );
