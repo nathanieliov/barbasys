@@ -33,6 +33,9 @@ import { CreateSupplier } from './use-cases/suppliers/CreateSupplier.js';
 import { ListSuppliers } from './use-cases/suppliers/ListSuppliers.js';
 import { UpdateSupplier } from './use-cases/suppliers/UpdateSupplier.js';
 import { DeleteSupplier } from './use-cases/suppliers/DeleteSupplier.js';
+import { ListUsers } from './use-cases/ListUsers.js';
+import { UpdateUser } from './use-cases/UpdateUser.js';
+import { DeleteUser } from './use-cases/DeleteUser.js';
 
 import { protect, authorize } from './middleware/auth-middleware.js';
 
@@ -71,6 +74,9 @@ const createSupplier = new CreateSupplier(supplierRepo);
 const listSuppliers = new ListSuppliers(supplierRepo);
 const updateSupplier = new UpdateSupplier(supplierRepo);
 const deleteSupplier = new DeleteSupplier(supplierRepo);
+const listUsers = new ListUsers(userRepo);
+const updateUser = new UpdateUser(userRepo);
+const deleteUser = new DeleteUser(userRepo);
 
 app.use(cors());
 app.use(express.json());
@@ -93,6 +99,35 @@ app.post('/api/auth/register', protect, authorize('OWNER'), async (req, res) => 
   try {
     const result = await registerUseCase.execute(req.body);
     res.status(201).json(result);
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// User Management
+app.get('/api/users', protect, authorize('OWNER'), async (req, res) => {
+  const shopId = req.user?.shop_id;
+  try {
+    const users = await listUsers.execute(shopId!);
+    res.json(users);
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to fetch users' });
+  }
+});
+
+app.put('/api/users/:id', protect, authorize('OWNER'), async (req, res) => {
+  try {
+    await updateUser.execute({ ...req.body, id: Number(req.params.id) });
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.delete('/api/users/:id', protect, authorize('OWNER'), async (req, res) => {
+  try {
+    await deleteUser.execute(Number(req.params.id));
+    res.json({ success: true });
   } catch (err: any) {
     res.status(400).json({ error: err.message });
   }
