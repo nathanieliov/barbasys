@@ -24,7 +24,14 @@ describe('Barber CRUD Use Cases', () => {
   });
 
   it('should delete a barber', async () => {
-    vi.mocked(mockRepo.findById).mockResolvedValue({ id: 1 } as Barber);
+    vi.mocked(mockRepo.findById).mockResolvedValue({ 
+      id: 1, 
+      name: 'Barber 1', 
+      service_commission_rate: 0.6, 
+      product_commission_rate: 0.1, 
+      shop_id: 1, 
+      is_active: 1 
+    });
     vi.mocked(mockRepo.delete).mockResolvedValue();
 
     await deleteBarber.execute(1);

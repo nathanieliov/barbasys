@@ -17,6 +17,7 @@ export interface Barber {
   service_commission_rate: number;
   product_commission_rate: number;
   shop_id: number | null;
+  is_active: number;
 }
 
 export interface Product {
@@ -27,6 +28,7 @@ export interface Product {
   min_stock_threshold: number;
   supplier_id: number | null;
   shop_id: number | null;
+  is_active: number;
 }
 
 export interface Supplier {
@@ -45,6 +47,7 @@ export interface Service {
   price: number;
   duration_minutes: number;
   shop_id: number | null;
+  is_active: number;
 }
 
 export interface Customer {

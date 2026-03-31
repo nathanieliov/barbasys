@@ -23,7 +23,7 @@ describe('Service CRUD Use Cases', () => {
   const deleteService = new DeleteService(mockRepo);
 
   it('should create a service', async () => {
-    const serviceData = { name: 'New Service', price: 50, duration_minutes: 30 };
+    const serviceData = { name: 'New Service', price: 50, duration_minutes: 30, shop_id: 1, is_active: 1 };
     vi.mocked(mockRepo.create).mockResolvedValue(1);
 
     const id = await createService.execute(serviceData);
@@ -63,7 +63,14 @@ describe('Service CRUD Use Cases', () => {
   });
 
   it('should delete a service', async () => {
-    vi.mocked(mockRepo.findById).mockResolvedValue({ id: 1 } as Service);
+    vi.mocked(mockRepo.findById).mockResolvedValue({ 
+      id: 1, 
+      name: 'Service 1', 
+      price: 50, 
+      duration_minutes: 30, 
+      shop_id: 1, 
+      is_active: 1 
+    });
     vi.mocked(mockRepo.delete).mockResolvedValue();
 
     await deleteService.execute(1);

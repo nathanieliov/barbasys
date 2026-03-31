@@ -157,7 +157,7 @@ app.get('/api/barbers', protect, async (req, res) => {
 });
 
 app.get('/api/barbers/:id/shifts', protect, (req, res) => {
-  const barberId = req.params.id;
+  const barberId = req.params.id as string;
   if (req.user?.role === 'BARBER' && req.user.barber_id !== parseInt(barberId)) {
     return res.status(403).json({ error: 'Cannot view shifts for another barber' });
   }
@@ -186,7 +186,7 @@ app.post('/api/barbers/:id/shifts', protect, authorize('OWNER', 'MANAGER'), (req
 });
 
 app.get('/api/barbers/:id/time-off', protect, (req, res) => {
-  const barberId = req.params.id;
+  const barberId = req.params.id as string;
   if (req.user?.role === 'BARBER' && req.user.barber_id !== parseInt(barberId)) {
     return res.status(403).json({ error: 'Cannot view time off for another barber' });
   }

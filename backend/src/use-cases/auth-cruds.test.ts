@@ -29,7 +29,14 @@ describe('Auth Use Cases', () => {
 
       vi.mocked(mockUserRepo.findByUsername).mockResolvedValue(null);
       vi.mocked(mockUserRepo.findByEmail).mockResolvedValue(null);
-      vi.mocked(mockUserRepo.create).mockResolvedValue({ id: 1, ...userData, password_hash: 'hashed' });
+      vi.mocked(mockUserRepo.create).mockResolvedValue({ 
+        id: 1, 
+        ...userData, 
+        password_hash: 'hashed',
+        barber_id: null,
+        shop_id: null,
+        created_at: new Date().toISOString()
+      });
 
       const result = await registerUseCase.execute(userData);
       expect(result.username).toBe('testuser');
@@ -37,13 +44,13 @@ describe('Auth Use Cases', () => {
     });
 
     it('should throw if username exists', async () => {
-      vi.mocked(mockUserRepo.findByUsername).mockResolvedValue({ id: 1 } as any);
+      vi.mocked(mockUserRepo.findByUsername).mockResolvedValue({ id: 1, username: 'exists', email: 'ex@ex.com', password_hash: 'h', role: 'BARBER', barber_id: null, shop_id: 1, created_at: '' } as any);
       await expect(registerUseCase.execute({ username: 'exists' } as any)).rejects.toThrow('Username already exists');
     });
 
     it('should throw if email exists', async () => {
       vi.mocked(mockUserRepo.findByUsername).mockResolvedValue(null);
-      vi.mocked(mockUserRepo.findByEmail).mockResolvedValue({ id: 1 } as any);
+      vi.mocked(mockUserRepo.findByEmail).mockResolvedValue({ id: 1, username: 'exists', email: 'exists@example.com', password_hash: 'h', role: 'BARBER', barber_id: null, shop_id: 1, created_at: '' } as any);
       await expect(registerUseCase.execute({ username: 'new', email: 'exists@example.com' } as any)).rejects.toThrow('Email already exists');
     });
   });
@@ -54,7 +61,16 @@ describe('Auth Use Cases', () => {
       const salt = await bcrypt.genSalt(10);
       const hash = await bcrypt.hash(password, salt);
       
-      const mockUser = { id: 1, username: 'user1', password_hash: hash, role: 'OWNER' as UserRole, shop_id: 1 };
+      const mockUser = { 
+        id: 1, 
+        username: 'user1', 
+        password_hash: hash, 
+        role: 'OWNER' as UserRole, 
+        shop_id: 1,
+        email: 'user1@example.com',
+        barber_id: null,
+        created_at: new Date().toISOString()
+      };
       vi.mocked(mockUserRepo.findByUsername).mockResolvedValue(mockUser);
 
       const result = await loginUseCase.execute('user1', password);
@@ -68,7 +84,16 @@ describe('Auth Use Cases', () => {
     });
 
     it('should throw for invalid password', async () => {
-      const mockUser = { id: 1, username: 'user1', password_hash: 'wronghash', role: 'OWNER' as UserRole };
+      const mockUser = { 
+        id: 1, 
+        username: 'user1', 
+        password_hash: 'wronghash', 
+        role: 'OWNER' as UserRole,
+        email: 'user1@example.com',
+        barber_id: null,
+        shop_id: 1,
+        created_at: new Date().toISOString()
+      };
       vi.mocked(mockUserRepo.findByUsername).mockResolvedValue(mockUser);
       await expect(loginUseCase.execute('user1', 'wrongpass')).rejects.toThrow('Invalid credentials');
     });

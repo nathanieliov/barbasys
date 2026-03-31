@@ -14,7 +14,8 @@ describe('SQLiteServiceRepository', () => {
       name: 'Test Service', 
       price: 25, 
       duration_minutes: 30,
-      shop_id: 1 
+      shop_id: 1,
+      is_active: 1
     });
     expect(id).toBeGreaterThan(0);
 
@@ -29,8 +30,8 @@ describe('SQLiteServiceRepository', () => {
   });
 
   it('should update a service', async () => {
-    const id = await repo.create({ name: 'Old', price: 10, duration_minutes: 10, shop_id: 1 });
-    await repo.update({ id, name: 'New', price: 20, duration_minutes: 20, shop_id: 1 });
+    const id = await repo.create({ name: 'Old', price: 10, duration_minutes: 10, shop_id: 1, is_active: 1 });
+    await repo.update({ id, name: 'New', price: 20, duration_minutes: 20, shop_id: 1, is_active: 1 });
     
     const service = await repo.findById(id);
     expect(service?.name).toBe('New');
@@ -38,7 +39,7 @@ describe('SQLiteServiceRepository', () => {
   });
 
   it('should delete (deactivate) a service', async () => {
-    const id = await repo.create({ name: 'To Delete', price: 10, duration_minutes: 10, shop_id: 1 });
+    const id = await repo.create({ name: 'To Delete', price: 10, duration_minutes: 10, shop_id: 1, is_active: 1 });
     await repo.delete(id);
     
     const service = await repo.findById(id);

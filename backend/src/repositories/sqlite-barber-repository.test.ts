@@ -15,7 +15,8 @@ describe('SQLiteBarberRepository', () => {
       name: 'Test Barber', 
       service_commission_rate: 0.6, 
       product_commission_rate: 0.1, 
-      shop_id: 1 
+      shop_id: 1,
+      is_active: 1
     });
     expect(id).toBeGreaterThan(0);
 
@@ -34,7 +35,8 @@ describe('SQLiteBarberRepository', () => {
       name: 'To Delete', 
       service_commission_rate: 0.5, 
       product_commission_rate: 0.1, 
-      shop_id: 1 
+      shop_id: 1,
+      is_active: 1
     });
     
     await repo.delete(id);

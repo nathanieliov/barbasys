@@ -14,7 +14,9 @@ describe('SQLiteProductRepository', () => {
       name: 'Test Product', 
       price: 15, 
       min_stock_threshold: 2,
-      shop_id: 1 
+      shop_id: 1,
+      supplier_id: null,
+      is_active: 1
     });
     expect(id).toBeGreaterThan(0);
 
@@ -29,8 +31,24 @@ describe('SQLiteProductRepository', () => {
   });
 
   it('should update a product', async () => {
-    const id = await repo.create({ name: 'Old', price: 10, min_stock_threshold: 1, shop_id: 1 });
-    await repo.update({ id, name: 'New', price: 20, min_stock_threshold: 2, shop_id: 1, stock: 0 });
+    const id = await repo.create({ 
+      name: 'Old', 
+      price: 10, 
+      min_stock_threshold: 1, 
+      shop_id: 1,
+      supplier_id: null,
+      is_active: 1
+    });
+    await repo.update({ 
+      id, 
+      name: 'New', 
+      price: 20, 
+      min_stock_threshold: 2, 
+      shop_id: 1, 
+      stock: 0,
+      supplier_id: null,
+      is_active: 1
+    });
     
     const product = await repo.findById(id);
     expect(product?.name).toBe('New');
@@ -38,7 +56,14 @@ describe('SQLiteProductRepository', () => {
   });
 
   it('should delete (deactivate) a product', async () => {
-    const id = await repo.create({ name: 'To Delete', price: 10, min_stock_threshold: 1, shop_id: 1 });
+    const id = await repo.create({ 
+      name: 'To Delete', 
+      price: 10, 
+      min_stock_threshold: 1, 
+      shop_id: 1,
+      supplier_id: null,
+      is_active: 1
+    });
     await repo.delete(id);
     
     const product = await repo.findById(id);
@@ -46,7 +71,14 @@ describe('SQLiteProductRepository', () => {
   });
 
   it('should handle stock reduction and restock', async () => {
-    const id = await repo.create({ name: 'Stock Test', price: 10, min_stock_threshold: 1, shop_id: 1 });
+    const id = await repo.create({ 
+      name: 'Stock Test', 
+      price: 10, 
+      min_stock_threshold: 1, 
+      shop_id: 1,
+      supplier_id: null,
+      is_active: 1
+    });
     await repo.restock(id, 10, 'Initial restock');
     
     let product = await repo.findById(id);

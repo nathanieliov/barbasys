@@ -19,7 +19,7 @@ describe('User Management Use Cases', () => {
 
   it('should list all users for a shop', async () => {
     const mockUsers: User[] = [
-      { id: 1, username: 'user1', email: 'u1@ex.com', role: 'OWNER', barber_id: null, shop_id: 1, created_at: '' }
+      { id: 1, username: 'user1', email: 'u1@ex.com', role: 'OWNER', barber_id: null, shop_id: 1, created_at: '', password_hash: 'hash' }
     ];
     vi.mocked(mockUserRepo.findAll).mockResolvedValue(mockUsers);
 
@@ -35,7 +35,16 @@ describe('User Management Use Cases', () => {
   });
 
   it('should delete a user', async () => {
-    vi.mocked(mockUserRepo.findById).mockResolvedValue({ id: 1 } as any);
+    vi.mocked(mockUserRepo.findById).mockResolvedValue({ 
+      id: 1, 
+      username: 'user1', 
+      email: 'u1@ex.com', 
+      role: 'OWNER', 
+      barber_id: null, 
+      shop_id: 1, 
+      created_at: '', 
+      password_hash: 'hash' 
+    });
     vi.mocked(mockUserRepo.delete).mockResolvedValue();
     await deleteUser.execute(1);
     expect(mockUserRepo.delete).toHaveBeenCalledWith(1);
