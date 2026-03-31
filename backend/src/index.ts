@@ -36,6 +36,7 @@ import { DeleteSupplier } from './use-cases/suppliers/DeleteSupplier.js';
 import { ListUsers } from './use-cases/ListUsers.js';
 import { UpdateUser } from './use-cases/UpdateUser.js';
 import { DeleteUser } from './use-cases/DeleteUser.js';
+import { UpdateProfile } from './use-cases/UpdateProfile.js';
 
 import { protect, authorize } from './middleware/auth-middleware.js';
 
@@ -77,6 +78,7 @@ const deleteSupplier = new DeleteSupplier(supplierRepo);
 const listUsers = new ListUsers(userRepo);
 const updateUser = new UpdateUser(userRepo);
 const deleteUser = new DeleteUser(userRepo);
+const updateProfile = new UpdateProfile(userRepo);
 
 app.use(cors());
 app.use(express.json());
@@ -135,6 +137,16 @@ app.delete('/api/users/:id', protect, authorize('OWNER'), async (req, res) => {
 
 app.get('/api/auth/me', protect, async (req, res) => {
   res.json(req.user);
+});
+
+app.patch('/api/auth/profile', protect, async (req, res) => {
+  const userId = req.user?.id;
+  try {
+    await updateProfile.execute({ ...req.body, id: userId! });
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
 });
 
 // Barbers
