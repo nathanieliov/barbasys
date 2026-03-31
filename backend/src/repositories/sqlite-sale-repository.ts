@@ -45,11 +45,11 @@ export class SQLiteSaleRepository implements ISaleRepository {
     return (result as Sale) || null;
   }
 
-  async findInRange(startDate: string, endDate: string, shopId: number, barberId?: number): Promise<{ total: number, tips: number }> {
+  async findInRange(startDate: string, endDate: string, shopId: number, barberId?: number | null): Promise<{ total: number, tips: number }> {
     let query = 'SELECT SUM(total_amount) as total, SUM(tip_amount) as tips FROM sales WHERE date(timestamp) BETWEEN ? AND ? AND shop_id = ?';
     const params: any[] = [startDate, endDate, shopId];
 
-    if (barberId) {
+    if (barberId !== undefined) {
       query += ' AND barber_id = ?';
       params.push(barberId);
     }
@@ -61,11 +61,11 @@ export class SQLiteSaleRepository implements ISaleRepository {
     };
   }
 
-  async findDetailedInRange(startDate: string, endDate: string, shopId: number, barberId?: number): Promise<(Sale & { items: SaleItem[] })[]> {
+  async findDetailedInRange(startDate: string, endDate: string, shopId: number, barberId?: number | null): Promise<(Sale & { items: SaleItem[] })[]> {
     let query = 'SELECT * FROM sales WHERE date(timestamp) BETWEEN ? AND ? AND shop_id = ?';
     const params: any[] = [startDate, endDate, shopId];
 
-    if (barberId) {
+    if (barberId !== undefined) {
       query += ' AND barber_id = ?';
       params.push(barberId);
     }

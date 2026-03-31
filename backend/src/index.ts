@@ -270,7 +270,7 @@ app.get('/api/customers/:id', protect, (req, res) => {
   }
 
   const historyQuery = `
-    SELECT s.id as sale_id, s.timestamp, s.total_amount, b.name as barber_name,
+    SELECT s.id as sale_id, s.timestamp, s.total_amount, s.barber_id, b.name as barber_name,
            (SELECT group_concat(name, '||') FROM sale_items si JOIN services srv ON si.item_id = srv.id WHERE si.sale_id = s.id AND si.type = 'service') as services,
            (SELECT group_concat(name, '||') FROM sale_items si JOIN products p ON si.item_id = p.id WHERE si.sale_id = s.id AND si.type = 'product') as products
     FROM sales s
@@ -279,12 +279,11 @@ app.get('/api/customers/:id', protect, (req, res) => {
   `;
   const historyParams: any[] = [id];
 
-  let history = db.prepare(historyQuery).all(...historyParams);
+  let history = db.prepare(historyQuery).all(...historyParams) as any[];
   
-  // If barber, maybe filter history to only their own?
-  // User said "Check only it's own ... customers", let's be strict.
+  // If barber, filter history to only their own
   if (req.user?.role === 'BARBER') {
-    history = (history as any[]).filter(h => h.barber_id === req.user?.barber_id);
+    history = history.filter(h => h.barber_id === req.user?.barber_id);
   }
 
   res.json({ ...customer, history });
@@ -686,37 +685,25 @@ app.post('/api/sales', protect, async (req, res) => {
   }
 });
 
-app.get('/api/sales', protect, (req, res) => {
+app.get('/api/sales', protect, async (req, res) => {
   const shopId = req.user?.shop_id;
   const { startDate, endDate, barberId: queryBarberId } = req.query;
 
-  let query = `
-    SELECT s.*, COALESCE(s.barber_name, b.name) as barber_name
-    FROM sales s
-    LEFT JOIN barbers b ON s.barber_id = b.id
-    WHERE s.shop_id = ?
-  `;
-  const params: any[] = [shopId];
-
-  // Role-based enforcement
+  let barberIdToFilter: number | undefined | null = undefined;
   if (req.user?.role === 'BARBER') {
-    query += " AND s.barber_id = ?";
-    params.push(req.user.barber_id);
+    // If it's a barber, we MUST filter. If barber_id is missing, use -1 to ensure empty results.
+    barberIdToFilter = req.user.barber_id ?? -1;
   } else if (queryBarberId) {
-    // Managers/Owners can filter by barber
-    query += " AND s.barber_id = ?";
-    params.push(parseInt(queryBarberId as string));
+    barberIdToFilter = parseInt(queryBarberId as string);
   }
-
-  if (startDate && endDate) {
-    query += " AND s.timestamp BETWEEN ? AND ?";
-    params.push(`${startDate} 00:00:00`, `${endDate} 23:59:59`);
-  }
-
-  query += " ORDER BY s.timestamp DESC LIMIT 100";
 
   try {
-    const sales = db.prepare(query).all(...params);
+    const sales = await saleRepo.findDetailedInRange(
+      (startDate as string) || '2000-01-01',
+      (endDate as string) || '2099-12-31',
+      shopId!,
+      barberIdToFilter
+    );
     res.json(sales);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch sales history' });
@@ -771,7 +758,7 @@ app.get('/api/reports', protect, authorize('OWNER', 'MANAGER', 'BARBER'), async 
   const endDate = (req.query.endDate as string) || startDate;
   
   const isBarber = req.user?.role === 'BARBER';
-  const barberId = req.user?.barber_id;
+  const barberId = isBarber ? (req.user?.barber_id ?? -1) : undefined;
 
   if (!shopId) return res.status(401).json({ error: 'Shop not assigned' });
 
@@ -780,7 +767,7 @@ app.get('/api/reports', protect, authorize('OWNER', 'MANAGER', 'BARBER'), async 
       startDate,
       endDate,
       shop_id: shopId,
-      barber_id: barberId || undefined,
+      barber_id: barberId,
       isBarber
     });
     res.json(result);
@@ -839,7 +826,7 @@ app.get('/api/reports/analytics', protect, authorize('OWNER', 'MANAGER', 'BARBER
   const shopId = req.user?.shop_id;
   const { startDate, endDate } = req.query;
   const isBarber = req.user?.role === 'BARBER';
-  const barberId = req.user?.barber_id;
+  const barberId = isBarber ? (req.user?.barber_id ?? -1) : undefined;
   
   // 1. Revenue by Hour (Heatmap data)
   let hourlyQuery = `
