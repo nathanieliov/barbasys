@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react';
 import apiClient from '../api/apiClient';
 import { Calendar as CalendarIcon, Clock, Scissors, User, X, PlusCircle, CheckCircle, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 
 export default function Schedule() {
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [appointments, setAppointments] = useState<any[]>([]);
   const [barbers, setBarbers] = useState<any[]>([]);
@@ -26,7 +28,12 @@ export default function Schedule() {
 
   const fetchData = () => {
     apiClient.get(`/appointments?date=${date}`).then(res => setAppointments(res.data));
-    apiClient.get('/barbers').then(res => setBarbers(res.data));
+    apiClient.get('/barbers').then(res => {
+      setBarbers(res.data);
+      if (user?.role === 'BARBER' && user.barber_id) {
+        setSelectedBarber(user.barber_id.toString());
+      }
+    });
     apiClient.get('/customers').then(res => setCustomers(res.data));
     apiClient.get('/services').then(res => setServices(res.data));
   };
@@ -201,7 +208,12 @@ export default function Schedule() {
                 <form onSubmit={handleBook}>
                   <div style={{ marginBottom: '1rem' }}>
                     <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Select Professional</label>
-                    <select value={selectedBarber} onChange={e => setSelectedBarber(e.target.value)} required>
+                    <select 
+                      value={selectedBarber} 
+                      onChange={e => setSelectedBarber(e.target.value)} 
+                      required
+                      disabled={user?.role === 'BARBER'}
+                    >
                       <option value="">Select Barber</option>
                       {barbers.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                     </select>

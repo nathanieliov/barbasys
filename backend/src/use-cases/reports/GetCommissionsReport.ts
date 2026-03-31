@@ -22,7 +22,7 @@ export class GetCommissionsReport {
 
     const revenueData = await this.saleRepo.findInRange(startDate, endDate, shop_id, isBarber ? barber_id : undefined);
     const commissions = await this.barberRepo.getCommissions(startDate, endDate, shop_id, isBarber ? barber_id : undefined);
-    const expenseTotal = await this.expenseRepo.getTotalInRange(startDate, endDate, shop_id);
+    const expenseTotal = isBarber ? 0 : await this.expenseRepo.getTotalInRange(startDate, endDate, shop_id);
 
     return {
       startDate,

@@ -3,8 +3,10 @@ import apiClient from '../api/apiClient';
 import { Trash2, ShoppingCart, User, Plus, X } from 'lucide-react';
 import { calculatePOSTotals } from '../utils/pos';
 import { useLocation } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 
 export default function POS() {
+  const { user } = useAuth();
   const location = useLocation();
   const appointmentData = location.state;
 
@@ -23,7 +25,12 @@ export default function POS() {
   const [saleSuccess, setSaleSuccess] = useState(false);
 
   useEffect(() => {
-    apiClient.get('/barbers').then(res => setBarbers(res.data)).catch(() => {});
+    apiClient.get('/barbers').then(res => {
+      setBarbers(res.data);
+      if (user?.role === 'BARBER' && user.barber_id) {
+        setSelectedBarber(user.barber_id.toString());
+      }
+    }).catch(() => {});
     apiClient.get('/services').then(res => setServices(res.data)).catch(() => {});
     apiClient.get('/inventory').then(res => setProducts(res.data)).catch(() => {});
 
@@ -108,6 +115,7 @@ export default function POS() {
                 value={selectedBarber} 
                 onChange={e => setSelectedBarber(e.target.value)}
                 style={{ paddingLeft: '2.5rem' }}
+                disabled={user?.role === 'BARBER'}
               >
                 <option value="">Choose barber...</option>
                 {barbers.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}

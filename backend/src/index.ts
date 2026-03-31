@@ -141,7 +141,15 @@ app.get('/api/auth/me', protect, async (req, res) => {
 app.get('/api/barbers', protect, async (req, res) => {
   const shopId = req.user?.shop_id;
   try {
-    const barbers = await db.prepare('SELECT * FROM barbers WHERE shop_id = ? AND is_active = 1').all(shopId);
+    let query = 'SELECT * FROM barbers WHERE shop_id = ? AND is_active = 1';
+    const params: any[] = [shopId];
+
+    if (req.user?.role === 'BARBER') {
+      query += ' AND id = ?';
+      params.push(req.user.barber_id);
+    }
+
+    const barbers = await db.prepare(query).all(...params);
     res.json(barbers);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch barbers' });
@@ -149,7 +157,11 @@ app.get('/api/barbers', protect, async (req, res) => {
 });
 
 app.get('/api/barbers/:id/shifts', protect, (req, res) => {
-  const shifts = db.prepare('SELECT * FROM barber_shifts WHERE barber_id = ?').all(req.params.id);
+  const barberId = req.params.id;
+  if (req.user?.role === 'BARBER' && req.user.barber_id !== parseInt(barberId)) {
+    return res.status(403).json({ error: 'Cannot view shifts for another barber' });
+  }
+  const shifts = db.prepare('SELECT * FROM barber_shifts WHERE barber_id = ?').all(barberId);
   res.json(shifts);
 });
 
@@ -174,7 +186,11 @@ app.post('/api/barbers/:id/shifts', protect, authorize('OWNER', 'MANAGER'), (req
 });
 
 app.get('/api/barbers/:id/time-off', protect, (req, res) => {
-  const timeOff = db.prepare('SELECT * FROM barber_time_off WHERE barber_id = ? ORDER BY start_time DESC').all(req.params.id);
+  const barberId = req.params.id;
+  if (req.user?.role === 'BARBER' && req.user.barber_id !== parseInt(barberId)) {
+    return res.status(403).json({ error: 'Cannot view time off for another barber' });
+  }
+  const timeOff = db.prepare('SELECT * FROM barber_time_off WHERE barber_id = ? ORDER BY start_time DESC').all(barberId);
   res.json(timeOff);
 });
 
@@ -196,24 +212,46 @@ app.post('/api/barbers/:id/time-off', protect, authorize('OWNER', 'MANAGER', 'BA
 });
 
 app.get('/api/customers', protect, (req, res) => {
-  const customers = db.prepare('SELECT * FROM customers ORDER BY last_visit DESC').all();
+  let query = 'SELECT * FROM customers';
+  const params: any[] = [];
+
+  if (req.user?.role === 'BARBER') {
+    query = 'SELECT DISTINCT c.* FROM customers c JOIN sales s ON s.customer_id = c.id WHERE s.barber_id = ?';
+    params.push(req.user.barber_id);
+  }
+
+  query += ' ORDER BY last_visit DESC';
+  const customers = db.prepare(query).all(...params);
   res.json(customers);
 });
 
 app.get('/api/customers/:id', protect, (req, res) => {
   const { id } = req.params;
-  const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(id);
+  const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(id) as any;
   if (!customer) return res.status(404).json({ error: 'Customer not found' });
   
-  const history = db.prepare(`
+  if (req.user?.role === 'BARBER') {
+    const hasServed = db.prepare('SELECT 1 FROM sales WHERE customer_id = ? AND barber_id = ? LIMIT 1').get(id, req.user.barber_id);
+    if (!hasServed) return res.status(403).json({ error: 'Not authorized to view this customer' });
+  }
+
+  const historyQuery = `
     SELECT s.id as sale_id, s.timestamp, s.total_amount, b.name as barber_name,
            (SELECT group_concat(name, '||') FROM sale_items si JOIN services srv ON si.item_id = srv.id WHERE si.sale_id = s.id AND si.type = 'service') as services,
            (SELECT group_concat(name, '||') FROM sale_items si JOIN products p ON si.item_id = p.id WHERE si.sale_id = s.id AND si.type = 'product') as products
     FROM sales s
     JOIN barbers b ON s.barber_id = b.id
     WHERE s.customer_id = ?
-    ORDER BY s.timestamp DESC
-  `).all(id);
+  `;
+  const historyParams: any[] = [id];
+
+  let history = db.prepare(historyQuery).all(...historyParams);
+  
+  // If barber, maybe filter history to only their own?
+  // User said "Check only it's own ... customers", let's be strict.
+  if (req.user?.role === 'BARBER') {
+    history = (history as any[]).filter(h => h.barber_id === req.user?.barber_id);
+  }
 
   res.json({ ...customer, history });
 });
@@ -222,6 +260,11 @@ app.patch('/api/customers/:id', protect, (req, res) => {
   const { id } = req.params;
   const { name, email, phone, notes, tags } = req.body;
   
+  if (req.user?.role === 'BARBER') {
+    const hasServed = db.prepare('SELECT 1 FROM sales WHERE customer_id = ? AND barber_id = ? LIMIT 1').get(id, req.user.barber_id);
+    if (!hasServed) return res.status(403).json({ error: 'Not authorized to update this customer' });
+  }
+
   try {
     db.prepare(`
       UPDATE customers 
@@ -236,15 +279,23 @@ app.patch('/api/customers/:id', protect, (req, res) => {
 
 app.get('/api/customers/:id/history', protect, (req, res) => {
   const { id } = req.params;
-  const history = db.prepare(`
+  let query = `
     SELECT s.id, s.timestamp, s.total_amount, b.name as barber_name,
            (SELECT group_concat(name, ', ') FROM sale_items si JOIN services srv ON si.item_id = srv.id WHERE si.sale_id = s.id AND si.type = 'service') as services,
            (SELECT group_concat(name, ', ') FROM sale_items si JOIN products p ON si.item_id = p.id WHERE si.sale_id = s.id AND si.type = 'product') as products
     FROM sales s
     JOIN barbers b ON s.barber_id = b.id
     WHERE s.customer_id = ?
-    ORDER BY s.timestamp DESC
-  `).all(id);
+  `;
+  const params: any[] = [id];
+
+  if (req.user?.role === 'BARBER') {
+    query += ' AND s.barber_id = ?';
+    params.push(req.user.barber_id);
+  }
+
+  query += ' ORDER BY s.timestamp DESC';
+  const history = db.prepare(query).all(...params);
   res.json(history);
 });
 
@@ -252,15 +303,23 @@ app.get('/api/customers/:id/history', protect, (req, res) => {
 app.get('/api/appointments', protect, (req, res) => {
   const shopId = req.user?.shop_id;
   const date = req.query.date || new Date().toISOString().split('T')[0];
-  const appointments = db.prepare(`
+  let query = `
     SELECT a.*, b.name as barber_name, c.name as customer_name, s.name as service_name
     FROM appointments a
     JOIN barbers b ON a.barber_id = b.id
     LEFT JOIN customers c ON a.customer_id = c.id
     JOIN services s ON a.service_id = s.id
     WHERE date(a.start_time) = ? AND a.shop_id = ?
-    ORDER BY a.start_time ASC
-  `).all(date, shopId);
+  `;
+  const params: any[] = [date, shopId];
+
+  if (req.user?.role === 'BARBER') {
+    query += ' AND a.barber_id = ?';
+    params.push(req.user.barber_id);
+  }
+
+  query += ' ORDER BY a.start_time ASC';
+  const appointments = db.prepare(query).all(...params);
   res.json(appointments);
 });
 
@@ -268,6 +327,10 @@ app.post('/api/appointments', protect, async (req, res) => {
   const shopId = req.user?.shop_id;
   const { send_confirmation, barber_id, customer_id, service_id, start_time } = req.body;
   
+  if (req.user?.role === 'BARBER' && req.user.barber_id !== barber_id) {
+    return res.status(403).json({ error: 'Cannot book for another barber' });
+  }
+
   try {
     const result = await createAppointment.execute({ ...req.body, shop_id: shopId });
     
@@ -575,6 +638,12 @@ app.post('/api/settings', protect, authorize('OWNER', 'MANAGER'), (req, res) => 
 // Sales (POS)
 app.post('/api/sales', protect, async (req, res) => {
   const shopId = req.user?.shop_id;
+  const { barber_id } = req.body;
+
+  if (req.user?.role === 'BARBER' && req.user.barber_id !== barber_id) {
+    return res.status(403).json({ error: 'Cannot input sales for another barber' });
+  }
+
   try {
     const result = await processSale.execute({ ...req.body, shop_id: shopId });
     res.json(result);
@@ -594,6 +663,11 @@ app.get('/api/sales', protect, (req, res) => {
     WHERE s.shop_id = ?
   `;
   const params: any[] = [shopId];
+
+  if (req.user?.role === 'BARBER') {
+    query += " AND s.barber_id = ?";
+    params.push(req.user.barber_id);
+  }
 
   if (startDate && endDate) {
     query += " AND s.timestamp BETWEEN ? AND ?";
@@ -615,12 +689,20 @@ app.get('/api/sales/:id', protect, (req, res) => {
   const { id } = req.params;
 
   try {
-    const sale = db.prepare(`
+    let query = `
       SELECT s.*, COALESCE(s.barber_name, b.name) as barber_name
       FROM sales s
       LEFT JOIN barbers b ON s.barber_id = b.id
       WHERE s.id = ? AND s.shop_id = ?
-    `).get(id, shopId) as any;
+    `;
+    const params: any[] = [id, shopId];
+
+    if (req.user?.role === 'BARBER') {
+      query += " AND s.barber_id = ?";
+      params.push(req.user.barber_id);
+    }
+
+    const sale = db.prepare(query).get(...params) as any;
 
     if (!sale) return res.status(404).json({ error: 'Sale not found' });
 
@@ -661,11 +743,15 @@ app.get('/api/reports', protect, authorize('OWNER', 'MANAGER', 'BARBER'), async 
   }
 });
 
-app.get('/api/reports/export/sales', protect, authorize('OWNER', 'MANAGER'), async (req, res) => {
+app.get('/api/reports/export/sales', protect, authorize('OWNER', 'MANAGER', 'BARBER'), async (req, res) => {
   const shopId = req.user?.shop_id;
   const startDate = (req.query.startDate as string) || new Date().toISOString().split('T')[0];
   const endDate = (req.query.endDate as string) || startDate;
-  const barberId = req.query.barberId ? parseInt(req.query.barberId as string) : undefined;
+  
+  let barberId = req.query.barberId ? parseInt(req.query.barberId as string) : undefined;
+  if (req.user?.role === 'BARBER') {
+    barberId = req.user.barber_id!;
+  }
 
   try {
     const csv = await exportSalesCSV.execute({
@@ -703,30 +789,42 @@ app.delete('/api/expenses/:id', protect, authorize('OWNER', 'MANAGER'), (req, re
   res.json({ success: true });
 });
 
-app.get('/api/reports/analytics', protect, authorize('OWNER', 'MANAGER'), (req, res) => {
+app.get('/api/reports/analytics', protect, authorize('OWNER', 'MANAGER', 'BARBER'), (req, res) => {
   const shopId = req.user?.shop_id;
   const { startDate, endDate } = req.query;
+  const isBarber = req.user?.role === 'BARBER';
+  const barberId = req.user?.barber_id;
   
   // 1. Revenue by Hour (Heatmap data)
-  const hourlyRevenue = db.prepare(`
+  let hourlyQuery = `
     SELECT strftime('%H', timestamp) as hour, SUM(total_amount) as revenue
     FROM sales
     WHERE date(timestamp) BETWEEN ? AND ? AND shop_id = ?
-    GROUP BY hour
-    ORDER BY hour ASC
-  `).all(startDate, endDate, shopId);
+  `;
+  const hourlyParams: any[] = [startDate, endDate, shopId];
+  if (isBarber) {
+    hourlyQuery += ' AND barber_id = ?';
+    hourlyParams.push(barberId);
+  }
+  hourlyQuery += ' GROUP BY hour ORDER BY hour ASC';
+  const hourlyRevenue = db.prepare(hourlyQuery).all(...hourlyParams);
 
   // 2. Revenue by Day of Week
-  const dailyRevenue = db.prepare(`
+  let dailyQuery = `
     SELECT strftime('%w', timestamp) as day_of_week, SUM(total_amount) as revenue
     FROM sales
     WHERE date(timestamp) BETWEEN ? AND ? AND shop_id = ?
-    GROUP BY day_of_week
-    ORDER BY day_of_week ASC
-  `).all(startDate, endDate, shopId);
+  `;
+  const dailyParams: any[] = [startDate, endDate, shopId];
+  if (isBarber) {
+    dailyQuery += ' AND barber_id = ?';
+    dailyParams.push(barberId);
+  }
+  dailyQuery += ' GROUP BY day_of_week ORDER BY day_of_week ASC';
+  const dailyRevenue = db.prepare(dailyQuery).all(...dailyParams);
 
   // 3. Barber Performance Metrics
-  const barberPerformance = db.prepare(`
+  let barberQuery = `
     SELECT 
       b.name,
       COUNT(s.id) as total_sales,
@@ -736,8 +834,16 @@ app.get('/api/reports/analytics', protect, authorize('OWNER', 'MANAGER'), (req, 
     FROM barbers b
     LEFT JOIN sales s ON s.barber_id = b.id AND date(s.timestamp) BETWEEN ? AND ? AND s.shop_id = ?
     WHERE b.shop_id = ?
-    GROUP BY b.id
-  `).all(startDate, endDate, shopId, startDate, endDate, shopId, shopId);
+  `;
+  const barberParams: any[] = [startDate, endDate, shopId, startDate, endDate, shopId, shopId];
+  
+  if (isBarber) {
+    barberQuery += ' AND b.id = ?';
+    barberParams.push(barberId);
+  }
+  
+  barberQuery += ' GROUP BY b.id';
+  const barberPerformance = db.prepare(barberQuery).all(...barberParams);
 
   res.json({
     hourlyRevenue,
