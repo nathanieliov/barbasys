@@ -4,7 +4,7 @@ import { Supplier } from '../../domain/entities.js';
 export class ListSuppliers {
   constructor(private supplierRepo: ISupplierRepository) {}
 
-  async execute(): Promise<Supplier[]> {
-    return this.supplierRepo.findAll();
+  async execute(shopId: number): Promise<Supplier[]> {
+    return this.supplierRepo.findAll(shopId);
   }
 }

@@ -365,8 +365,9 @@ app.get('/api/inventory/intelligence', protect, authorize('OWNER', 'MANAGER'), a
 
 // Suppliers
 app.get('/api/suppliers', protect, authorize('OWNER', 'MANAGER'), async (req, res) => {
+  const shopId = req.user?.shop_id;
   try {
-    const suppliers = await listSuppliers.execute();
+    const suppliers = await listSuppliers.execute(shopId!);
     res.json(suppliers);
   } catch (err: any) {
     res.status(500).json({ error: 'Failed to fetch suppliers' });
@@ -374,8 +375,9 @@ app.get('/api/suppliers', protect, authorize('OWNER', 'MANAGER'), async (req, re
 });
 
 app.post('/api/suppliers', protect, authorize('OWNER', 'MANAGER'), async (req, res) => {
+  const shopId = req.user?.shop_id;
   try {
-    const id = await createSupplier.execute(req.body);
+    const id = await createSupplier.execute({ ...req.body, shop_id: shopId });
     res.status(201).json({ id });
   } catch (err: any) {
     res.status(400).json({ error: err.message });

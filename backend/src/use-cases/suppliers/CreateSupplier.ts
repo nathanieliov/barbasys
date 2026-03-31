@@ -7,6 +7,7 @@ export interface CreateSupplierRequest {
   email?: string | null;
   phone?: string | null;
   lead_time_days?: number;
+  shop_id: number;
 }
 
 export class CreateSupplier {
@@ -14,6 +15,7 @@ export class CreateSupplier {
 
   async execute(request: CreateSupplierRequest): Promise<number> {
     if (!request.name) throw new Error('Supplier name is required');
+    if (!request.shop_id) throw new Error('Shop ID is required');
     
     if (request.phone) {
       // Basic phone validation: at least 7 digits, can have +, -, (), spaces
@@ -28,7 +30,8 @@ export class CreateSupplier {
       contact_name: request.contact_name || null,
       email: request.email || null,
       phone: request.phone || null,
-      lead_time_days: request.lead_time_days ?? 7
+      lead_time_days: request.lead_time_days ?? 7,
+      shop_id: request.shop_id
     });
   }
 }

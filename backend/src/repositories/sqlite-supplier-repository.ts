@@ -5,8 +5,8 @@ import { ISupplierRepository } from './supplier-repository.interface.js';
 export class SQLiteSupplierRepository implements ISupplierRepository {
   constructor(private db: Database) {}
 
-  async findAll(): Promise<Supplier[]> {
-    return this.db.prepare('SELECT * FROM suppliers WHERE is_active = 1').all() as Supplier[];
+  async findAll(shopId: number): Promise<Supplier[]> {
+    return this.db.prepare('SELECT * FROM suppliers WHERE shop_id = ? AND is_active = 1').all(shopId) as Supplier[];
   }
 
   async findById(id: number): Promise<Supplier | null> {
@@ -14,10 +14,10 @@ export class SQLiteSupplierRepository implements ISupplierRepository {
     return (result as Supplier) || null;
   }
 
-  async create(supplier: Omit<Supplier, 'id' | 'is_active'>): Promise<number> {
+  async create(supplier: Omit<Supplier, 'id' | 'is_active'> & { shop_id: number }): Promise<number> {
     const result = this.db.prepare(
-      'INSERT INTO suppliers (name, contact_name, email, phone, lead_time_days) VALUES (?, ?, ?, ?, ?)'
-    ).run(supplier.name, supplier.contact_name, supplier.email, supplier.phone, supplier.lead_time_days);
+      'INSERT INTO suppliers (name, contact_name, email, phone, lead_time_days, shop_id) VALUES (?, ?, ?, ?, ?, ?)'
+    ).run(supplier.name, supplier.contact_name, supplier.email, supplier.phone, supplier.lead_time_days, supplier.shop_id);
     return Number(result.lastInsertRowid);
   }
 

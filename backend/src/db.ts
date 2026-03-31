@@ -187,8 +187,30 @@ try { db.exec('ALTER TABLE barbers ADD COLUMN is_active INTEGER DEFAULT 1'); } c
 try { db.exec('ALTER TABLE services ADD COLUMN is_active INTEGER DEFAULT 1'); } catch (e) {}
 try { db.exec('ALTER TABLE products ADD COLUMN is_active INTEGER DEFAULT 1'); } catch (e) {}
 try { db.exec('ALTER TABLE suppliers ADD COLUMN is_active INTEGER DEFAULT 1'); } catch (e) {}
+try { db.exec('ALTER TABLE suppliers ADD COLUMN shop_id INTEGER'); } catch (e) {}
 try { db.exec('ALTER TABLE sales ADD COLUMN barber_name TEXT'); } catch (e) {}
 try { db.exec('ALTER TABLE sale_items ADD COLUMN item_name TEXT'); } catch (e) {}
+
+// Migration for shop_settings to support multi-shop
+try {
+  const columns = db.prepare('PRAGMA table_info(shop_settings)').all();
+  const hasShopId = columns.some((c: any) => c.name === 'shop_id');
+  if (!hasShopId) {
+    db.exec(`
+      ALTER TABLE shop_settings RENAME TO shop_settings_old;
+      CREATE TABLE shop_settings (
+        shop_id INTEGER NOT NULL,
+        key TEXT NOT NULL,
+        value TEXT NOT NULL,
+        PRIMARY KEY (shop_id, key),
+        FOREIGN KEY (shop_id) REFERENCES shops(id) ON DELETE CASCADE
+      );
+      INSERT INTO shop_settings (shop_id, key, value)
+      SELECT (SELECT id FROM shops LIMIT 1), key, value FROM shop_settings_old;
+      DROP TABLE shop_settings_old;
+    `);
+  }
+} catch (e) {}
 
 // Backfill snapshotted names for existing sales
 try {
