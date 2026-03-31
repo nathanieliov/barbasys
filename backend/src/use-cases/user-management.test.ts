@@ -29,7 +29,7 @@ describe('User Management Use Cases', () => {
   });
 
   it('should update a user', async () => {
-    vi.mocked(mockUserRepo.update).mockResolvedValue();
+    vi.mocked(mockUserRepo.update).mockResolvedValue({ id: 1 } as any);
     await updateUser.execute({ id: 1, username: 'updated' });
     expect(mockUserRepo.update).toHaveBeenCalledWith({ id: 1, username: 'updated' });
   });

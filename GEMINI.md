@@ -37,11 +37,19 @@ Every task must follow this sequential lifecycle:
 
 Handoff criteria are defined in `workflow.toml`.
 
-## Git Workflow (MANDATORY)
+## Agentic Workflow & QA Protocol
 
-- **Atomic Commits**: Each logical change (feature, bug fix, refactor) must be in its own small commit. No "big bang" commits.
-- **Commit Messages**: Use clear, descriptive messages (e.g., `feat: add barber shift validation`, `fix: correct daily report commission calculation`).
-- **Safety**: Never commit `.env` or database files.
+To ensure high-quality, complete feature deliveries, the following protocol must be followed:
+
+1.  **Build Validation**: After any change to entities, interfaces, or shared logic, always run `npm run build --prefix backend` and `npm run build --prefix frontend` to catch silent type errors.
+2.  **Environment Hygiene**: Before running unit tests, ensure the environment is clean by removing the `dist/` directory (e.g., `rm -rf backend/dist`) to avoid running stale compiled tests.
+3.  **Multi-Role Verification**: When implementing Role-Based Access Control (RBAC), verify the feature by simulating logins for different roles (e.g., OWNER vs BARBER) via tests or manual checks.
+4.  **E2E Mandatory**: Any change to routing, navigation, or critical business flows (POS, Booking) must be verified with a Playwright smoke test (`npx playwright test`).
+5.  **Definition of Done**: A task is complete ONLY when:
+    *   Backend logic is unit tested.
+    *   Frontend UI is implemented and navigated.
+    *   `tsc` passes for the entire project.
+    *   All tests (Unit & E2E) are green.
 
 ## Guidelines
 

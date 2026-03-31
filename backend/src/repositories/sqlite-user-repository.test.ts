@@ -48,6 +48,27 @@ describe('SQLiteUserRepository', () => {
     expect(updated?.shop_id).toBe(2);
   });
 
+  it('should list all users for a shop', async () => {
+    const users = await repo.findAll(1);
+    expect(users.length).toBeGreaterThan(0);
+  });
+
+  it('should update a user', async () => {
+    const user = await repo.findByUsername('newuser');
+    await repo.update({ id: user!.id, email: 'updated@example.com' });
+    
+    const updated = await repo.findById(user!.id);
+    expect(updated?.email).toBe('updated@example.com');
+  });
+
+  it('should delete a user', async () => {
+    const user = await repo.findByUsername('newuser');
+    await repo.delete(user!.id);
+    
+    const found = await repo.findById(user!.id);
+    expect(found).toBeNull();
+  });
+
   it('should return null if user not found', async () => {
     const found = await repo.findById(99999);
     expect(found).toBeNull();

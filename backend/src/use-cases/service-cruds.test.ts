@@ -81,4 +81,37 @@ describe('Service CRUD Use Cases', () => {
     vi.mocked(mockRepo.findById).mockResolvedValue(null);
     await expect(deleteService.execute(999)).rejects.toThrow('Service not found');
   });
+
+  it('should throw if name missing when creating', async () => {
+    await expect(createService.execute({ name: '', price: 10, duration_minutes: 10 })).rejects.toThrow('Service name is required');
+  });
+
+  it('should throw if price negative when creating', async () => {
+    await expect(createService.execute({ name: 'T', price: -1, duration_minutes: 10 })).rejects.toThrow('price cannot be negative');
+  });
+
+  it('should throw if duration negative when creating', async () => {
+    await expect(createService.execute({ name: 'T', price: 10, duration_minutes: -1 })).rejects.toThrow('duration cannot be negative');
+  });
+
+  it('should throw if ID missing when updating', async () => {
+    await expect(updateService.execute({ name: 'T', price: 10, duration_minutes: 10, shop_id: 1, is_active: 1 } as any)).rejects.toThrow('Service ID is required');
+  });
+
+  it('should throw if name missing when updating', async () => {
+    await expect(updateService.execute({ id: 1, name: '', price: 10, duration_minutes: 10, shop_id: 1, is_active: 1 })).rejects.toThrow('Service name is required');
+  });
+
+  it('should throw if service not found when updating', async () => {
+    vi.mocked(mockRepo.findById).mockResolvedValue(null);
+    await expect(updateService.execute({ id: 999, name: 'T', price: 10, duration_minutes: 10, shop_id: 1, is_active: 1 })).rejects.toThrow('Service not found');
+  });
+
+  it('should throw if price negative when updating', async () => {
+    await expect(updateService.execute({ id: 1, name: 'T', price: -1, duration_minutes: 10, shop_id: 1, is_active: 1 })).rejects.toThrow('price cannot be negative');
+  });
+
+  it('should throw if duration negative when updating', async () => {
+    await expect(updateService.execute({ id: 1, name: 'T', price: 10, duration_minutes: -1, shop_id: 1, is_active: 1 })).rejects.toThrow('duration cannot be negative');
+  });
 });
