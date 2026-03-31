@@ -28,7 +28,7 @@ export class SQLiteProductRepository implements IProductRepository {
   }
 
   async delete(id: number): Promise<void> {
-    this.db.prepare('UPDATE barbers SET is_active = 0 WHERE id = ?').run(id);
+    this.db.prepare('UPDATE products SET is_active = 0 WHERE id = ?').run(id);
   }
 
   async reduceStock(id: number, amount: number, saleId: number): Promise<void> {

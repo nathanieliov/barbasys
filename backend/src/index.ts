@@ -96,7 +96,7 @@ app.get('/api/auth/me', protect, async (req, res) => {
 app.get('/api/barbers', protect, async (req, res) => {
   const shopId = req.user?.shop_id;
   try {
-    const barbers = await db.prepare('SELECT * FROM barbers WHERE shop_id = ?').all(shopId);
+    const barbers = await db.prepare('SELECT * FROM barbers WHERE shop_id = ? AND is_active = 1').all(shopId);
     res.json(barbers);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch barbers' });
@@ -416,7 +416,7 @@ app.post('/api/inventory/restock', protect, authorize('OWNER', 'MANAGER'), (req,
 app.get('/api/services', protect, async (req, res) => {
   const shopId = req.user?.shop_id;
   try {
-    const services = await db.prepare('SELECT * FROM services WHERE shop_id = ?').all(shopId);
+    const services = await db.prepare('SELECT * FROM services WHERE shop_id = ? AND is_active = 1').all(shopId);
     res.json(services);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch services' });

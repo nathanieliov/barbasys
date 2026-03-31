@@ -10,7 +10,8 @@ export class SQLiteBarberRepository implements IBarberRepository {
   }
 
   async findById(id: number): Promise<Barber | null> {
-    return this.db.prepare('SELECT * FROM barbers WHERE id = ? AND is_active = 1').get(id) as Barber | null;
+    const result = this.db.prepare('SELECT * FROM barbers WHERE id = ? AND is_active = 1').get(id);
+    return (result as Barber) || null;
   }
 
   async create(barber: Omit<Barber, 'id'>): Promise<number> {

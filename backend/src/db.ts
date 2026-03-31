@@ -187,6 +187,8 @@ try { db.exec('ALTER TABLE barbers ADD COLUMN is_active INTEGER DEFAULT 1'); } c
 try { db.exec('ALTER TABLE services ADD COLUMN is_active INTEGER DEFAULT 1'); } catch (e) {}
 try { db.exec('ALTER TABLE products ADD COLUMN is_active INTEGER DEFAULT 1'); } catch (e) {}
 try { db.exec('ALTER TABLE suppliers ADD COLUMN is_active INTEGER DEFAULT 1'); } catch (e) {}
+try { db.exec('ALTER TABLE sales ADD COLUMN barber_name TEXT'); } catch (e) {}
+try { db.exec('ALTER TABLE sale_items ADD COLUMN item_name TEXT'); } catch (e) {}
 
 // Backfill snapshotted names for existing sales
 try {
