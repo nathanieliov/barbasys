@@ -237,11 +237,23 @@ if (shopsCount.count === 0) {
 }
 const defaultShopId = (db.prepare('SELECT id FROM shops LIMIT 1').get() as { id: number }).id;
 
-const usersCount = db.prepare('SELECT count(*) as count FROM users').get() as { count: number };
-if (usersCount.count === 0) {
-  const salt = bcrypt.genSaltSync(10);
-  const passwordHash = bcrypt.hashSync('admin123', salt);
-  db.prepare('INSERT OR IGNORE INTO users (username, email, password_hash, role, shop_id) VALUES (?, ?, ?, ?, ?)').run('admin', 'admin@barbasys.com', passwordHash, 'OWNER', defaultShopId);
+const salt = bcrypt.genSaltSync(10);
+const passwordHash = bcrypt.hashSync('admin123', salt);
+
+// Seed OWNER
+db.prepare('INSERT OR IGNORE INTO users (username, email, password_hash, role, shop_id) VALUES (?, ?, ?, ?, ?)').run('admin', 'admin@barbasys.com', passwordHash, 'OWNER', defaultShopId);
+
+// Seed MANAGER
+db.prepare('INSERT OR IGNORE INTO users (username, email, password_hash, role, shop_id) VALUES (?, ?, ?, ?, ?)').run('manager', 'manager@barbasys.com', passwordHash, 'MANAGER', defaultShopId);
+
+// Seed BARBER (associated with Nathaniel or any available barber)
+let barberToLink = db.prepare('SELECT id FROM barbers WHERE name = ?').get('Nathaniel') as { id: number };
+if (!barberToLink) {
+  barberToLink = db.prepare('SELECT id FROM barbers LIMIT 1').get() as { id: number };
+}
+
+if (barberToLink) {
+  db.prepare('INSERT OR IGNORE INTO users (username, email, password_hash, role, barber_id, shop_id) VALUES (?, ?, ?, ?, ?, ?)').run('barber', 'barber@barbasys.com', passwordHash, 'BARBER', barberToLink.id, defaultShopId);
 }
 
 const barbersCount = db.prepare('SELECT count(*) as count FROM barbers').get() as { count: number };
