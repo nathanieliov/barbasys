@@ -17,6 +17,7 @@ import Suppliers from './pages/Suppliers';
 import Analytics from './pages/Analytics';
 import Expenses from './pages/Expenses';
 import UserProfile from './pages/UserProfile';
+import Users from './pages/Users';
 import Login from './pages/Login';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider, useAuth } from './hooks/useAuth';
@@ -70,6 +71,7 @@ const Sidebar = ({ isOpen, toggleSidebar }: { isOpen: boolean, toggleSidebar: ()
     { to: "/expenses", icon: <Receipt size={20} />, label: "Expenses", admin: true },
     { to: "/reports", icon: <BarChart3 size={20} />, label: "Reports" },
     { to: "/barbers", icon: <Users size={20} />, label: "Barbers", admin: true },
+    { to: "/users", icon: <Shield size={20} />, label: "User Accounts", admin: true },
     { to: "/customers", icon: <Users size={20} />, label: "Customers" },
     { to: "/profile", icon: <User size={20} />, label: "My Profile" },
     { to: "/settings", icon: <SettingsIcon size={20} />, label: "Settings", admin: true },
@@ -182,6 +184,7 @@ function App() {
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/expenses" element={<Expenses />} />
               <Route path="/barbers" element={<Barbers />} />
+              <Route path="/users" element={<Users />} />
               <Route path="/services" element={<Services />} />
               <Route path="/suppliers" element={<Suppliers />} />
               <Route path="/settings" element={<Settings />} />
