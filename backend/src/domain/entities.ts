@@ -25,7 +25,18 @@ export interface Product {
   price: number;
   stock: number;
   min_stock_threshold: number;
+  supplier_id: number | null;
   shop_id: number | null;
+}
+
+export interface Supplier {
+  id: number;
+  name: string;
+  contact_name: string | null;
+  email: string | null;
+  phone: string | null;
+  lead_time_days: number;
+  is_active: number;
 }
 
 export interface Service {

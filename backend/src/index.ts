@@ -12,6 +12,7 @@ import { SQLiteSaleRepository } from './repositories/sqlite-sale-repository.js';
 import { SQLiteCustomerRepository } from './repositories/sqlite-customer-repository.js';
 import { SQLiteProductRepository } from './repositories/sqlite-product-repository.js';
 import { SQLiteExpenseRepository } from './repositories/sqlite-expense-repository.js';
+import { SQLiteSupplierRepository } from './repositories/sqlite-supplier-repository.js';
 
 import { ListBarbers } from './use-cases/list-barbers.js';
 import { DeleteBarber } from './use-cases/delete-barber.js';
@@ -28,6 +29,10 @@ import { GetCommissionsReport } from './use-cases/reports/GetCommissionsReport.j
 import { ExportSalesCSV } from './use-cases/reports/ExportSalesCSV.js';
 import { GetInventoryIntelligence } from './use-cases/inventory/get-inventory-intelligence.js';
 import { SwitchShop } from './use-cases/switch-shop.js';
+import { CreateSupplier } from './use-cases/suppliers/CreateSupplier.js';
+import { ListSuppliers } from './use-cases/suppliers/ListSuppliers.js';
+import { UpdateSupplier } from './use-cases/suppliers/UpdateSupplier.js';
+import { DeleteSupplier } from './use-cases/suppliers/DeleteSupplier.js';
 
 import { protect, authorize } from './middleware/auth-middleware.js';
 
@@ -46,6 +51,7 @@ const saleRepo = new SQLiteSaleRepository(db);
 const customerRepo = new SQLiteCustomerRepository(db);
 const productRepo = new SQLiteProductRepository(db);
 const expenseRepo = new SQLiteExpenseRepository(db);
+const supplierRepo = new SQLiteSupplierRepository(db);
 
 const listBarbers = new ListBarbers(barberRepo);
 const loginUseCase = new LoginUseCase(userRepo);
@@ -61,6 +67,10 @@ const getCommissionsReport = new GetCommissionsReport(saleRepo, barberRepo, expe
 const exportSalesCSV = new ExportSalesCSV(saleRepo);
 const getInventoryIntelligence = new GetInventoryIntelligence(productRepo);
 const switchShop = new SwitchShop(userRepo);
+const createSupplier = new CreateSupplier(supplierRepo);
+const listSuppliers = new ListSuppliers(supplierRepo);
+const updateSupplier = new UpdateSupplier(supplierRepo);
+const deleteSupplier = new DeleteSupplier(supplierRepo);
 
 app.use(cors());
 app.use(express.json());
@@ -354,29 +364,39 @@ app.get('/api/inventory/intelligence', protect, authorize('OWNER', 'MANAGER'), a
 });
 
 // Suppliers
-app.get('/api/suppliers', protect, authorize('OWNER', 'MANAGER'), (req, res) => {
-  const suppliers = db.prepare('SELECT * FROM suppliers WHERE is_active = 1').all();
-  res.json(suppliers);
-});
-
-app.post('/api/suppliers', protect, authorize('OWNER', 'MANAGER'), (req, res) => {
-  const { name, contact_name, email, phone, lead_time_days } = req.body;
-  const result = db.prepare('INSERT INTO suppliers (name, contact_name, email, phone, lead_time_days) VALUES (?, ?, ?, ?, ?)').run(name, contact_name, email, phone, lead_time_days);
-  res.status(201).json({ id: result.lastInsertRowid });
-});
-
-app.delete('/api/suppliers/:id', protect, authorize('OWNER', 'MANAGER'), (req, res) => {
-  db.prepare('UPDATE suppliers SET is_active = 0 WHERE id = ?').run(req.params.id);
-  res.json({ success: true });
-});
-
-app.put('/api/suppliers/:id', protect, authorize('OWNER', 'MANAGER'), (req, res) => {
-  const { name, contact_name, email, phone, lead_time_days } = req.body;
+app.get('/api/suppliers', protect, authorize('OWNER', 'MANAGER'), async (req, res) => {
   try {
-    db.prepare('UPDATE suppliers SET name = ?, contact_name = ?, email = ?, phone = ?, lead_time_days = ? WHERE id = ?').run(name, contact_name, email, phone, lead_time_days, req.params.id);
+    const suppliers = await listSuppliers.execute();
+    res.json(suppliers);
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to fetch suppliers' });
+  }
+});
+
+app.post('/api/suppliers', protect, authorize('OWNER', 'MANAGER'), async (req, res) => {
+  try {
+    const id = await createSupplier.execute(req.body);
+    res.status(201).json({ id });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.delete('/api/suppliers/:id', protect, authorize('OWNER', 'MANAGER'), async (req, res) => {
+  try {
+    await deleteSupplier.execute(Number(req.params.id));
     res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to update supplier' });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.put('/api/suppliers/:id', protect, authorize('OWNER', 'MANAGER'), async (req, res) => {
+  try {
+    await updateSupplier.execute({ ...req.body, id: Number(req.params.id) });
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
   }
 });
 

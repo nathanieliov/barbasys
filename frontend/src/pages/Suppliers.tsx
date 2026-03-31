@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import apiClient from '../api/apiClient';
 import { PlusCircle, X, Truck, Mail, Phone, User, Edit2, Trash2, Clock } from 'lucide-react';
 
 export default function Suppliers() {
+  const navigate = useNavigate();
   const [suppliers, setSuppliers] = useState<any[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<any>(null);
@@ -132,7 +134,11 @@ export default function Suppliers() {
             </div>
 
             <div style={{ marginTop: 'auto' }}>
-              <button className="secondary" style={{ width: '100%', fontSize: '0.85rem' }}>
+              <button 
+                className="secondary" 
+                style={{ width: '100%', fontSize: '0.85rem' }}
+                onClick={() => navigate(`/inventory?supplierId=${s.id}`)}
+              >
                 View Catalog
               </button>
             </div>

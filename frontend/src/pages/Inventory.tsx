@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import apiClient from '../api/apiClient';
 import { AlertCircle, PlusCircle, X, TrendingDown, Search, Package, Filter, Edit2, Trash2, Tag, DollarSign, Truck } from 'lucide-react';
 
 export default function Inventory() {
+  const [searchParams] = useSearchParams();
+  const initialSupplierId = searchParams.get('supplierId');
+
   const [products, setProducts] = useState<any[]>([]);
   const [suppliers, setSuppliers] = useState<any[]>([]);
   const [intelligence, setIntelligence] = useState<any[]>([]);
@@ -103,10 +107,15 @@ export default function Inventory() {
     }
   };
 
-  const filteredProducts = products.filter(p => 
-    p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (p.supplier_name && p.supplier_name.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const filteredProducts = products.filter(p => {
+    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (p.supplier_name && p.supplier_name.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    if (initialSupplierId) {
+      return matchesSearch && p.supplier_id === parseInt(initialSupplierId);
+    }
+    return matchesSearch;
+  });
 
   const reorderSuggestions = intelligence.filter(i => i.reorder_suggested);
 
