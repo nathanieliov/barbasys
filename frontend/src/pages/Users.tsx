@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../api/apiClient';
-import { User, Mail, Shield, Trash2, PlusCircle, X, CheckCircle, AlertCircle, Key } from 'lucide-react';
+import { Trash2, PlusCircle, X, CheckCircle, AlertCircle, Key } from 'lucide-react';
 
 export default function Users() {
   const [users, setUsers] = useState<any[]>([]);

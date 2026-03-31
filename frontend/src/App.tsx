@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import apiClient from './api/apiClient';
 import { BrowserRouter as Router, Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Scissors, Package, BarChart3, Users, ShoppingCart, Calendar as CalendarIcon, LogOut, Settings as SettingsIcon, Clock, Truck, BarChart, Receipt, Menu } from 'lucide-react';
+import { LayoutDashboard, Scissors, Package, BarChart3, Users as UsersIcon, ShoppingCart, Calendar as CalendarIcon, LogOut, Settings as SettingsIcon, Clock, Truck, BarChart, Receipt, Menu, User, Shield } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import POS from './pages/POS';
 import Inventory from './pages/Inventory';
@@ -70,9 +70,9 @@ const Sidebar = ({ isOpen, toggleSidebar }: { isOpen: boolean, toggleSidebar: ()
     { to: "/analytics", icon: <BarChart size={20} />, label: "Analytics" },
     { to: "/expenses", icon: <Receipt size={20} />, label: "Expenses", admin: true },
     { to: "/reports", icon: <BarChart3 size={20} />, label: "Reports" },
-    { to: "/barbers", icon: <Users size={20} />, label: "Barbers", admin: true },
+    { to: "/barbers", icon: <UsersIcon size={20} />, label: "Barbers", admin: true },
     { to: "/users", icon: <Shield size={20} />, label: "User Accounts", admin: true },
-    { to: "/customers", icon: <Users size={20} />, label: "Customers" },
+    { to: "/customers", icon: <UsersIcon size={20} />, label: "Customers" },
     { to: "/profile", icon: <User size={20} />, label: "My Profile" },
     { to: "/settings", icon: <SettingsIcon size={20} />, label: "Settings", admin: true },
   ];
