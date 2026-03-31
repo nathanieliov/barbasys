@@ -83,15 +83,15 @@ describe('Service CRUD Use Cases', () => {
   });
 
   it('should throw if name missing when creating', async () => {
-    await expect(createService.execute({ name: '', price: 10, duration_minutes: 10 })).rejects.toThrow('Service name is required');
+    await expect(createService.execute({ name: '', price: 10, duration_minutes: 10, shop_id: 1, is_active: 1 })).rejects.toThrow('Service name is required');
   });
 
   it('should throw if price negative when creating', async () => {
-    await expect(createService.execute({ name: 'T', price: -1, duration_minutes: 10 })).rejects.toThrow('price cannot be negative');
+    await expect(createService.execute({ name: 'T', price: -1, duration_minutes: 10, shop_id: 1, is_active: 1 })).rejects.toThrow('price cannot be negative');
   });
 
   it('should throw if duration negative when creating', async () => {
-    await expect(createService.execute({ name: 'T', price: 10, duration_minutes: -1 })).rejects.toThrow('duration cannot be negative');
+    await expect(createService.execute({ name: 'T', price: 10, duration_minutes: -1, shop_id: 1, is_active: 1 })).rejects.toThrow('duration cannot be negative');
   });
 
   it('should throw if ID missing when updating', async () => {

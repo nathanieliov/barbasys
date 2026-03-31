@@ -27,7 +27,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'rm -f test_e2e.db && npm run build --prefix backend && DATABASE_URL="/Users/nathaniel/dev/workspace/projects/barbasys/test_e2e.db" concurrently "npm run start --prefix backend" "npm run build --prefix frontend && npm run preview --prefix frontend"',
+    command: `rm -f test_e2e.db && npm run build --prefix backend && DATABASE_URL="${path.resolve('test_e2e.db')}" npx concurrently "npm run start --prefix backend" "npm run build --prefix frontend && npm run preview --prefix frontend"`,
     url: 'http://localhost:4173',
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
