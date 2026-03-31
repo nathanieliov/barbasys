@@ -97,7 +97,14 @@ export default function POS() {
   return (
     <div className="pos-container">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-        <h1>Point of Sale</h1>
+        <div>
+          <h1 style={{ marginBottom: '0.25rem' }}>Point of Sale</h1>
+          {user?.role === 'BARBER' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary)', fontWeight: '700', fontSize: '0.9rem' }}>
+              <User size={16} /> Professional: {user.username}
+            </div>
+          )}
+        </div>
         {appointmentData && (
           <div className="status-badge status-scheduled" style={{ padding: '0.5rem 1rem' }}>
             Check-in: Appt #{appointmentData.appointmentId}
@@ -107,25 +114,26 @@ export default function POS() {
       
       <div className="pos-grid">
         <div className="items-section">
-          <div className="card">
-            <h2>1. Select Professional</h2>
-            <div style={{ position: 'relative' }}>
-              <User size={18} style={{ position: 'absolute', left: '0.75rem', top: '0.75rem', color: 'var(--text-muted)' }} />
-              <select 
-                value={selectedBarber} 
-                onChange={e => setSelectedBarber(e.target.value)}
-                style={{ paddingLeft: '2.5rem' }}
-                disabled={user?.role === 'BARBER'}
-              >
-                <option value="">Choose barber...</option>
-                {barbers.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-              </select>
+          {user?.role !== 'BARBER' && (
+            <div className="card">
+              <h2>1. Select Professional</h2>
+              <div style={{ position: 'relative' }}>
+                <User size={18} style={{ position: 'absolute', left: '0.75rem', top: '0.75rem', color: 'var(--text-muted)' }} />
+                <select 
+                  value={selectedBarber} 
+                  onChange={e => setSelectedBarber(e.target.value)}
+                  style={{ paddingLeft: '2.5rem' }}
+                >
+                  <option value="">Choose barber...</option>
+                  {barbers.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                </select>
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="card">
             <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              2. Services
+              {user?.role === 'BARBER' ? '1. Services' : '2. Services'}
             </h2>
             <div className="item-list-grid">
               {services.map(s => (
@@ -140,7 +148,7 @@ export default function POS() {
             </div>
 
             <h2 style={{ marginTop: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              3. Products
+              {user?.role === 'BARBER' ? '2. Products' : '3. Products'}
             </h2>
             <div className="item-list-grid">
               {products.map(p => (

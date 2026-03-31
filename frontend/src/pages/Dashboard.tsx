@@ -48,6 +48,11 @@ export default function Dashboard() {
     <div className="dashboard-container">
       <div style={{ marginBottom: '2rem' }}>
         <h1 style={{ marginBottom: '0.25rem' }}>Welcome back, {user?.username}!</h1>
+        {isBarber && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary)', fontWeight: '700', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
+            <Users size={16} /> Professional Account
+          </div>
+        )}
         <p style={{ color: 'var(--text-muted)' }}>Here's what's happening today at the shop.</p>
       </div>
 

@@ -206,18 +206,29 @@ export default function Schedule() {
                 )}
                 
                 <form onSubmit={handleBook}>
-                  <div style={{ marginBottom: '1rem' }}>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Select Professional</label>
-                    <select 
-                      value={selectedBarber} 
-                      onChange={e => setSelectedBarber(e.target.value)} 
-                      required
-                      disabled={user?.role === 'BARBER'}
-                    >
-                      <option value="">Select Barber</option>
-                      {barbers.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                    </select>
-                  </div>
+                  {user?.role !== 'BARBER' ? (
+                    <div style={{ marginBottom: '1rem' }}>
+                      <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Select Professional</label>
+                      <select 
+                        value={selectedBarber} 
+                        onChange={e => setSelectedBarber(e.target.value)} 
+                        required
+                      >
+                        <option value="">Select Barber</option>
+                        {barbers.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                      </select>
+                    </div>
+                  ) : (
+                    <div style={{ marginBottom: '1.5rem', padding: '1rem', background: 'rgba(79, 70, 229, 0.05)', borderRadius: '0.75rem', border: '1px solid rgba(79, 70, 229, 0.1)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <div style={{ background: 'var(--primary)', color: 'white', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <User size={18} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '800' }}>Professional</div>
+                        <div style={{ fontWeight: '700', color: 'var(--primary)' }}>{user.username}</div>
+                      </div>
+                    </div>
+                  )}
                   
                   <div style={{ marginBottom: '1rem' }}>
                     <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Customer (Optional)</label>
