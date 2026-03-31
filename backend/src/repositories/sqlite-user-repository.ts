@@ -34,7 +34,7 @@ export class SQLiteUserRepository implements UserRepository {
     };
   }
 
-  async update(user: Partial<User> & { id: number }): Promise<void> {
+  async update(user: Partial<User> & { id: number }): Promise<User> {
     const existing = await this.findById(user.id);
     if (!existing) throw new Error('User not found');
 
@@ -42,10 +42,13 @@ export class SQLiteUserRepository implements UserRepository {
     const email = user.email ?? existing.email;
     const role = user.role ?? existing.role;
     const barber_id = user.barber_id !== undefined ? user.barber_id : existing.barber_id;
+    const password_hash = user.password_hash ?? existing.password_hash;
 
     db.prepare(
-      'UPDATE users SET username = ?, email = ?, role = ?, barber_id = ? WHERE id = ?'
-    ).run(username, email, role, barber_id, user.id);
+      'UPDATE users SET username = ?, email = ?, role = ?, barber_id = ?, password_hash = ? WHERE id = ?'
+    ).run(username, email, role, barber_id, password_hash, user.id);
+
+    return (await this.findById(user.id))!;
   }
 
   async updateShopId(userId: number, shopId: number): Promise<void> {

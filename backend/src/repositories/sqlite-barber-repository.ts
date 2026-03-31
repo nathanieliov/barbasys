@@ -21,6 +21,19 @@ export class SQLiteBarberRepository implements IBarberRepository {
     return Number(result.lastInsertRowid);
   }
 
+  async update(barber: Partial<Barber> & { id: number }): Promise<void> {
+    const existing = await this.findById(barber.id);
+    if (!existing) throw new Error('Barber not found');
+
+    const name = barber.name ?? existing.name;
+    const service_commission_rate = barber.service_commission_rate ?? existing.service_commission_rate;
+    const product_commission_rate = barber.product_commission_rate ?? existing.product_commission_rate;
+
+    this.db.prepare(
+      'UPDATE barbers SET name = ?, service_commission_rate = ?, product_commission_rate = ? WHERE id = ?'
+    ).run(name, service_commission_rate, product_commission_rate, barber.id);
+  }
+
   async delete(id: number): Promise<void> {
     this.db.prepare('UPDATE barbers SET is_active = 0 WHERE id = ?').run(id);
   }

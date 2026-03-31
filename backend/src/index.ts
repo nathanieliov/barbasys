@@ -78,7 +78,7 @@ const deleteSupplier = new DeleteSupplier(supplierRepo);
 const listUsers = new ListUsers(userRepo);
 const updateUser = new UpdateUser(userRepo);
 const deleteUser = new DeleteUser(userRepo);
-const updateProfile = new UpdateProfile(userRepo);
+const updateProfile = new UpdateProfile(userRepo, barberRepo);
 
 app.use(cors());
 app.use(express.json());
@@ -136,14 +136,35 @@ app.delete('/api/users/:id', protect, authorize('OWNER'), async (req, res) => {
 });
 
 app.get('/api/auth/me', protect, async (req, res) => {
-  res.json(req.user);
+  try {
+    const user = await userRepo.findById(req.user!.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    
+    res.json({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+      barber_id: user.barber_id,
+      shop_id: user.shop_id
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch current user' });
+  }
 });
 
 app.patch('/api/auth/profile', protect, async (req, res) => {
   const userId = req.user?.id;
   try {
-    await updateProfile.execute({ ...req.body, id: userId! });
-    res.json({ success: true });
+    const user = await updateProfile.execute({ ...req.body, id: userId! });
+    res.json({ success: true, user: {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+      barber_id: user.barber_id,
+      shop_id: user.shop_id
+    }});
   } catch (err: any) {
     res.status(400).json({ error: err.message });
   }

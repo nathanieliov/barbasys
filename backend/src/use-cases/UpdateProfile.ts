@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { UserRepository } from '../repositories/user-repository.interface.js';
+import { IBarberRepository } from '../repositories/barber-repository.interface.js';
 import { User } from '../domain/entities.js';
 
 export interface UpdateProfileRequest {
@@ -11,9 +12,12 @@ export interface UpdateProfileRequest {
 }
 
 export class UpdateProfile {
-  constructor(private userRepo: UserRepository) {}
+  constructor(
+    private userRepo: UserRepository,
+    private barberRepo?: IBarberRepository
+  ) {}
 
-  async execute(request: UpdateProfileRequest): Promise<void> {
+  async execute(request: UpdateProfileRequest): Promise<User> {
     const user = await this.userRepo.findById(request.id);
     if (!user) throw new Error('User not found');
 
@@ -36,6 +40,16 @@ export class UpdateProfile {
       updateData.password_hash = await bcrypt.hash(request.new_password, salt);
     }
 
-    return this.userRepo.update(updateData);
+    const updatedUser = await this.userRepo.update(updateData);
+
+    // Sync barber name if linked
+    if (request.username && user.barber_id && this.barberRepo) {
+      await this.barberRepo.update({
+        id: user.barber_id,
+        name: request.username
+      });
+    }
+
+    return updatedUser;
   }
 }

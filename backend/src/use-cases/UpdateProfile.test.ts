@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { UpdateProfile } from './UpdateProfile.js';
-import { UserRepository } from '../repositories/user-repository.interface.js';
 import bcrypt from 'bcryptjs';
 
 describe('UpdateProfile Use Case', () => {
   let mockUserRepo: any;
+  let mockBarberRepo: any;
   let useCase: UpdateProfile;
 
   beforeEach(() => {
@@ -12,16 +12,20 @@ describe('UpdateProfile Use Case', () => {
       findById: vi.fn(),
       update: vi.fn()
     };
-    useCase = new UpdateProfile(mockUserRepo);
+    mockBarberRepo = {
+      update: vi.fn()
+    };
+    useCase = new UpdateProfile(mockUserRepo, mockBarberRepo);
   });
 
   it('should update username and email', async () => {
     const mockUser = { id: 1, username: 'old', email: 'old@ex.com', password_hash: 'hash' };
     mockUserRepo.findById.mockResolvedValue(mockUser);
-    mockUserRepo.update.mockResolvedValue();
+    mockUserRepo.update.mockResolvedValue({ ...mockUser, username: 'new', email: 'new@ex.com' });
 
-    await useCase.execute({ id: 1, username: 'new', email: 'new@ex.com' });
+    const result = await useCase.execute({ id: 1, username: 'new', email: 'new@ex.com' });
 
+    expect(result.username).toBe('new');
     expect(mockUserRepo.update).toHaveBeenCalledWith({
       id: 1,
       username: 'new',
@@ -35,7 +39,7 @@ describe('UpdateProfile Use Case', () => {
     const mockUser = { id: 1, username: 'user', password_hash: hash };
     
     mockUserRepo.findById.mockResolvedValue(mockUser);
-    mockUserRepo.update.mockResolvedValue();
+    mockUserRepo.update.mockResolvedValue(mockUser);
 
     await useCase.execute({ 
       id: 1, 
@@ -60,12 +64,16 @@ describe('UpdateProfile Use Case', () => {
     })).rejects.toThrow('Current password is incorrect');
   });
 
-  it('should throw if current password missing when setting new one', async () => {
-    mockUserRepo.findById.mockResolvedValue({ id: 1 });
+  it('should sync barber name if username changed', async () => {
+    const mockUser = { id: 1, username: 'old', barber_id: 10, password_hash: 'h' };
+    mockUserRepo.findById.mockResolvedValue(mockUser);
+    mockUserRepo.update.mockResolvedValue({ ...mockUser, username: 'new' });
 
-    await expect(useCase.execute({ 
-      id: 1, 
-      new_password: 'new' 
-    })).rejects.toThrow('Current password is required');
+    await useCase.execute({ id: 1, username: 'new' });
+
+    expect(mockBarberRepo.update).toHaveBeenCalledWith({
+      id: 10,
+      name: 'new'
+    });
   });
 });

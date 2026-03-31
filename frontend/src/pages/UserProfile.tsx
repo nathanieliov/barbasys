@@ -4,7 +4,7 @@ import apiClient from '../api/apiClient';
 import { User, Mail, Lock, Shield, CheckCircle, AlertCircle, Save } from 'lucide-react';
 
 export default function UserProfile() {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   
   // Profile Info State
   const [username, setUsername] = useState(user?.username || '');
@@ -24,8 +24,9 @@ export default function UserProfile() {
     setMessage({ text: '', type: '' });
     
     try {
-      await apiClient.patch('/auth/profile', { username, email });
-      setMessage({ text: 'Profile updated successfully! Please re-login if changes are not reflected.', type: 'success' });
+      const res = await apiClient.patch('/auth/profile', { username, email });
+      updateUser(res.data.user);
+      setMessage({ text: 'Profile updated successfully!', type: 'success' });
     } catch (err: any) {
       setMessage({ text: err.response?.data?.error || 'Failed to update profile', type: 'error' });
     } finally {
