@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../api/apiClient';
-import { UserPlus, User, X, Percent, BadgeCheck, Phone, Mail, Trash2, Edit2 } from 'lucide-react';
+import { UserPlus, User, X, Percent, Phone, Mail, Trash2, Edit2 } from 'lucide-react';
 
 export default function Barbers() {
   const [barbers, setBarbers] = useState<any[]>([]);
@@ -9,6 +9,7 @@ export default function Barbers() {
   
   // Form State
   const [name, setName] = useState('');
+  const [fullname, setFullname] = useState('');
   const [serviceRate, setServiceRate] = useState('0.6');
   const [productRate, setProductRate] = useState('0.1');
 
@@ -22,8 +23,9 @@ export default function Barbers() {
 
   const resetForm = () => {
     setName('');
+    setFullname('');
     setServiceRate('0.6');
-    productRate === '0.1' ? setProductRate('0.1') : setProductRate('0.1'); // Keep consistent default
+    setProductRate('0.1');
     setEditingBarber(null);
     setShowModal(false);
   };
@@ -31,6 +33,7 @@ export default function Barbers() {
   const startEdit = (barber: any) => {
     setEditingBarber(barber);
     setName(barber.name);
+    setFullname(barber.fullname || '');
     setServiceRate(barber.service_commission_rate.toString());
     setProductRate(barber.product_commission_rate.toString());
     setShowModal(true);
@@ -38,10 +41,11 @@ export default function Barbers() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name) return;
+    if (!name || !fullname) return;
 
     const data = { 
       name, 
+      fullname,
       service_commission_rate: parseFloat(serviceRate),
       product_commission_rate: parseFloat(productRate)
     };
@@ -87,12 +91,12 @@ export default function Barbers() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem' }}>
               <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                 <div style={{ width: '56px', height: '56px', background: 'rgba(79, 70, 229, 0.1)', color: 'var(--primary)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem', fontWeight: '800', border: '2px solid white', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
-                  {b.name.charAt(0)}
+                  {(b.fullname || b.name).charAt(0)}
                 </div>
                 <div>
-                  <div style={{ fontWeight: '800', fontSize: '1.1rem', color: 'var(--text-main)' }}>{b.name}</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--success)', fontSize: '0.75rem', fontWeight: '700' }}>
-                    <BadgeCheck size={14} /> Active Professional
+                  <div style={{ fontWeight: '800', fontSize: '1.1rem', color: 'var(--text-main)' }}>{b.fullname || b.name}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: '600' }}>
+                    @{b.name}
                   </div>
                 </div>
               </div>
@@ -155,18 +159,34 @@ export default function Barbers() {
             </div>
 
             <form onSubmit={handleSubmit}>
-              <div style={{ marginBottom: '1.25rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>Full Name</label>
-                <div style={{ position: 'relative' }}>
-                  <User size={18} style={{ position: 'absolute', left: '0.85rem', top: '0.75rem', color: 'var(--text-muted)' }} />
-                  <input 
-                    type="text" 
-                    placeholder="e.g. John Doe" 
-                    value={name} 
-                    onChange={e => setName(e.target.value)} 
-                    style={{ paddingLeft: '2.5rem' }}
-                    required
-                  />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.25rem' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>System Name (Short)</label>
+                  <div style={{ position: 'relative' }}>
+                    <User size={16} style={{ position: 'absolute', left: '0.75rem', top: '0.75rem', color: 'var(--text-muted)' }} />
+                    <input 
+                      type="text" 
+                      placeholder="e.g. John" 
+                      value={name} 
+                      onChange={e => setName(e.target.value)} 
+                      style={{ paddingLeft: '2.5rem' }}
+                      required
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>Full Professional Name</label>
+                  <div style={{ position: 'relative' }}>
+                    <User size={16} style={{ position: 'absolute', left: '0.75rem', top: '0.75rem', color: 'var(--text-muted)' }} />
+                    <input 
+                      type="text" 
+                      placeholder="e.g. John Doe" 
+                      value={fullname} 
+                      onChange={e => setFullname(e.target.value)} 
+                      style={{ paddingLeft: '2.5rem' }}
+                      required
+                    />
+                  </div>
                 </div>
               </div>
 

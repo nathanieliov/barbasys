@@ -21,7 +21,14 @@ export class LoginUseCase {
     };
 
     const token = jwt.sign(
-      { id: user.id, username: user.username, role: user.role, barber_id: user.barber_id, shop_id: user.shop_id },
+      { 
+        id: user.id, 
+        username: user.username, 
+        role: user.role, 
+        barber_id: user.barber_id, 
+        shop_id: user.shop_id,
+        fullname: user.fullname
+      },
       process.env.JWT_SECRET || 'secret',
       options
     );
@@ -34,7 +41,8 @@ export class LoginUseCase {
         email: user.email,
         role: user.role,
         barber_id: user.barber_id,
-        shop_id: user.shop_id
+        shop_id: user.shop_id,
+        fullname: user.fullname
       }
     };
   }

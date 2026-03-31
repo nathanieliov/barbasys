@@ -8,6 +8,7 @@ interface User {
   role: 'OWNER' | 'MANAGER' | 'BARBER';
   barber_id: number | null;
   shop_id: number | null;
+  fullname?: string | null;
 }
 
 interface AuthContextType {

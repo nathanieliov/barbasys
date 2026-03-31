@@ -70,7 +70,7 @@ describe('POS Journey API Integration', () => {
     // Product: 18 * 0.1 = 1.80
     // Tip: 5.00
     // Total: 19.30
-    const alexData = reportRes.body.commissions.find((c: any) => c.name === 'Alex');
+    const alexData = reportRes.body.commissions.find((c: any) => c.name === 'Alex Rivera');
     expect(alexData).toBeDefined();
     expect(alexData.service_commission).toBeCloseTo(12.50, 2);
     expect(alexData.product_commission).toBeCloseTo(1.80, 2);

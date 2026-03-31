@@ -101,7 +101,7 @@ export default function POS() {
           <h1 style={{ marginBottom: '0.25rem' }}>Point of Sale</h1>
           {user?.role === 'BARBER' && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary)', fontWeight: '700', fontSize: '0.9rem' }}>
-              <User size={16} /> Professional: {user.username}
+              <User size={16} /> Professional: {user.fullname || user.username}
             </div>
           )}
         </div>
@@ -125,8 +125,9 @@ export default function POS() {
                   style={{ paddingLeft: '2.5rem' }}
                 >
                   <option value="">Choose barber...</option>
-                  {barbers.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                </select>
+                  {barbers.map(b => <option key={b.id} value={b.id}>{b.fullname || b.name}</option>)}
+                  </select>
+
               </div>
             </div>
           )}

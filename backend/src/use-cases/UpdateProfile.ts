@@ -6,6 +6,7 @@ import { User } from '../domain/entities.js';
 export interface UpdateProfileRequest {
   id: number;
   username?: string;
+  fullname?: string;
   email?: string;
   current_password?: string;
   new_password?: string;
@@ -42,11 +43,11 @@ export class UpdateProfile {
 
     const updatedUser = await this.userRepo.update(updateData);
 
-    // Sync barber name if linked
-    if (request.username && user.barber_id && this.barberRepo) {
+    // Sync barber fullname if linked
+    if (request.fullname && user.barber_id && this.barberRepo) {
       await this.barberRepo.update({
         id: user.barber_id,
-        name: request.username
+        fullname: request.fullname
       });
     }
 

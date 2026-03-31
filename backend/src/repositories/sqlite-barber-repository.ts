@@ -16,8 +16,8 @@ export class SQLiteBarberRepository implements IBarberRepository {
 
   async create(barber: Omit<Barber, 'id'>): Promise<number> {
     const result = this.db.prepare(
-      'INSERT INTO barbers (name, service_commission_rate, product_commission_rate, shop_id) VALUES (?, ?, ?, ?)'
-    ).run(barber.name, barber.service_commission_rate, barber.product_commission_rate, barber.shop_id);
+      'INSERT INTO barbers (name, fullname, service_commission_rate, product_commission_rate, shop_id) VALUES (?, ?, ?, ?, ?)'
+    ).run(barber.name, barber.fullname, barber.service_commission_rate, barber.product_commission_rate, barber.shop_id);
     return Number(result.lastInsertRowid);
   }
 
@@ -26,12 +26,13 @@ export class SQLiteBarberRepository implements IBarberRepository {
     if (!existing) throw new Error('Barber not found');
 
     const name = barber.name ?? existing.name;
+    const fullname = barber.fullname ?? existing.fullname;
     const service_commission_rate = barber.service_commission_rate ?? existing.service_commission_rate;
     const product_commission_rate = barber.product_commission_rate ?? existing.product_commission_rate;
 
     this.db.prepare(
-      'UPDATE barbers SET name = ?, service_commission_rate = ?, product_commission_rate = ? WHERE id = ?'
-    ).run(name, service_commission_rate, product_commission_rate, barber.id);
+      'UPDATE barbers SET name = ?, fullname = ?, service_commission_rate = ?, product_commission_rate = ? WHERE id = ?'
+    ).run(name, fullname, service_commission_rate, product_commission_rate, barber.id);
   }
 
   async delete(id: number): Promise<void> {
@@ -40,7 +41,7 @@ export class SQLiteBarberRepository implements IBarberRepository {
 
   async getCommissions(startDate: string, endDate: string, shopId: number, barberId?: number): Promise<any[]> {
     const commissionsQuery = `
-      SELECT b.id as barber_id, b.name,
+      SELECT b.id as barber_id, COALESCE(b.fullname, b.name) as name,
              IFNULL(SUM(CASE WHEN si.type = 'service' THEN si.price * b.service_commission_rate ELSE 0 END), 0) as service_commission,
              IFNULL(SUM(CASE WHEN si.type = 'product' THEN si.price * b.product_commission_rate ELSE 0 END), 0) as product_commission,
              IFNULL((SELECT SUM(tip_amount) FROM sales WHERE barber_id = b.id AND date(timestamp) BETWEEN ? AND ?), 0) as tips,

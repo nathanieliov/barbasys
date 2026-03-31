@@ -57,7 +57,7 @@ describe('Sales and Reports API', () => {
     expect(reportRes.body.tips).toBe(5);
 
     // Verify Nathaniel's specific commission and tip aggregation
-    const nathanielData = reportRes.body.commissions.find((c: any) => c.name === 'Nathaniel');
+    const nathanielData = reportRes.body.commissions.find((c: any) => c.name === 'Nathaniel Calderon');
     expect(nathanielData).toBeDefined();
     expect(nathanielData.service_commission).toBeCloseTo(15, 2);
     expect(nathanielData.product_commission).toBeCloseTo(2.7, 2);

@@ -121,7 +121,7 @@ const Sidebar = ({ isOpen, toggleSidebar }: { isOpen: boolean, toggleSidebar: ()
         
         <div className="sidebar-footer">
           <div className="user-info">
-            <p className="user-name">{user.username}</p>
+            <p className="user-name">{user.fullname || user.username}</p>
             <p className="user-role">{user.role}</p>
           </div>
           <button onClick={handleLogout} className="logout-button" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', width: '100%', border: '1px solid rgba(239, 68, 68, 0.2)' }}>

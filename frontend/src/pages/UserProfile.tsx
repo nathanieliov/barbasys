@@ -8,6 +8,7 @@ export default function UserProfile() {
   
   // Profile Info State
   const [username, setUsername] = useState(user?.username || '');
+  const [fullname, setFullname] = useState(user?.fullname || '');
   const [email, setEmail] = useState(user?.email || '');
   
   // Password State
@@ -24,7 +25,7 @@ export default function UserProfile() {
     setMessage({ text: '', type: '' });
     
     try {
-      const res = await apiClient.patch('/auth/profile', { username, email });
+      const res = await apiClient.patch('/auth/profile', { username, fullname, email });
       updateUser(res.data.user);
       setMessage({ text: 'Profile updated successfully!', type: 'success' });
     } catch (err: any) {
@@ -94,6 +95,20 @@ export default function UserProfile() {
           </div>
 
           <form onSubmit={handleUpdateProfile}>
+            <div style={{ marginBottom: '1.25rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>Full Legal Name</label>
+              <div style={{ position: 'relative' }}>
+                <User size={16} style={{ position: 'absolute', left: '0.75rem', top: '0.75rem', color: '#94a3b8' }} />
+                <input 
+                  type="text" 
+                  value={fullname}
+                  onChange={e => setFullname(e.target.value)}
+                  style={{ paddingLeft: '2.5rem' }}
+                  required
+                />
+              </div>
+            </div>
+
             <div style={{ marginBottom: '1.25rem' }}>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>Username</label>
               <div style={{ position: 'relative' }}>

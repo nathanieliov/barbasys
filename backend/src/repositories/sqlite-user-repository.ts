@@ -4,17 +4,32 @@ import db from '../db.js';
 
 export class SQLiteUserRepository implements UserRepository {
   async findById(id: number): Promise<User | null> {
-    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(id) as User | undefined;
+    const user = db.prepare(`
+      SELECT u.*, b.fullname as fullname 
+      FROM users u 
+      LEFT JOIN barbers b ON u.barber_id = b.id 
+      WHERE u.id = ?
+    `).get(id) as User | undefined;
     return user || null;
   }
 
   async findByUsername(username: string): Promise<User | null> {
-    const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username) as User | undefined;
+    const user = db.prepare(`
+      SELECT u.*, b.fullname as fullname 
+      FROM users u 
+      LEFT JOIN barbers b ON u.barber_id = b.id 
+      WHERE u.username = ?
+    `).get(username) as User | undefined;
     return user || null;
   }
 
   async findByEmail(email: string): Promise<User | null> {
-    const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email) as User | undefined;
+    const user = db.prepare(`
+      SELECT u.*, b.fullname as fullname 
+      FROM users u 
+      LEFT JOIN barbers b ON u.barber_id = b.id 
+      WHERE u.email = ?
+    `).get(email) as User | undefined;
     return user || null;
   }
 

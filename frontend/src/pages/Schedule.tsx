@@ -215,8 +215,9 @@ export default function Schedule() {
                         required
                       >
                         <option value="">Select Barber</option>
-                        {barbers.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                      </select>
+                        {barbers.map(b => <option key={b.id} value={b.id}>{b.fullname || b.name}</option>)}
+                        </select>
+
                     </div>
                   ) : (
                     <div style={{ marginBottom: '1.5rem', padding: '1rem', background: 'rgba(79, 70, 229, 0.05)', borderRadius: '0.75rem', border: '1px solid rgba(79, 70, 229, 0.1)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -225,7 +226,7 @@ export default function Schedule() {
                       </div>
                       <div>
                         <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '800' }}>Professional</div>
-                        <div style={{ fontWeight: '700', color: 'var(--primary)' }}>{user.username}</div>
+                        <div style={{ fontWeight: '700', color: 'var(--primary)' }}>{user.fullname || user.username}</div>
                       </div>
                     </div>
                   )}

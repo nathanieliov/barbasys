@@ -65,7 +65,7 @@ export class ProcessSale {
 
     const saleId = await this.saleRepo.create({
       barber_id,
-      barber_name: barber.name,
+      barber_name: barber.fullname || barber.name,
       customer_id: customerId,
       total_amount,
       tip_amount,
@@ -100,7 +100,7 @@ export class ProcessSale {
       tip_amount,
       discount_amount,
       items,
-      barber_name: barber.name || 'Professional'
+      barber_name: barber.fullname || barber.name || 'Professional'
     });
 
     return { success: true, saleId };

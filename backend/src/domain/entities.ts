@@ -9,11 +9,13 @@ export interface User {
   barber_id: number | null;
   shop_id: number | null;
   created_at: string;
+  fullname?: string | null;
 }
 
 export interface Barber {
   id: number;
   name: string;
+  fullname: string;
   service_commission_rate: number;
   product_commission_rate: number;
   shop_id: number | null;

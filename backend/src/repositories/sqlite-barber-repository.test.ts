@@ -13,6 +13,7 @@ describe('SQLiteBarberRepository', () => {
   it('should create and find a barber', async () => {
     const id = await repo.create({ 
       name: 'Test Barber', 
+      fullname: 'Test Barber Fullname',
       service_commission_rate: 0.6, 
       product_commission_rate: 0.1, 
       shop_id: 1,
@@ -33,6 +34,7 @@ describe('SQLiteBarberRepository', () => {
   it('should delete (deactivate) a barber', async () => {
     const id = await repo.create({ 
       name: 'To Delete', 
+      fullname: 'To Delete Fullname',
       service_commission_rate: 0.5, 
       product_commission_rate: 0.1, 
       shop_id: 1,

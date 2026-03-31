@@ -146,7 +146,8 @@ app.get('/api/auth/me', protect, async (req, res) => {
       email: user.email,
       role: user.role,
       barber_id: user.barber_id,
-      shop_id: user.shop_id
+      shop_id: user.shop_id,
+      fullname: user.fullname
     });
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch current user' });
@@ -859,7 +860,7 @@ app.get('/api/reports/analytics', protect, authorize('OWNER', 'MANAGER', 'BARBER
   // 3. Barber Performance Metrics
   let barberQuery = `
     SELECT 
-      b.name,
+      COALESCE(b.fullname, b.name) as name,
       COUNT(s.id) as total_sales,
       SUM(s.total_amount) as total_revenue,
       AVG(s.total_amount) as avg_ticket_size,

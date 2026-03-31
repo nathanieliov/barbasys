@@ -26,6 +26,7 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS barbers (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
+    fullname TEXT,
     service_commission_rate REAL DEFAULT 0.5,
     product_commission_rate REAL DEFAULT 0.1,
     shop_id INTEGER,
@@ -192,6 +193,8 @@ const defaultShopId = (db.prepare('SELECT id FROM shops LIMIT 1').get() as { id:
 
 // 2. Migration for existing databases
 try { db.exec('ALTER TABLE barbers ADD COLUMN is_active INTEGER DEFAULT 1'); } catch (e) {}
+try { db.exec('ALTER TABLE barbers ADD COLUMN fullname TEXT'); } catch (e) {}
+try { db.exec('UPDATE barbers SET fullname = name WHERE fullname IS NULL'); } catch (e) {}
 try { db.exec('ALTER TABLE services ADD COLUMN is_active INTEGER DEFAULT 1'); } catch (e) {}
 try { db.exec('ALTER TABLE products ADD COLUMN is_active INTEGER DEFAULT 1'); } catch (e) {}
 try { db.exec('ALTER TABLE suppliers ADD COLUMN is_active INTEGER DEFAULT 1'); } catch (e) {}
@@ -258,8 +261,8 @@ if (barberToLink) {
 
 const barbersCount = db.prepare('SELECT count(*) as count FROM barbers').get() as { count: number };
 if (barbersCount.count === 0) {
-  const nathaniel = db.prepare('INSERT INTO barbers (name, service_commission_rate, product_commission_rate, shop_id) VALUES (?, ?, ?, ?)').run('Nathaniel', 0.6, 0.15, defaultShopId);
-  const alex = db.prepare('INSERT INTO barbers (name, service_commission_rate, product_commission_rate, shop_id) VALUES (?, ?, ?, ?)').run('Alex', 0.5, 0.10, defaultShopId);
+  const nathaniel = db.prepare('INSERT INTO barbers (name, fullname, service_commission_rate, product_commission_rate, shop_id) VALUES (?, ?, ?, ?, ?)').run('Nathaniel', 'Nathaniel Calderon', 0.6, 0.15, defaultShopId);
+  const alex = db.prepare('INSERT INTO barbers (name, fullname, service_commission_rate, product_commission_rate, shop_id) VALUES (?, ?, ?, ?, ?)').run('Alex', 'Alex Rivera', 0.5, 0.10, defaultShopId);
   
   // Seed all-week shifts (0-6)
   const shiftInsert = db.prepare('INSERT INTO barber_shifts (barber_id, day_of_week, start_time, end_time) VALUES (?, ?, ?, ?)');
