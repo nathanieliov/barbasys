@@ -182,7 +182,15 @@ db.exec(`
   );
 `);
 
-// Migration for existing databases
+// 1. Ensure shops exist first (needed for defaultShopId and migrations)
+const shopsCount = db.prepare('SELECT count(*) as count FROM shops').get() as { count: number };
+if (shopsCount.count === 0) {
+  db.prepare('INSERT INTO shops (name, address) VALUES (?, ?)').run('Main Street Shop', '123 Main St');
+  db.prepare('INSERT INTO shops (name, address) VALUES (?, ?)').run('Downtown Studio', '456 Center Ave');
+}
+const defaultShopId = (db.prepare('SELECT id FROM shops LIMIT 1').get() as { id: number }).id;
+
+// 2. Migration for existing databases
 try { db.exec('ALTER TABLE barbers ADD COLUMN is_active INTEGER DEFAULT 1'); } catch (e) {}
 try { db.exec('ALTER TABLE services ADD COLUMN is_active INTEGER DEFAULT 1'); } catch (e) {}
 try { db.exec('ALTER TABLE products ADD COLUMN is_active INTEGER DEFAULT 1'); } catch (e) {}
@@ -191,7 +199,7 @@ try { db.exec('ALTER TABLE suppliers ADD COLUMN shop_id INTEGER'); } catch (e) {
 try { db.exec('ALTER TABLE sales ADD COLUMN barber_name TEXT'); } catch (e) {}
 try { db.exec('ALTER TABLE sale_items ADD COLUMN item_name TEXT'); } catch (e) {}
 
-// Migration for shop_settings to support multi-shop
+// 3. Migration for shop_settings to support multi-shop
 try {
   const columns = db.prepare('PRAGMA table_info(shop_settings)').all();
   const hasShopId = columns.some((c: any) => c.name === 'shop_id');
@@ -206,7 +214,7 @@ try {
         FOREIGN KEY (shop_id) REFERENCES shops(id) ON DELETE CASCADE
       );
       INSERT INTO shop_settings (shop_id, key, value)
-      SELECT (SELECT id FROM shops LIMIT 1), key, value FROM shop_settings_old;
+      SELECT ${defaultShopId}, key, value FROM shop_settings_old;
       DROP TABLE shop_settings_old;
     `);
   }
@@ -228,14 +236,6 @@ try {
     WHERE item_name IS NULL AND type = 'product';
   `);
 } catch (e) {}
-
-// Seed initial data
-const shopsCount = db.prepare('SELECT count(*) as count FROM shops').get() as { count: number };
-if (shopsCount.count === 0) {
-  db.prepare('INSERT INTO shops (name, address) VALUES (?, ?)').run('Main Street Shop', '123 Main St');
-  db.prepare('INSERT INTO shops (name, address) VALUES (?, ?)').run('Downtown Studio', '456 Center Ave');
-}
-const defaultShopId = (db.prepare('SELECT id FROM shops LIMIT 1').get() as { id: number }).id;
 
 const salt = bcrypt.genSaltSync(10);
 const passwordHash = bcrypt.hashSync('admin123', salt);
