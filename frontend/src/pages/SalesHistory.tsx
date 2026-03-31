@@ -1,26 +1,43 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../api/apiClient';
 import { ShoppingBag, Calendar, User, Clock, X, Receipt, Scissors, Tag } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
 
 export default function SalesHistory() {
+  const { user } = useAuth();
+  const isBarber = user?.role === 'BARBER';
+
   const [sales, setSales] = useState<any[]>([]);
+  const [barbers, setBarbers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState({
     startDate: new Date().toISOString().split('T')[0],
     endDate: new Date().toISOString().split('T')[0]
   });
+  const [selectedBarberId, setSelectedBarberId] = useState('');
   const [selectedSale, setSelectedSale] = useState<any>(null);
 
   const fetchSales = () => {
     setLoading(true);
-    apiClient.get(`/sales?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`)
+    let url = `/sales?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`;
+    if (selectedBarberId) {
+      url += `&barberId=${selectedBarberId}`;
+    }
+    
+    apiClient.get(url)
       .then(res => setSales(res.data))
       .finally(() => setLoading(false));
   };
 
   useEffect(() => {
     fetchSales();
-  }, [dateRange]);
+  }, [dateRange, selectedBarberId]);
+
+  useEffect(() => {
+    if (!isBarber) {
+      apiClient.get('/barbers').then(res => setBarbers(res.data)).catch(() => {});
+    }
+  }, [isBarber]);
 
   const fetchSaleDetail = async (id: number) => {
     try {
@@ -45,11 +62,26 @@ export default function SalesHistory() {
     <div className="sales-history-container">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h1>Sales Log</h1>
-          <p style={{ color: 'var(--text-muted)' }}>Review and audit all shop transactions.</p>
+          <h1>{isBarber ? 'My Sales Log' : 'Shop Sales Log'}</h1>
+          <p style={{ color: 'var(--text-muted)' }}>
+            {isBarber ? 'Review your personal transaction history.' : 'Review and audit all shop transactions.'}
+          </p>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          {!isBarber && (
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              <User size={16} style={{ position: 'absolute', left: '0.75rem', color: 'var(--text-muted)', pointerEvents: 'none' }} />
+              <select 
+                value={selectedBarberId}
+                onChange={e => setSelectedBarberId(e.target.value)}
+                style={{ marginBottom: 0, paddingLeft: '2.25rem', fontSize: '0.85rem', fontWeight: '600' }}
+              >
+                <option value="">All Professionals</option>
+                {barbers.map(b => <option key={b.id} value={b.id}>{b.fullname || b.name}</option>)}
+              </select>
+            </div>
+          )}
           <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
             <Calendar size={16} style={{ position: 'absolute', left: '0.75rem', color: 'var(--text-muted)', pointerEvents: 'none' }} />
             <input 

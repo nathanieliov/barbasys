@@ -688,7 +688,7 @@ app.post('/api/sales', protect, async (req, res) => {
 
 app.get('/api/sales', protect, (req, res) => {
   const shopId = req.user?.shop_id;
-  const { startDate, endDate } = req.query;
+  const { startDate, endDate, barberId: queryBarberId } = req.query;
 
   let query = `
     SELECT s.*, COALESCE(s.barber_name, b.name) as barber_name
@@ -698,9 +698,14 @@ app.get('/api/sales', protect, (req, res) => {
   `;
   const params: any[] = [shopId];
 
+  // Role-based enforcement
   if (req.user?.role === 'BARBER') {
     query += " AND s.barber_id = ?";
     params.push(req.user.barber_id);
+  } else if (queryBarberId) {
+    // Managers/Owners can filter by barber
+    query += " AND s.barber_id = ?";
+    params.push(parseInt(queryBarberId as string));
   }
 
   if (startDate && endDate) {
@@ -738,7 +743,14 @@ app.get('/api/sales/:id', protect, (req, res) => {
 
     const sale = db.prepare(query).get(...params) as any;
 
-    if (!sale) return res.status(404).json({ error: 'Sale not found' });
+    if (!sale) {
+      // Check if it exists but belongs to someone else (security)
+      const exists = db.prepare('SELECT 1 FROM sales WHERE id = ? AND shop_id = ?').get(id, shopId);
+      if (exists && req.user?.role === 'BARBER') {
+        return res.status(403).json({ error: 'Access denied to this transaction' });
+      }
+      return res.status(404).json({ error: 'Sale not found' });
+    }
 
     const items = db.prepare(`
       SELECT si.*, COALESCE(si.item_name, 'Unknown Item') as item_name
