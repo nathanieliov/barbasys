@@ -15,7 +15,18 @@ describe('Barber CRUD Use Cases', () => {
   const deleteBarber = new DeleteBarber(mockRepo);
 
   it('should list all barbers', async () => {
-    const mockBarbers: Barber[] = [{ id: 1, name: 'Barber 1', fullname: 'Barber One', service_commission_rate: 0.6, product_commission_rate: 0.1, shop_id: 1, is_active: 1 }];
+    const mockBarbers: Barber[] = [{ 
+      id: 1, 
+      name: 'Barber 1', 
+      fullname: 'Barber One', 
+      payment_model: 'COMMISSION',
+      service_commission_rate: 0.6, 
+      product_commission_rate: 0.1, 
+      fixed_amount: null,
+      fixed_period: null,
+      shop_id: 1, 
+      is_active: 1 
+    }];
     vi.mocked(mockRepo.findAll).mockResolvedValue(mockBarbers);
 
     const result = await listBarbers.execute();
@@ -28,8 +39,11 @@ describe('Barber CRUD Use Cases', () => {
       id: 1, 
       name: 'Barber 1', 
       fullname: 'Barber One',
+      payment_model: 'COMMISSION',
       service_commission_rate: 0.6, 
       product_commission_rate: 0.1, 
+      fixed_amount: null,
+      fixed_period: null,
       shop_id: 1, 
       is_active: 1 
     });
