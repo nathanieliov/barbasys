@@ -642,27 +642,46 @@ app.get('/api/shops/:id', protect, (req, res) => {
 
 app.get('/api/settings', protect, (req, res) => {
   const shopId = req.user?.shop_id;
+  const shop = db.prepare('SELECT * FROM shops WHERE id = ?').get(shopId) as any;
   const settings = db.prepare('SELECT * FROM shop_settings WHERE shop_id = ?').all(shopId);
   const settingsMap = (settings as any[]).reduce((acc, curr) => {
     acc[curr.key] = curr.value;
     return acc;
   }, {});
-  res.json(settingsMap);
+  
+  res.json({
+    ...settingsMap,
+    shop_name: shop?.name || '',
+    shop_address: shop?.address || '',
+    shop_phone: shop?.phone || ''
+  });
 });
 
 app.post('/api/settings', protect, authorize('OWNER', 'MANAGER'), (req, res) => {
   const shopId = req.user?.shop_id;
-  const settings = req.body;
-  const upsert = db.prepare('INSERT OR REPLACE INTO shop_settings (shop_id, key, value) VALUES (?, ?, ?)');
+  const settings = { ...req.body };
   
-  const transaction = db.transaction((settings: any) => {
+  // Extract shop-specific fields from settings to update the shops table
+  const { shop_name, shop_address, shop_phone } = settings;
+  delete settings.shop_name;
+  delete settings.shop_address;
+  delete settings.shop_phone;
+
+  const upsertSetting = db.prepare('INSERT OR REPLACE INTO shop_settings (shop_id, key, value) VALUES (?, ?, ?)');
+  const updateShop = db.prepare('UPDATE shops SET name = ?, address = ?, phone = ? WHERE id = ?');
+  
+  const transaction = db.transaction((settings: any, shopInfo: any) => {
+    // 1. Update shop details
+    updateShop.run(shopInfo.name, shopInfo.address, shopInfo.phone, shopId);
+
+    // 2. Update all other settings
     for (const [key, value] of Object.entries(settings)) {
-      upsert.run(shopId, key, String(value));
+      upsertSetting.run(shopId, key, String(value));
     }
   });
 
   try {
-    transaction(settings);
+    transaction(settings, { name: shop_name, address: shop_address, phone: shop_phone });
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Failed to update settings' });
