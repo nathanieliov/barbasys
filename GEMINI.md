@@ -47,6 +47,7 @@ For complex features, implementation should be parallelized using `generalist` s
 
 ### 3. Integration & QA Phase (Sequential - Main Agent Only)
 - **Integration**: The Main Agent merges tracks, replaces Mocks with real API calls, and resolves any discrepancies.
+- **Verification**: Run `scripts/ai-verify.sh` to clean stale artifacts and verify cross-project type integrity.
 - **Validation**: Run project-wide `tsc --noEmit`, `npm run lint`, and the full E2E test suite.
 - **MANDATORY**: No task is complete until the Main Agent verifies the "Definition of Done."
 
