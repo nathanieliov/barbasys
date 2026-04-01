@@ -75,5 +75,23 @@ describe('UpdateProfile Use Case', () => {
       id: 10,
       fullname: 'new name'
     });
+    expect(mockUserRepo.update).toHaveBeenCalledWith({
+      id: 1,
+      fullname: 'new name'
+    });
+  });
+
+  it('should update fullname in user repository', async () => {
+    const mockUser = { id: 1, username: 'old', email: 'old@ex.com', password_hash: 'hash' };
+    mockUserRepo.findById.mockResolvedValue(mockUser);
+    mockUserRepo.update.mockResolvedValue({ ...mockUser, fullname: 'New Name' });
+
+    const result = await useCase.execute({ id: 1, fullname: 'New Name' });
+
+    expect(result.fullname).toBe('New Name');
+    expect(mockUserRepo.update).toHaveBeenCalledWith({
+      id: 1,
+      fullname: 'New Name'
+    });
   });
 });

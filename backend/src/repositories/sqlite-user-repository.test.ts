@@ -54,11 +54,23 @@ describe('SQLiteUserRepository', () => {
   });
 
   it('should update a user', async () => {
-    const user = await repo.findByUsername('newuser');
-    await repo.update({ id: user!.id, email: 'updated@example.com' });
+    const userData = {
+      username: 'update_me',
+      email: 'update@example.com',
+      password_hash: 'hashed',
+      role: 'MANAGER' as const,
+      barber_id: null,
+      shop_id: 1,
+      fullname: 'Initial Name'
+    };
+    const user = await repo.create(userData);
     
-    const updated = await repo.findById(user!.id);
-    expect(updated?.email).toBe('updated@example.com');
+    await repo.update({ id: user.id, fullname: 'Updated Name' });
+    
+    const updated = await repo.findById(user.id);
+    expect(updated?.fullname).toBe('Updated Name');
+    
+    await repo.delete(user.id);
   });
 
   it('should delete a user', async () => {

@@ -164,7 +164,8 @@ app.patch('/api/auth/profile', protect, async (req, res) => {
       email: user.email,
       role: user.role,
       barber_id: user.barber_id,
-      shop_id: user.shop_id
+      shop_id: user.shop_id,
+      fullname: user.fullname
     }});
   } catch (err: any) {
     res.status(400).json({ error: err.message });

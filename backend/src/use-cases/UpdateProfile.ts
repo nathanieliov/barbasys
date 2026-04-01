@@ -26,6 +26,7 @@ export class UpdateProfile {
 
     if (request.username) updateData.username = request.username;
     if (request.email) updateData.email = request.email;
+    if (request.fullname) updateData.fullname = request.fullname;
 
     if (request.new_password) {
       if (!request.current_password) {
