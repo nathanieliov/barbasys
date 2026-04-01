@@ -64,13 +64,14 @@ describe('UpdateProfile Use Case', () => {
     })).rejects.toThrow('Current password is incorrect');
   });
 
-  it('should sync barber name if fullname changed', async () => {
+  it('should sync barber name before user update', async () => {
     const mockUser = { id: 1, username: 'old', barber_id: 10, password_hash: 'h' };
     mockUserRepo.findById.mockResolvedValue(mockUser);
     mockUserRepo.update.mockResolvedValue({ ...mockUser, username: 'old', fullname: 'new name' });
 
     await useCase.execute({ id: 1, fullname: 'new name' });
 
+    // Verify calls in correct sequence
     expect(mockBarberRepo.update).toHaveBeenCalledWith({
       id: 10,
       fullname: 'new name'
@@ -79,6 +80,11 @@ describe('UpdateProfile Use Case', () => {
       id: 1,
       fullname: 'new name'
     });
+    
+    // Verify sequence
+    const barberCallIndex = mockBarberRepo.update.mock.invocationCallOrder[0];
+    const userCallIndex = mockUserRepo.update.mock.invocationCallOrder[0];
+    expect(barberCallIndex).toBeLessThan(userCallIndex);
   });
 
   it('should update fullname in user repository', async () => {
