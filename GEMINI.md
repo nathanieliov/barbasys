@@ -29,13 +29,41 @@ A comprehensive management system for barbershops, featuring a robust backend fo
 
 ## Development Workflow (MANDATORY)
 
-Every task must follow this sequential lifecycle:
-1. **Architect Phase**: Research requirements, analyze existing code, and define the technical strategy/design. Document changes in an ADR if structural.
-2. **Engineer Phase**: Implement the design using surgical, idiomatic code changes. Follow project style and responsiveness requirements.
-3. **QA Phase**: Validate changes via automated tests and manual verification of requirements (e.g., mobile responsiveness).
-4. **Reviewer Phase**: Perform a final pass for consistency, naming conventions, and adherence to "Clean Architecture" or local patterns.
+Every task MUST follow this structured SDLC lifecycle, as defined in \`workflow.toml\`. You must explicitly state your transition between these phases.
 
-Handoff criteria are defined in `workflow.toml`.
+1. **Architect Phase**: 
+   - Research requirements and analyze existing code.
+   - Define the technical strategy and design.
+   - **MANDATORY**: Document changes in an ADR if structural.
+   - **MANDATORY**: Define/update shared interfaces in \`shared/src/index.ts\` before implementation.
+
+2. **Engineer Phase**:
+   - **Engineer-Backend**: Implement logic in \`backend/src/\`. Adhere to Clean Architecture.
+   - **Engineer-Frontend**: Implement UI in \`frontend/src/\`. Ensure responsiveness.
+   - **MANDATORY**: Follow project style and responsiveness requirements.
+   - **MANDATORY**: Commit all logic changes at the end of this phase before moving to QA.
+
+3. **QA Phase**:
+   - **QA-Unit**: Validate logic via automated unit tests for backend and frontend.
+   - **QA-E2E**: Verify critical flows with Playwright smoke tests.
+   - **MANDATORY**: No task is complete without passing all tests and verifying requirements manually.
+
+4. **Reviewer Phase**:
+   - Perform a final self-review or call the \`generalist\` sub-agent to act as a reviewer.
+   - Verify consistency, naming conventions, and adherence to local patterns.
+   - **MANDATORY**: Run \`tsc --noEmit\` and \`npm run lint\` to ensure project-wide health.
+   - **MANDATORY**: Commit any final adjustments or "Reviewer feedback" fixes.
+
+## Definition of Done
+
+A task is complete ONLY when:
+- Backend logic is unit tested and adheres to Clean Architecture.
+- Frontend UI is implemented, responsive, and navigated.
+- **MANDATORY**: Shared contracts are used for type-safety across boundaries.
+- **MANDATORY**: \`tsc\` and linting pass for the entire project.
+- **MANDATORY**: All changes are committed with a clear message.
+- **MANDATORY**: All tests (Unit & E2E) are green.
+- **MANDATORY**: Environment is clean (e.g., \`rm -rf backend/dist\`).
 
 ## Agentic Workflow & QA Protocol
 
