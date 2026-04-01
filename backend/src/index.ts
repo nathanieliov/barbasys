@@ -691,7 +691,6 @@ app.get('/api/sales', protect, async (req, res) => {
 
   let barberIdToFilter: number | undefined | null = undefined;
   if (req.user?.role === 'BARBER') {
-    // If it's a barber, we MUST filter. If barber_id is missing, use -1 to ensure empty results.
     barberIdToFilter = req.user.barber_id ?? -1;
   } else if (queryBarberId) {
     barberIdToFilter = parseInt(queryBarberId as string);

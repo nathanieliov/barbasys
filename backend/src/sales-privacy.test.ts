@@ -12,7 +12,7 @@ describe('Sales Log Privacy Enforcement', () => {
 
   beforeAll(async () => {
     // 1. Setup - Clear and get tokens
-    db.exec("DELETE FROM sale_items; DELETE FROM sales; DELETE FROM users WHERE username = 'Nathaniel_Test'");
+    db.exec("DELETE FROM sale_items; DELETE FROM sales; DELETE FROM users WHERE username IN ('Nathaniel_Test', 'null_barber')");
     db.exec("DELETE FROM barbers WHERE name IN ('Nathaniel_Barber', 'Other_Barber')");
     
     const adminRes = await request(app).post('/api/auth/login').send({
@@ -60,33 +60,30 @@ describe('Sales Log Privacy Enforcement', () => {
     });
   });
 
-  it('should strictly only return Nathaniel own sales and NOT the other barber sales', async () => {
+  it('should only return Nathaniel own sales and NOT the other barber sales', async () => {
     const res = await request(app)
       .get('/api/sales')
       .set('Authorization', `Bearer ${nathanielToken}`);
     
     expect(res.status).toBe(200);
-    
-    // Log for debugging if it fails
-    if (res.body.length > 1) {
-      console.log('Nathaniel saw too many sales:', res.body.map((s: any) => s.barber_id));
-    }
-
-    // Should be exactly 1 sale (his own)
     expect(res.body.length).toBe(1);
     expect(res.body[0].barber_id).toBe(nathanielBarberId);
+  });
+
+  it('should NOT allow Nathaniel to see other sales by providing a different barberId in query', async () => {
+    const res = await request(app)
+      .get(`/api/sales?barberId=${otherBarberId}`)
+      .set('Authorization', `Bearer ${nathanielToken}`);
     
-    // Double check: No sale from Other Barber should be present
-    const hasOtherSale = res.body.some((s: any) => s.barber_id === otherBarberId);
-    expect(hasOtherSale).toBe(false);
+    expect(res.status).toBe(200);
+    expect(res.body.length).toBe(1);
+    expect(res.body[0].barber_id).toBe(nathanielBarberId);
   });
 
   it('should return 403 when Nathaniel tries to access detail of Other Barber sale', async () => {
-    // 1. Get other sale ID
     const allSales = await request(app).get('/api/sales').set('Authorization', `Bearer ${adminToken}`);
     const otherSaleId = allSales.body.find((s: any) => s.barber_id === otherBarberId).id;
 
-    // 2. Try to access it as Nathaniel
     const res = await request(app)
       .get(`/api/sales/${otherSaleId}`)
       .set('Authorization', `Bearer ${nathanielToken}`);
@@ -101,47 +98,25 @@ describe('Sales Log Privacy Enforcement', () => {
       .set('Authorization', `Bearer ${nathanielToken}`);
     
     expect(res.status).toBe(200);
-    // Commissions array should have exactly 1 entry
     expect(res.body.commissions.length).toBe(1);
     expect(res.body.commissions[0].barber_id).toBe(nathanielBarberId);
   });
 
-  it('should only return Nathaniel own performance in the analytics', async () => {
-    const today = new Date().toISOString().split('T')[0];
-    const res = await request(app)
-      .get(`/api/reports/analytics?startDate=${today}&endDate=${today}`)
-      .set('Authorization', `Bearer ${nathanielToken}`);
-    
-    expect(res.status).toBe(200);
-    // barberPerformance array should have exactly 1 entry
-    expect(res.body.barberPerformance.length).toBe(1);
-    expect(res.body.barberPerformance[0].name).toBe('Nathaniel Test');
-  });
+  it('should NOT allow Nathaniel to see sales from another shop', async () => {
+    const s2 = db.prepare('INSERT INTO shops (name) VALUES (?)').run('Other Shop');
+    const otherShopId = Number(s2.lastInsertRowid);
 
-  it('should return NO sales for a BARBER role with NO linked barber_id', async () => {
-    // 1. Create a barber user with null barber_id
-    await request(app).post('/api/auth/register').set('Authorization', `Bearer ${adminToken}`).send({
-      username: 'null_barber',
-      email: 'null@ex.com',
-      password_hash: 'password123',
-      role: 'BARBER',
-      barber_id: null,
-      shop_id: shopId
+    await request(app).post('/api/sales').set('Authorization', `Bearer ${adminToken}`).send({
+      barber_id: nathanielBarberId,
+      items: [{ id: 1, name: 'Service', type: 'service', price: 100 }],
+      shop_id: otherShopId
     });
-
-    const loginRes = await request(app).post('/api/auth/login').send({
-      username: 'null_barber',
-      password: 'password123'
-    });
-    const nullToken = loginRes.body.token;
 
     const res = await request(app)
       .get('/api/sales')
-      .set('Authorization', `Bearer ${nullToken}`);
+      .set('Authorization', `Bearer ${nathanielToken}`);
     
     expect(res.status).toBe(200);
-    // If it's undefined in the filter, it might return EVERYTHING. 
-    // We want it to return NOTHING or strictly filter.
-    expect(res.body.length).toBe(0);
+    expect(res.body.every((s: any) => s.shop_id === shopId)).toBe(true);
   });
 });

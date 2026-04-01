@@ -92,6 +92,7 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT NOT NULL UNIQUE,
+    fullname TEXT,
     email TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
     role TEXT NOT NULL CHECK(role IN ('OWNER', 'MANAGER', 'BARBER')),
@@ -195,6 +196,8 @@ const defaultShopId = (db.prepare('SELECT id FROM shops LIMIT 1').get() as { id:
 try { db.exec('ALTER TABLE barbers ADD COLUMN is_active INTEGER DEFAULT 1'); } catch (e) {}
 try { db.exec('ALTER TABLE barbers ADD COLUMN fullname TEXT'); } catch (e) {}
 try { db.exec('UPDATE barbers SET fullname = name WHERE fullname IS NULL'); } catch (e) {}
+try { db.exec('ALTER TABLE users ADD COLUMN fullname TEXT'); } catch (e) {}
+try { db.exec('UPDATE users SET fullname = username WHERE fullname IS NULL'); } catch (e) {}
 try { db.exec('ALTER TABLE services ADD COLUMN is_active INTEGER DEFAULT 1'); } catch (e) {}
 try { db.exec('ALTER TABLE products ADD COLUMN is_active INTEGER DEFAULT 1'); } catch (e) {}
 try { db.exec('ALTER TABLE suppliers ADD COLUMN is_active INTEGER DEFAULT 1'); } catch (e) {}
@@ -243,22 +246,7 @@ try {
 const salt = bcrypt.genSaltSync(10);
 const passwordHash = bcrypt.hashSync('admin123', salt);
 
-// Seed OWNER
-db.prepare('INSERT OR IGNORE INTO users (username, email, password_hash, role, shop_id) VALUES (?, ?, ?, ?, ?)').run('admin', 'admin@barbasys.com', passwordHash, 'OWNER', defaultShopId);
-
-// Seed MANAGER
-db.prepare('INSERT OR IGNORE INTO users (username, email, password_hash, role, shop_id) VALUES (?, ?, ?, ?, ?)').run('manager', 'manager@barbasys.com', passwordHash, 'MANAGER', defaultShopId);
-
-// Seed BARBER (associated with Nathaniel or any available barber)
-let barberToLink = db.prepare('SELECT id FROM barbers WHERE name = ?').get('Nathaniel') as { id: number };
-if (!barberToLink) {
-  barberToLink = db.prepare('SELECT id FROM barbers LIMIT 1').get() as { id: number };
-}
-
-if (barberToLink) {
-  db.prepare('INSERT OR IGNORE INTO users (username, email, password_hash, role, barber_id, shop_id) VALUES (?, ?, ?, ?, ?, ?)').run('barber', 'barber@barbasys.com', passwordHash, 'BARBER', barberToLink.id, defaultShopId);
-}
-
+// 1. Seed Barbers FIRST (so they can be linked to users)
 const barbersCount = db.prepare('SELECT count(*) as count FROM barbers').get() as { count: number };
 if (barbersCount.count === 0) {
   const nathaniel = db.prepare('INSERT INTO barbers (name, fullname, service_commission_rate, product_commission_rate, shop_id) VALUES (?, ?, ?, ?, ?)').run('Nathaniel', 'Nathaniel Calderon', 0.6, 0.15, defaultShopId);
@@ -267,7 +255,7 @@ if (barbersCount.count === 0) {
   // Seed all-week shifts (0-6)
   const shiftInsert = db.prepare('INSERT INTO barber_shifts (barber_id, day_of_week, start_time, end_time) VALUES (?, ?, ?, ?)');
   [0, 1, 2, 3, 4, 5, 6].forEach(day => {
-    shiftInsert.run(nathaniel.lastInsertRowid, day, '09:00', '21:00'); // Extended hours for tests
+    shiftInsert.run(nathaniel.lastInsertRowid, day, '09:00', '21:00');
     shiftInsert.run(alex.lastInsertRowid, day, '09:00', '21:00');
   });
 
@@ -276,6 +264,25 @@ if (barbersCount.count === 0) {
   
   db.prepare('INSERT INTO products (name, price, stock, min_stock_threshold, shop_id) VALUES (?, ?, ?, ?, ?)').run('Pomade', 18, 10, 3, defaultShopId);
   db.prepare('INSERT INTO products (name, price, stock, min_stock_threshold, shop_id) VALUES (?, ?, ?, ?, ?)').run('Shampoo', 12, 5, 2, defaultShopId);
+}
+
+// 2. Seed Users
+// Seed OWNER
+db.prepare('INSERT OR IGNORE INTO users (username, email, password_hash, role, shop_id) VALUES (?, ?, ?, ?, ?)').run('admin', 'admin@barbasys.com', passwordHash, 'OWNER', defaultShopId);
+
+// Seed MANAGER
+db.prepare('INSERT OR IGNORE INTO users (username, email, password_hash, role, shop_id) VALUES (?, ?, ?, ?, ?)').run('manager', 'manager@barbasys.com', passwordHash, 'MANAGER', defaultShopId);
+
+// Seed BARBER (linked to Nathaniel)
+let barberToLink = db.prepare('SELECT id FROM barbers WHERE name = ?').get('Nathaniel') as { id: number };
+if (!barberToLink) {
+  barberToLink = db.prepare('SELECT id FROM barbers LIMIT 1').get() as { id: number };
+}
+
+if (barberToLink) {
+  db.prepare('INSERT OR IGNORE INTO users (username, email, password_hash, role, barber_id, shop_id) VALUES (?, ?, ?, ?, ?, ?)').run('barber', 'barber@barbasys.com', passwordHash, 'BARBER', barberToLink.id, defaultShopId);
+  // Also seed a user specifically named Nathaniel for testing
+  db.prepare('INSERT OR IGNORE INTO users (username, email, password_hash, role, barber_id, shop_id) VALUES (?, ?, ?, ?, ?, ?)').run('Nathaniel', 'nathaniel.calderon@gmail.com', passwordHash, 'BARBER', barberToLink.id, defaultShopId);
 }
 
 export default db;
