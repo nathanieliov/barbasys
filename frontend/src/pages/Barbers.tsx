@@ -8,7 +8,6 @@ export default function Barbers() {
   const [editingBarber, setEditingBarber] = useState<any>(null);
   
   // Form State
-  const [name, setName] = useState('');
   const [fullname, setFullname] = useState('');
   const [serviceRate, setServiceRate] = useState('0.6');
   const [productRate, setProductRate] = useState('0.1');
@@ -25,7 +24,6 @@ export default function Barbers() {
   }, []);
 
   const resetForm = () => {
-    setName('');
     setFullname('');
     setServiceRate('0.6');
     setProductRate('0.1');
@@ -38,8 +36,7 @@ export default function Barbers() {
 
   const startEdit = (barber: any) => {
     setEditingBarber(barber);
-    setName(barber.name);
-    setFullname(barber.fullname || '');
+    setFullname(barber.fullname || barber.name || '');
     setServiceRate(barber.service_commission_rate.toString());
     setProductRate(barber.product_commission_rate.toString());
     setPaymentModel(barber.payment_model || 'COMMISSION');
@@ -50,10 +47,11 @@ export default function Barbers() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !fullname) return;
+    if (!fullname) return;
 
+    // Use fullname for both backend fields to ensure consistency and avoid confusion
     const data = { 
-      name, 
+      name: fullname, 
       fullname,
       payment_model: paymentModel,
       service_commission_rate: parseFloat(serviceRate),
@@ -107,9 +105,6 @@ export default function Barbers() {
                 </div>
                 <div>
                   <div style={{ fontWeight: '800', fontSize: '1.1rem', color: 'var(--text-main)' }}>{b.fullname || b.name}</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: '600' }}>
-                    @{b.name}
-                  </div>
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '0.25rem' }}>
@@ -186,34 +181,18 @@ export default function Barbers() {
             </div>
 
             <form onSubmit={handleSubmit}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.25rem' }}>
-                <div>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>System Name (Short)</label>
-                  <div style={{ position: 'relative' }}>
-                    <User size={16} style={{ position: 'absolute', left: '0.75rem', top: '0.75rem', color: 'var(--text-muted)' }} />
-                    <input 
-                      type="text" 
-                      placeholder="e.g. John" 
-                      value={name} 
-                      onChange={e => setName(e.target.value)} 
-                      style={{ paddingLeft: '2.5rem' }}
-                      required
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>Full Professional Name</label>
-                  <div style={{ position: 'relative' }}>
-                    <User size={16} style={{ position: 'absolute', left: '0.75rem', top: '0.75rem', color: 'var(--text-muted)' }} />
-                    <input 
-                      type="text" 
-                      placeholder="e.g. John Doe" 
-                      value={fullname} 
-                      onChange={e => setFullname(e.target.value)} 
-                      style={{ paddingLeft: '2.5rem' }}
-                      required
-                    />
-                  </div>
+              <div style={{ marginBottom: '1.25rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>Full Name</label>
+                <div style={{ position: 'relative' }}>
+                  <User size={16} style={{ position: 'absolute', left: '0.75rem', top: '0.75rem', color: 'var(--text-muted)' }} />
+                  <input 
+                    type="text" 
+                    placeholder="e.g. John Doe" 
+                    value={fullname} 
+                    onChange={e => setFullname(e.target.value)} 
+                    style={{ paddingLeft: '2.5rem' }}
+                    required
+                  />
                 </div>
               </div>
 

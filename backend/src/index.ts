@@ -424,25 +424,25 @@ app.patch('/api/appointments/:id', protect, (req, res) => {
   res.json({ success: true });
 });
 
-app.post('/api/barbers', protect, authorize('OWNER', 'MANAGER'), (req, res) => {
+app.post('/api/barbers', protect, authorize('OWNER', 'MANAGER'), async (req, res) => {
   const shopId = req.user?.shop_id;
-  const { name, service_commission_rate, product_commission_rate } = req.body;
-  const result = db.prepare('INSERT INTO barbers (name, service_commission_rate, product_commission_rate, shop_id) VALUES (?, ?, ?, ?)').run(name, service_commission_rate, product_commission_rate, shopId);
-  res.status(201).json({ id: result.lastInsertRowid });
-});
-
-app.put('/api/barbers/:id', protect, authorize('OWNER', 'MANAGER'), (req, res) => {
-  const { name, service_commission_rate, product_commission_rate } = req.body;
-  const { id } = req.params;
-  
   try {
-    db.prepare('UPDATE barbers SET name = ?, service_commission_rate = ?, product_commission_rate = ? WHERE id = ?').run(name, service_commission_rate, product_commission_rate, id);
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to update barber' });
+    const id = await barberRepo.create({ ...req.body, shop_id: shopId });
+    res.status(201).json({ id });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
   }
 });
 
+app.put('/api/barbers/:id', protect, authorize('OWNER', 'MANAGER'), async (req, res) => {
+  const id = req.params.id as string;
+  try {
+    await barberRepo.update({ ...req.body, id: parseInt(id) });
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
 app.delete('/api/barbers/:id', protect, authorize('OWNER', 'MANAGER'), async (req, res) => {
   try {
     const deleteBarberUseCase = new DeleteBarber(barberRepo);
