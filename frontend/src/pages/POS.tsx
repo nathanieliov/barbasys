@@ -23,8 +23,12 @@ export default function POS() {
   const [discountAmount, setDiscountAmount] = useState<number>(0);
   const [showCheckout, setShowCheckout] = useState(false);
   const [saleSuccess, setSaleSuccess] = useState(false);
+  const [taxRate, setTaxRate] = useState(0);
 
   useEffect(() => {
+    apiClient.get('/settings').then(res => {
+      setTaxRate(parseFloat(res.data.default_tax_rate || '0'));
+    });
     apiClient.get('/barbers').then(res => {
       setBarbers(res.data);
       if (user?.role === 'BARBER' && user.barber_id) {
@@ -92,7 +96,7 @@ export default function POS() {
     setShowCheckout(false);
   };
 
-  const { subtotal, total } = calculatePOSTotals(cart, tipAmount || 0, discountAmount || 0);
+  const { subtotal, taxAmount, total } = calculatePOSTotals(cart, tipAmount || 0, discountAmount || 0, taxRate);
 
   return (
     <div className="pos-container">
@@ -200,9 +204,19 @@ export default function POS() {
             </div>
             
             <div style={{ marginTop: '2rem', background: '#f9fafb', padding: '1.25rem', borderRadius: '1rem', border: '1px solid var(--border)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', color: 'var(--text-muted)', fontWeight: '600', fontSize: '0.9rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', color: 'var(--text-muted)', fontWeight: '600', fontSize: '0.9rem' }}>
                 <span>Subtotal</span>
                 <span>${subtotal.toFixed(2)}</span>
+              </div>
+              {discountAmount > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', color: 'var(--danger)', fontWeight: '600', fontSize: '0.9rem' }}>
+                  <span>Discount</span>
+                  <span>-${discountAmount.toFixed(2)}</span>
+                </div>
+              )}
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', color: 'var(--text-muted)', fontWeight: '600', fontSize: '0.9rem' }}>
+                <span>Tax ({taxRate}%)</span>
+                <span>${taxAmount.toFixed(2)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.5rem', fontWeight: '900', color: 'var(--text-main)', borderTop: '1px dashed var(--border)', paddingTop: '0.75rem', marginTop: '0.25rem' }}>
                 <span>Total</span>

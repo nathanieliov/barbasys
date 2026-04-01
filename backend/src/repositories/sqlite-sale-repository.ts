@@ -7,8 +7,8 @@ export class SQLiteSaleRepository implements ISaleRepository {
 
   async create(sale: Omit<Sale, 'id' | 'timestamp'>, items: Omit<SaleItem, 'id' | 'sale_id'>[]): Promise<number> {
     const insertSale = this.db.prepare(`
-      INSERT INTO sales (barber_id, barber_name, customer_id, total_amount, tip_amount, discount_amount, customer_email, customer_phone, shop_id)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO sales (barber_id, barber_name, customer_id, total_amount, tip_amount, tax_amount, discount_amount, customer_email, customer_phone, shop_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const insertItem = this.db.prepare(`
@@ -23,6 +23,7 @@ export class SQLiteSaleRepository implements ISaleRepository {
         s.customer_id,
         s.total_amount,
         s.tip_amount,
+        s.tax_amount,
         s.discount_amount,
         s.customer_email,
         s.customer_phone,

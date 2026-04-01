@@ -112,6 +112,7 @@ db.exec(`
     customer_id INTEGER,
     total_amount REAL NOT NULL,
     tip_amount REAL DEFAULT 0,
+    tax_amount REAL DEFAULT 0,
     discount_amount REAL DEFAULT 0,
     customer_email TEXT,
     customer_phone TEXT,
@@ -209,6 +210,7 @@ try { db.exec('ALTER TABLE products ADD COLUMN is_active INTEGER DEFAULT 1'); } 
 try { db.exec('ALTER TABLE suppliers ADD COLUMN is_active INTEGER DEFAULT 1'); } catch (e) {}
 try { db.exec('ALTER TABLE suppliers ADD COLUMN shop_id INTEGER'); } catch (e) {}
 try { db.exec('ALTER TABLE sales ADD COLUMN barber_name TEXT'); } catch (e) {}
+try { db.exec('ALTER TABLE sales ADD COLUMN tax_amount REAL DEFAULT 0'); } catch (e) {}
 try { db.exec('ALTER TABLE sale_items ADD COLUMN item_name TEXT'); } catch (e) {}
 
 // 3. Migration for shop_settings to support multi-shop

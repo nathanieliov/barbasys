@@ -22,6 +22,7 @@ describe('SQLiteSaleRepository', () => {
       customer_id: null,
       total_amount: 50,
       tip_amount: 10,
+      tax_amount: 5,
       discount_amount: 0,
       customer_email: 'test@example.com',
       customer_phone: null,

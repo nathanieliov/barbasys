@@ -3,6 +3,7 @@ import { ICustomerRepository } from '../../repositories/customer-repository.inte
 import { IBarberRepository } from '../../repositories/barber-repository.interface.js';
 import { IProductRepository } from '../../repositories/product-repository.interface.js';
 import { sendReceipt, alertLowStock } from '../../communication.js';
+import { Database } from 'better-sqlite3';
 
 export interface ProcessSaleRequest {
   barber_id: number;
@@ -24,7 +25,8 @@ export class ProcessSale {
     private saleRepo: ISaleRepository,
     private customerRepo: ICustomerRepository,
     private barberRepo: IBarberRepository,
-    private productRepo: IProductRepository
+    private productRepo: IProductRepository,
+    private db: Database
   ) {}
 
   async execute(request: ProcessSaleRequest) {
@@ -45,8 +47,14 @@ export class ProcessSale {
       throw new Error('Barber not found');
     }
 
+    // Fetch tax rate from settings
+    const taxSetting = this.db.prepare('SELECT value FROM shop_settings WHERE shop_id = ? AND key = ?').get(shop_id, 'default_tax_rate') as { value: string } | undefined;
+    const taxRate = parseFloat(taxSetting?.value || '0');
+
     const total_items_amount = items.reduce((sum, item) => sum + (item.price || 0), 0);
-    const total_amount = Math.max(0, total_items_amount + tip_amount - discount_amount);
+    const taxable_amount = Math.max(0, total_items_amount - discount_amount);
+    const tax_amount = taxable_amount * (taxRate / 100);
+    const total_amount = taxable_amount + tax_amount + tip_amount;
 
     let customerId = null;
     if (customer_email || customer_phone) {
@@ -69,6 +77,7 @@ export class ProcessSale {
       customer_id: customerId,
       total_amount,
       tip_amount,
+      tax_amount,
       discount_amount,
       customer_email,
       customer_phone,

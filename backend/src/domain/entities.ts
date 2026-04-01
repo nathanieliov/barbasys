@@ -73,6 +73,7 @@ export interface Sale {
   customer_id: number | null;
   total_amount: number;
   tip_amount: number;
+  tax_amount: number;
   discount_amount: number;
   customer_email: string | null;
   customer_phone: string | null;

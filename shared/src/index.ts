@@ -15,12 +15,17 @@ export interface Barber {
   is_active: number;
 }
 
-export interface User {
+export interface Sale {
   id: number;
-  username: string;
-  email: string;
-  role: UserRole;
-  barber_id: number | null;
+  barber_id: number;
+  customer_id: number | null;
+  total_amount: number;
+  tip_amount: number;
+  tax_amount: number;
+  discount_amount: number;
+  customer_email: string | null;
+  customer_phone: string | null;
+  barber_name: string;
+  timestamp: string;
   shop_id: number | null;
-  fullname?: string | null;
 }
