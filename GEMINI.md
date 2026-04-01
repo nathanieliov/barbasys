@@ -80,6 +80,7 @@ To ensure high-quality, complete feature deliveries, the following protocol must
 
 ## Guidelines
 
+- **Clean Code**: Prioritize **code readability over efficiency**. Choose clear naming, expressive abstractions, and simple logic over premature optimizations or clever "one-liners." Code is for humans to read and machines to execute.
 - **Style**: Use TypeScript for all new code. Adhere to Clean Architecture patterns in `backend/src`.
 - **Testing**: Add tests for new business logic in both backend and frontend.
 - **Validation**: Run `npm run lint` and `tsc --noEmit` before finalizing changes.
