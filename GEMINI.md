@@ -29,41 +29,40 @@ A comprehensive management system for barbershops, featuring a robust backend fo
 
 ## Development Workflow (MANDATORY)
 
-Every task MUST follow this structured SDLC lifecycle, as defined in \`workflow.toml\`. You must explicitly state your transition between these phases.
+Every task MUST follow this structured SDLC lifecycle. You may choose between **Sequential** or **Parallel** execution based on task complexity.
 
-1. **Architect Phase**: 
-   - Research requirements and analyze existing code.
-   - Define the technical strategy and design.
-   - **MANDATORY**: Document changes in an ADR if structural.
-   - **MANDATORY**: Define/update shared interfaces in \`shared/src/index.ts\` before implementation.
+### 1. Architect Phase (Sequential & Authoritative)
+- **Goal**: Establish the "Source of Truth" before any implementation begins.
+- **Contract-First**: Define/update shared interfaces in `shared/src/index.ts`.
+- **Mocking Contract**: Define mock data structures (e.g., MSW handlers or Mock API Providers) to decouple Frontend from Backend development.
+- **MANDATORY**: Document changes in an ADR if structural.
+- **MANDATORY**: Commit all contracts/mocks before transitioning.
 
-2. **Engineer Phase**:
-   - **Engineer-Backend**: Implement logic in \`backend/src/\`. Adhere to Clean Architecture.
-   - **Engineer-Frontend**: Implement UI in \`frontend/src/\`. Ensure responsiveness.
-   - **MANDATORY**: Follow project style and responsiveness requirements.
-   - **MANDATORY**: Commit all logic changes at the end of this phase before moving to QA.
+### 2. Implementation Phase (Parallel or Sequential)
+For complex features, implementation should be parallelized using `generalist` sub-agents:
+- **Track A (Backend)**: Implement logic in `backend/src/` against the shared contracts.
+- **Track B (Frontend)**: Implement UI in `frontend/src/` using the Mocking Contract for immediate visual feedback.
+- **Track C (QA/Testing)**: Develop Unit and E2E tests based on the Architect's specifications.
+- **MANDATORY**: Sub-agents must commit their track's work before returning.
 
-3. **QA Phase**:
-   - **QA-Unit**: Validate logic via automated unit tests for backend and frontend.
-   - **QA-E2E**: Verify critical flows with Playwright smoke tests.
-   - **MANDATORY**: No task is complete without passing all tests and verifying requirements manually.
+### 3. Integration & QA Phase (Sequential - Main Agent Only)
+- **Integration**: The Main Agent merges tracks, replaces Mocks with real API calls, and resolves any discrepancies.
+- **Validation**: Run project-wide `tsc --noEmit`, `npm run lint`, and the full E2E test suite.
+- **MANDATORY**: No task is complete until the Main Agent verifies the "Definition of Done."
 
-4. **Reviewer Phase**:
-   - Perform a final self-review or call the \`generalist\` sub-agent to act as a reviewer.
-   - Verify consistency, naming conventions, and adherence to local patterns.
-   - **MANDATORY**: Run \`tsc --noEmit\` and \`npm run lint\` to ensure project-wide health.
-   - **MANDATORY**: Commit any final adjustments or "Reviewer feedback" fixes.
+### 4. Reviewer Phase
+- Final pass for style, naming conventions, and Clean Architecture compliance.
+- **MANDATORY**: Final commit of integration fixes and environment cleanup (e.g., `rm -rf backend/dist`).
 
 ## Definition of Done
 
 A task is complete ONLY when:
-- Backend logic is unit tested and adheres to Clean Architecture.
-- Frontend UI is implemented, responsive, and navigated.
-- **MANDATORY**: Shared contracts are used for type-safety across boundaries.
-- **MANDATORY**: \`tsc\` and linting pass for the entire project.
-- **MANDATORY**: All changes are committed with a clear message.
-- **MANDATORY**: All tests (Unit & E2E) are green.
-- **MANDATORY**: Environment is clean (e.g., \`rm -rf backend/dist\`).
+- **Parallel Integration**: Backend, Frontend, and Tests are merged and verified as a single unit.
+- **Contract Compliance**: `shared/` contracts are strictly followed by all layers.
+- **Project Health**: `tsc` and linting pass for the entire project.
+- **Full Verification**: All unit and E2E tests are green.
+- **Traceability**: All phases (Architect, Implementation, Integration) result in clean, documented commits.
+
 
 ## Agentic Workflow & QA Protocol
 
