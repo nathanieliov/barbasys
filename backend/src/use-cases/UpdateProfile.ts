@@ -42,15 +42,16 @@ export class UpdateProfile {
       updateData.password_hash = await bcrypt.hash(request.new_password, salt);
     }
 
-    const updatedUser = await this.userRepo.update(updateData);
-
-    // Sync barber fullname if linked
+    // Sync barber fullname if linked - MUST HAPPEN BEFORE userRepo.update
+    // because userRepo.update returns the user with a joined fullname from the barber table.
     if (request.fullname && user.barber_id && this.barberRepo) {
       await this.barberRepo.update({
         id: user.barber_id,
         fullname: request.fullname
       });
     }
+
+    const updatedUser = await this.userRepo.update(updateData);
 
     return updatedUser;
   }
