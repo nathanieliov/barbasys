@@ -4,8 +4,11 @@ import { Trash2, ShoppingCart, User, Plus, X } from 'lucide-react';
 import { calculatePOSTotals } from '../utils/pos';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { useSettings } from '../hooks/useSettings';
+import { formatCurrency } from '../utils/format';
 
 export default function POS() {
+  const { settings } = useSettings();
   const { user } = useAuth();
   const location = useLocation();
   const appointmentData = location.state;
@@ -144,7 +147,7 @@ export default function POS() {
               {services.map(s => (
                 <button key={s.id} className="secondary" onClick={() => addToCart(s, 'service')} style={{ flexDirection: 'column', alignItems: 'flex-start', padding: '1rem', height: 'auto', textAlign: 'left', minHeight: '100px' }}>
                   <span style={{ fontWeight: '700', fontSize: '0.9rem', marginBottom: '0.25rem' }}>{s.name}</span>
-                  <span style={{ color: 'var(--primary)', fontWeight: '700' }}>${s.price.toFixed(2)}</span>
+                  <span style={{ color: 'var(--primary)', fontWeight: '700' }}>{formatCurrency(s.price, settings.currency_symbol)}</span>
                   <div style={{ marginTop: 'auto', alignSelf: 'flex-end', background: 'var(--primary)', color: 'white', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 4px rgba(79, 70, 229, 0.3)' }}>
                     <Plus size={18} />
                   </div>
@@ -160,7 +163,7 @@ export default function POS() {
                 <button key={p.id} className="secondary" onClick={() => addToCart(p, 'product')} style={{ flexDirection: 'column', alignItems: 'flex-start', padding: '1rem', height: 'auto', textAlign: 'left', minHeight: '100px' }}>
                   <span style={{ fontWeight: '700', fontSize: '0.9rem', marginBottom: '0.25rem' }}>{p.name}</span>
                   <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center', marginTop: 'auto' }}>
-                    <span style={{ color: 'var(--primary)', fontWeight: '700' }}>${p.price.toFixed(2)}</span>
+                    <span style={{ color: 'var(--primary)', fontWeight: '700' }}>{formatCurrency(p.price, settings.currency_symbol)}</span>
                     <span style={{ fontSize: '0.7rem', color: p.stock < 5 ? 'var(--danger)' : 'var(--text-muted)', fontWeight: '600' }}>Stock: {p.stock}</span>
                   </div>
                   <div style={{ marginTop: '0.5rem', alignSelf: 'flex-end', background: 'var(--primary)', color: 'white', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 4px rgba(79, 70, 229, 0.3)' }}>
@@ -187,7 +190,7 @@ export default function POS() {
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.025em' }}>{item.type}</div>
                   </div>
                   <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                    <span style={{ fontWeight: '700' }}>${item.price.toFixed(2)}</span>
+                    <span style={{ fontWeight: '700' }}>{formatCurrency(item.price, settings.currency_symbol)}</span>
                     <button className="secondary" style={{ padding: '0.5rem', color: 'var(--danger)', borderColor: 'transparent', borderRadius: '0.5rem' }} onClick={() => removeFromCart(item.cartId)}>
                       <Trash2 size={16} />
                     </button>
@@ -206,21 +209,21 @@ export default function POS() {
             <div style={{ marginTop: '2rem', background: '#f9fafb', padding: '1.25rem', borderRadius: '1rem', border: '1px solid var(--border)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', color: 'var(--text-muted)', fontWeight: '600', fontSize: '0.9rem' }}>
                 <span>Subtotal</span>
-                <span>${subtotal.toFixed(2)}</span>
+                <span>{formatCurrency(subtotal, settings.currency_symbol)}</span>
               </div>
               {discountAmount > 0 && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', color: 'var(--danger)', fontWeight: '600', fontSize: '0.9rem' }}>
                   <span>Discount</span>
-                  <span>-${discountAmount.toFixed(2)}</span>
+                  <span>-{formatCurrency(discountAmount, settings.currency_symbol)}</span>
                 </div>
               )}
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', color: 'var(--text-muted)', fontWeight: '600', fontSize: '0.9rem' }}>
                 <span>Tax ({taxRate}%)</span>
-                <span>${taxAmount.toFixed(2)}</span>
+                <span>{formatCurrency(taxAmount, settings.currency_symbol)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.5rem', fontWeight: '900', color: 'var(--text-main)', borderTop: '1px dashed var(--border)', paddingTop: '0.75rem', marginTop: '0.25rem' }}>
                 <span>Total</span>
-                <span>${total.toFixed(2)}</span>
+                <span>{formatCurrency(total, settings.currency_symbol)}</span>
               </div>
             </div>
 
@@ -249,7 +252,7 @@ export default function POS() {
             </div>
             <div>
               <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', fontWeight: '800', opacity: 0.8 }}>Current Total</div>
-              <div style={{ fontSize: '1.25rem', fontWeight: '900' }}>${total.toFixed(2)}</div>
+              <div style={{ fontSize: '1.25rem', fontWeight: '900' }}>{formatCurrency(total, settings.currency_symbol)}</div>
             </div>
           </div>
           <button 
@@ -356,7 +359,7 @@ export default function POS() {
                     </div>
                   <div style={{ background: 'var(--primary)', color: 'white', padding: '1.5rem', borderRadius: '1rem', textAlign: 'center', marginTop: '1rem' }}>
                     <div style={{ opacity: 0.8, fontSize: '0.9rem' }}>Amount Due</div>
-                    <div style={{ fontSize: '2.5rem', fontWeight: '900' }}>${total.toFixed(2)}</div>
+                    <div style={{ fontSize: '2.5rem', fontWeight: '900' }}>{formatCurrency(total, settings.currency_symbol)}</div>
                   </div>
 
                   <button onClick={submitSale} style={{ width: '100%', padding: '1.25rem', fontSize: '1.25rem', marginTop: '0.5rem' }}>

@@ -2,8 +2,11 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import apiClient from '../api/apiClient';
 import { AlertCircle, PlusCircle, X, TrendingDown, Search, Package, Filter, Edit2, Trash2, Tag, DollarSign, Truck } from 'lucide-react';
+import { useSettings } from '../hooks/useSettings';
+import { formatCurrency } from '../utils/format';
 
 export default function Inventory() {
+  const { settings } = useSettings();
   const [searchParams] = useSearchParams();
   const initialSupplierId = searchParams.get('supplierId');
 
@@ -217,7 +220,7 @@ export default function Inventory() {
                 </div>
                 <div style={{ background: '#f9fafb', padding: '0.75rem', borderRadius: '0.5rem', textAlign: 'center' }}>
                   <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '700', marginBottom: '0.25rem' }}>Price</div>
-                  <div style={{ fontSize: '1.25rem', fontWeight: '800' }}>${p.price.toFixed(2)}</div>
+                  <div style={{ fontSize: '1.25rem', fontWeight: '800' }}>{formatCurrency(p.price, settings.currency_symbol)}</div>
                 </div>
               </div>
 

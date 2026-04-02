@@ -2,8 +2,11 @@ import { useEffect, useState } from 'react';
 import apiClient from '../api/apiClient';
 import { ShoppingBag, Calendar, User, Clock, X, Receipt, Scissors, Tag } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { useSettings } from '../hooks/useSettings';
+import { formatCurrency } from '../utils/format';
 
 export default function SalesHistory() {
+  const { settings } = useSettings();
   const { user } = useAuth();
   const isBarber = user?.role === 'BARBER';
 
@@ -147,10 +150,10 @@ export default function SalesHistory() {
 
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ fontWeight: '900', fontSize: '1.25rem', color: 'var(--text-main)' }}>
-                      ${sale.total_amount.toFixed(2)}
+                      {formatCurrency(sale.total_amount, settings.currency_symbol)}
                     </div>
                     <div style={{ fontSize: '0.75rem', color: 'var(--success)', fontWeight: '700' }}>
-                      Includes ${sale.tip_amount.toFixed(2)} tip
+                      Includes {formatCurrency(sale.tip_amount, settings.currency_symbol)} tip
                     </div>
                   </div>
                 </div>
@@ -203,7 +206,7 @@ export default function SalesHistory() {
                         <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'capitalize' }}>{item.type}</div>
                       </div>
                     </div>
-                    <span style={{ fontWeight: '700' }}>${item.price.toFixed(2)}</span>
+                    <span style={{ fontWeight: '700' }}>{formatCurrency(item.price, settings.currency_symbol)}</span>
                   </div>
                 ))}
               </div>
@@ -212,19 +215,25 @@ export default function SalesHistory() {
             <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1.25rem', marginTop: '1rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', color: 'var(--text-muted)' }}>
                 <span>Subtotal</span>
-                <span>${(selectedSale.total_amount - selectedSale.tip_amount + selectedSale.discount_amount).toFixed(2)}</span>
+                <span>{formatCurrency(selectedSale.total_amount - selectedSale.tip_amount + selectedSale.discount_amount - (selectedSale.tax_amount || 0), settings.currency_symbol)}</span>
               </div>
+              {selectedSale.tax_amount > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', color: 'var(--text-muted)' }}>
+                  <span>Tax</span>
+                  <span>+{formatCurrency(selectedSale.tax_amount, settings.currency_symbol)}</span>
+                </div>
+              )}
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', color: 'var(--success)', fontSize: '0.9rem' }}>
                 <span>Gratuity (Tip)</span>
-                <span>+${selectedSale.tip_amount.toFixed(2)}</span>
+                <span>+{formatCurrency(selectedSale.tip_amount, settings.currency_symbol)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', color: 'var(--danger)', fontSize: '0.9rem' }}>
                 <span>Discount</span>
-                <span>-${selectedSale.discount_amount.toFixed(2)}</span>
+                <span>-{formatCurrency(selectedSale.discount_amount, settings.currency_symbol)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: 'var(--primary)', color: 'white', borderRadius: '0.75rem' }}>
                 <span style={{ fontWeight: '600' }}>Total Paid</span>
-                <span style={{ fontSize: '1.5rem', fontWeight: '900' }}>${selectedSale.total_amount.toFixed(2)}</span>
+                <span style={{ fontSize: '1.5rem', fontWeight: '900' }}>{formatCurrency(selectedSale.total_amount, settings.currency_symbol)}</span>
               </div>
             </div>
 

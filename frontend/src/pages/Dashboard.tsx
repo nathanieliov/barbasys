@@ -2,8 +2,11 @@ import { useEffect, useState } from 'react';
 import apiClient from '../api/apiClient';
 import { TrendingUp, Users, DollarSign, Calendar, Star, ShoppingCart, Package } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { useSettings } from '../hooks/useSettings';
+import { formatCurrency } from '../utils/format';
 
 export default function Dashboard() {
+  const { settings } = useSettings();
   const [stats, setStats] = useState<any>(null);
   const [weeklyStats, setWeeklyStats] = useState<any>(null);
   const { user } = useAuth();
@@ -34,7 +37,7 @@ export default function Dashboard() {
   const myCommissions = isBarber ? getCommissionData(stats) : null;
   const myWeeklyCommissions = isBarber ? getCommissionData(weeklyStats) : null;
 
-  const formatCurrency = (amount: number) => `$${(amount || 0).toFixed(2)}`;
+  const displayCurrency = (amount: number) => formatCurrency(amount, settings.currency_symbol);
 
   const todayTotal = isBarber 
     ? (myCommissions ? myCommissions.service_commission + myCommissions.product_commission + myCommissions.tips : 0)
@@ -66,7 +69,7 @@ export default function Dashboard() {
             <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: '600' }}>
               {isBarber ? "Daily Earnings" : "Today's Revenue"}
             </p>
-            <h2 style={{ marginBottom: 0, fontSize: '1.5rem', fontWeight: '800' }}>{formatCurrency(todayTotal)}</h2>
+            <h2 style={{ marginBottom: 0, fontSize: '1.5rem', fontWeight: '800' }}>{displayCurrency(todayTotal)}</h2>
           </div>
         </div>
 
@@ -79,7 +82,7 @@ export default function Dashboard() {
             <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: '600' }}>
               {isBarber ? "Weekly Earnings" : "Weekly Revenue"}
             </p>
-            <h2 style={{ marginBottom: 0, fontSize: '1.5rem', fontWeight: '800' }}>{formatCurrency(weeklyTotal)}</h2>
+            <h2 style={{ marginBottom: 0, fontSize: '1.5rem', fontWeight: '800' }}>{displayCurrency(weeklyTotal)}</h2>
           </div>
         </div>
 
@@ -103,7 +106,7 @@ export default function Dashboard() {
             </div>
             <div>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: '600' }}>Tips Today</p>
-              <h2 style={{ marginBottom: 0, fontSize: '1.5rem', fontWeight: '800' }}>{formatCurrency(myCommissions?.tips || 0)}</h2>
+              <h2 style={{ marginBottom: 0, fontSize: '1.5rem', fontWeight: '800' }}>{displayCurrency(myCommissions?.tips || 0)}</h2>
             </div>
           </div>
         )}
@@ -122,15 +125,15 @@ export default function Dashboard() {
                 <>
                   <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem', background: '#f9fafb', borderRadius: '0.5rem' }}>
                     <span style={{ color: 'var(--text-muted)', fontWeight: '500' }}>Service Commission</span>
-                    <span style={{ fontWeight: '700' }}>{formatCurrency(myCommissions.service_commission)}</span>
+                    <span style={{ fontWeight: '700' }}>{displayCurrency(myCommissions.service_commission)}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem', background: '#f9fafb', borderRadius: '0.5rem' }}>
                     <span style={{ color: 'var(--text-muted)', fontWeight: '500' }}>Product Commission</span>
-                    <span style={{ fontWeight: '700' }}>{formatCurrency(myCommissions.product_commission)}</span>
+                    <span style={{ fontWeight: '700' }}>{displayCurrency(myCommissions.product_commission)}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem', background: 'rgba(16, 185, 129, 0.05)', borderRadius: '0.5rem', border: '1px dashed var(--success)' }}>
                     <span style={{ color: 'var(--success)', fontWeight: '600' }}>Tips</span>
-                    <span style={{ fontWeight: '700', color: 'var(--success)' }}>{formatCurrency(myCommissions.tips)}</span>
+                    <span style={{ fontWeight: '700', color: 'var(--success)' }}>{displayCurrency(myCommissions.tips)}</span>
                   </div>
                 </>
               ) : (
@@ -150,8 +153,8 @@ export default function Dashboard() {
                       <span style={{ fontWeight: '600' }}>{c.name}</span>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontWeight: '700' }}>{formatCurrency(c.service_commission + c.product_commission)}</div>
-                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>+ {formatCurrency(c.tips)} tips</div>
+                      <div style={{ fontWeight: '700' }}>{displayCurrency(c.service_commission + c.product_commission)}</div>
+                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>+ {displayCurrency(c.tips)} tips</div>
                     </div>
                   </div>
                 ))

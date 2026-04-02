@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../api/apiClient';
 import { Calendar, DollarSign, TrendingUp, Receipt, Users, PieChart, ArrowUpRight, ArrowDownRight, Briefcase, Download } from 'lucide-react';
+import { useSettings } from '../hooks/useSettings';
+import { formatCurrency } from '../utils/format';
 
 export default function Reports() {
+  const { settings } = useSettings();
   const [report, setReport] = useState<any>(null);
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [rangeType, setRangeType] = useState<'day' | 'week' | 'month'>('day');
@@ -127,7 +130,7 @@ export default function Reports() {
             </div>
           </div>
           <h2 style={{ marginBottom: '0.25rem', fontSize: '1.75rem', fontWeight: '900' }}>
-            ${report?.revenue?.toFixed(2) || '0.00'}
+            {formatCurrency(report?.revenue, settings.currency_symbol)}
           </h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: '600' }}>Total collections</p>
         </div>
@@ -142,7 +145,7 @@ export default function Reports() {
             </div>
           </div>
           <h2 style={{ marginBottom: '0.25rem', fontSize: '1.75rem', fontWeight: '900' }}>
-            ${report?.expenses?.toFixed(2) || '0.00'}
+            {formatCurrency(report?.expenses, settings.currency_symbol)}
           </h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: '600' }}>Supplies & overheads</p>
         </div>
@@ -157,7 +160,7 @@ export default function Reports() {
             </div>
           </div>
           <h2 style={{ marginBottom: '0.25rem', fontSize: '1.75rem', fontWeight: '900' }}>
-            ${netProfit.toFixed(2)}
+            {formatCurrency(netProfit, settings.currency_symbol)}
           </h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: '600' }}>Net take-home</p>
         </div>
@@ -183,7 +186,7 @@ export default function Reports() {
                       </div>
                       <span style={{ fontWeight: '700' }}>{c.name}</span>
                     </div>
-                    <span style={{ fontWeight: '800', color: 'var(--text-main)' }}>${c.total_payout.toFixed(2)}</span>
+                    <span style={{ fontWeight: '800', color: 'var(--text-main)' }}>{formatCurrency(c.total_payout, settings.currency_symbol)}</span>
                   </div>
                   <div style={{ width: '100%', background: '#f3f4f6', borderRadius: '999px', height: '10px', overflow: 'hidden', border: '1px solid var(--border)' }}>
                     <div style={{ width: `${percentage}%`, background: 'linear-gradient(to right, var(--primary), #818cf8)', height: '100%', borderRadius: '999px', transition: 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)' }}></div>
@@ -215,20 +218,20 @@ export default function Reports() {
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
                     <div>
                       <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase' }}>Services</div>
-                      <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>${c.service_commission.toFixed(2)}</div>
+                      <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>{formatCurrency(c.service_commission, settings.currency_symbol)}</div>
                     </div>
                     <div>
                       <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase' }}>Products</div>
-                      <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>${c.product_commission.toFixed(2)}</div>
+                      <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>{formatCurrency(c.product_commission, settings.currency_symbol)}</div>
                     </div>
                     <div>
                       <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase' }}>Tips</div>
-                      <div style={{ fontWeight: '700', fontSize: '0.9rem', color: 'var(--success)' }}>${c.tips.toFixed(2)}</div>
+                      <div style={{ fontWeight: '700', fontSize: '0.9rem', color: 'var(--success)' }}>{formatCurrency(c.tips, settings.currency_symbol)}</div>
                     </div>
                   </div>
-                  <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px dashed var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: '600' }}>Total Payout</span>
-                    <span style={{ fontWeight: '900', color: 'var(--primary)' }}>${c.total_payout.toFixed(2)}</span>
+                    <span style={{ fontWeight: '900', color: 'var(--primary)' }}>{formatCurrency(c.total_payout, settings.currency_symbol)}</span>
                   </div>
                 </div>
               );

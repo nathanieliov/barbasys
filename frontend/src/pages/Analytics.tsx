@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../api/apiClient';
 import { Clock, Calendar, User, TrendingUp, Filter } from 'lucide-react';
+import { useSettings } from '../hooks/useSettings';
+import { formatCurrency } from '../utils/format';
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 export default function Analytics() {
+  const { settings } = useSettings();
   const [data, setData] = useState<any>(null);
   const [dateRange, setDateRange] = useState({
     startDate: new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0],
@@ -64,7 +67,7 @@ export default function Analytics() {
                     background: height > 70 ? 'var(--primary)' : 'rgba(99, 102, 241, 0.3)',
                     borderRadius: '4px 4px 0 0',
                     transition: 'height 0.5s ease'
-                  }} title={`$${hourData?.revenue.toFixed(2) || 0}`}></div>
+                  }} title={formatCurrency(hourData?.revenue, settings.currency_symbol)}></div>
                   <span style={{ fontSize: '0.6rem', color: '#64748b' }}>{hour}h</span>
                 </div>
               );
@@ -90,7 +93,7 @@ export default function Analytics() {
                     background: 'var(--primary)',
                     borderRadius: '4px 4px 0 0',
                     opacity: height / 100 + 0.2
-                  }} title={`$${dayData?.revenue.toFixed(2) || 0}`}></div>
+                  }} title={formatCurrency(dayData?.revenue, settings.currency_symbol)}></div>
                   <span style={{ fontSize: '0.75rem', color: '#64748b' }}>{day}</span>
                 </div>
               );
@@ -108,8 +111,8 @@ export default function Analytics() {
             <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '0.5rem' }}>
               <p style={{ color: '#94a3b8', fontSize: '0.8rem', margin: 0 }}>Avg. Ticket Size</p>
               <h3 style={{ margin: '0.25rem 0 0 0' }}>
-                ${(data?.barberPerformance?.reduce((acc: number, curr: any) => acc + (curr.total_revenue || 0), 0) / 
-                   data?.barberPerformance?.reduce((acc: number, curr: any) => acc + (curr.total_sales || 0), 1)).toFixed(2)}
+                {formatCurrency(data?.barberPerformance?.reduce((acc: number, curr: any) => acc + (curr.total_revenue || 0), 0) / 
+                   data?.barberPerformance?.reduce((acc: number, curr: any) => acc + (curr.total_sales || 0), 1), settings.currency_symbol)}
               </h3>
             </div>
             <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '0.5rem' }}>
@@ -144,8 +147,8 @@ export default function Analytics() {
                 <td style={{ padding: '1rem', fontWeight: 'bold' }}>{b.name}</td>
                 <td style={{ padding: '1rem' }}>{b.total_sales}</td>
                 <td style={{ padding: '1rem' }}>{b.completed_appointments}</td>
-                <td style={{ padding: '1rem' }}>${(b.avg_ticket_size || 0).toFixed(2)}</td>
-                <td style={{ padding: '1rem', color: '#10b981', fontWeight: 'bold' }}>${(b.total_revenue || 0).toFixed(2)}</td>
+                <td style={{ padding: '1rem' }}>{formatCurrency(b.avg_ticket_size, settings.currency_symbol)}</td>
+                <td style={{ padding: '1rem', color: '#10b981', fontWeight: 'bold' }}>{formatCurrency(b.total_revenue, settings.currency_symbol)}</td>
               </tr>
             ))}
           </tbody>

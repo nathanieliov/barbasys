@@ -21,6 +21,7 @@ import Users from './pages/Users';
 import Login from './pages/Login';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider, useAuth } from './hooks/useAuth';
+import { SettingsProvider } from './hooks/useSettings';
 
 const Sidebar = ({ isOpen, toggleSidebar }: { isOpen: boolean, toggleSidebar: () => void }) => {
   const { user, logout } = useAuth();
@@ -163,8 +164,9 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <Layout>
+      <SettingsProvider>
+        <Router>
+          <Layout>
           <Routes>
             <Route path="/login" element={<Login />} />
             
@@ -192,6 +194,7 @@ function App() {
           </Routes>
         </Layout>
       </Router>
+      </SettingsProvider>
     </AuthProvider>
   );
 }

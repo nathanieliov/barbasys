@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../api/apiClient';
 import { PlusCircle, Edit2, Trash2, Clock, DollarSign, X, Scissors } from 'lucide-react';
+import { useSettings } from '../hooks/useSettings';
+import { formatCurrency } from '../utils/format';
 
 export default function Services() {
+  const { settings } = useSettings();
   const [services, setServices] = useState<any[]>([]);
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
@@ -105,8 +108,7 @@ export default function Services() {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginTop: 'auto' }}>
               <div style={{ background: '#f9fafb', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <DollarSign size={16} color="var(--success)" />
-                <span style={{ fontWeight: '800', fontSize: '1rem' }}>{s.price.toFixed(2)}</span>
+                <span style={{ fontWeight: '800', fontSize: '1rem', color: 'var(--success)' }}>{formatCurrency(s.price, settings.currency_symbol)}</span>
               </div>
               <div style={{ background: '#f9fafb', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Clock size={16} color="var(--primary)" />
