@@ -7,7 +7,7 @@ export class SQLiteAppointmentRepository implements IAppointmentRepository {
 
   async create(appointment: Omit<Appointment, 'id' | 'status' | 'reminder_sent'> & { recurring_id?: string | null, recurring_rule?: string | null }): Promise<number> {
     const result = this.db.prepare(
-      'INSERT INTO appointments (barber_id, customer_id, service_id, start_time, recurring_id, recurring_rule, shop_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
+      'INSERT INTO appointments (barber_id, customer_id, service_id, start_time, recurring_id, recurring_rule, shop_id, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
     ).run(
       appointment.barber_id,
       appointment.customer_id,
@@ -15,7 +15,8 @@ export class SQLiteAppointmentRepository implements IAppointmentRepository {
       appointment.start_time,
       appointment.recurring_id || null,
       appointment.recurring_rule || null,
-      appointment.shop_id
+      appointment.shop_id,
+      appointment.notes || null
     );
     return Number(result.lastInsertRowid);
   }

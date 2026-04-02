@@ -1,4 +1,4 @@
-export type UserRole = 'OWNER' | 'MANAGER' | 'BARBER';
+export type UserRole = 'OWNER' | 'MANAGER' | 'BARBER' | 'CUSTOMER';
 export type PaymentModel = 'COMMISSION' | 'FIXED' | 'FIXED_FEE';
 export type FixedPeriod = 'MONTHLY' | 'WEEKLY' | 'BIWEEKLY';
 
@@ -9,9 +9,12 @@ export interface User {
   password_hash: string;
   role: UserRole;
   barber_id: number | null;
+  customer_id: number | null;
   shop_id: number | null;
   created_at: string;
   fullname?: string | null;
+  otp_code?: string | null;
+  otp_expires?: string | null;
 }
 
 export interface Barber {
@@ -99,4 +102,5 @@ export interface Appointment {
   start_time: string;
   status: 'scheduled' | 'completed' | 'cancelled';
   shop_id: number | null;
+  notes?: string | null;
 }

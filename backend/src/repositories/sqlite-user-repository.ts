@@ -34,13 +34,13 @@ export class SQLiteUserRepository implements UserRepository {
   }
 
   async findAll(shopId: number): Promise<User[]> {
-    return db.prepare('SELECT id, username, email, role, barber_id, shop_id, created_at, fullname FROM users WHERE shop_id = ?').all(shopId) as User[];
+    return db.prepare('SELECT id, username, email, role, barber_id, customer_id, shop_id, created_at, fullname FROM users WHERE shop_id = ?').all(shopId) as User[];
   }
 
   async create(user: Omit<User, 'id' | 'created_at'>): Promise<User> {
     const info = db.prepare(
-      'INSERT INTO users (username, email, password_hash, role, barber_id, shop_id, fullname) VALUES (?, ?, ?, ?, ?, ?, ?)'
-    ).run(user.username, user.email, user.password_hash, user.role, user.barber_id, user.shop_id, user.fullname || null);
+      'INSERT INTO users (username, email, password_hash, role, barber_id, customer_id, shop_id, fullname, otp_code, otp_expires) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    ).run(user.username, user.email, user.password_hash, user.role, user.barber_id || null, user.customer_id || null, user.shop_id || null, user.fullname || null, user.otp_code || null, user.otp_expires || null);
     
     return {
       ...user,
@@ -57,12 +57,15 @@ export class SQLiteUserRepository implements UserRepository {
     const email = user.email ?? existing.email;
     const role = user.role ?? existing.role;
     const barber_id = user.barber_id !== undefined ? user.barber_id : existing.barber_id;
+    const customer_id = user.customer_id !== undefined ? user.customer_id : existing.customer_id;
     const password_hash = user.password_hash ?? existing.password_hash;
     const fullname = user.fullname ?? existing.fullname;
+    const otp_code = user.otp_code !== undefined ? user.otp_code : existing.otp_code;
+    const otp_expires = user.otp_expires !== undefined ? user.otp_expires : existing.otp_expires;
 
     db.prepare(
-      'UPDATE users SET username = ?, email = ?, role = ?, barber_id = ?, password_hash = ?, fullname = ? WHERE id = ?'
-    ).run(username, email, role, barber_id, password_hash, fullname, user.id);
+      'UPDATE users SET username = ?, email = ?, role = ?, barber_id = ?, customer_id = ?, password_hash = ?, fullname = ?, otp_code = ?, otp_expires = ? WHERE id = ?'
+    ).run(username, email, role, barber_id, customer_id, password_hash, fullname, otp_code, otp_expires, user.id);
 
     return (await this.findById(user.id))!;
   }

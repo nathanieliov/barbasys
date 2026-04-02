@@ -20,6 +20,9 @@ import Expenses from './pages/Expenses';
 import UserProfile from './pages/UserProfile';
 import Users from './pages/Users';
 import Login from './pages/Login';
+import ShopDiscovery from './pages/ShopDiscovery';
+import BookingFlow from './pages/BookingFlow';
+import CustomerPortal from './pages/CustomerPortal';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { SettingsProvider } from './hooks/useSettings';
@@ -143,19 +146,23 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   
   if (!user) return <>{children}</>;
 
+  const isCustomer = user.role === 'CUSTOMER';
+
   return (
-    <div className="app-container">
-      <header className="mobile-header">
-        <div className="logo" style={{ fontSize: '1.1rem' }}>
-          <Scissors size={20} />
-          <span>BarbaSys</span>
-        </div>
-        <button className="secondary" style={{ padding: '0.5rem' }} onClick={() => setIsSidebarOpen(true)}>
-          <Menu size={24} />
-        </button>
-      </header>
+    <div className={`app-container ${isCustomer ? 'customer-layout' : ''}`}>
+      {!isCustomer && (
+        <header className="mobile-header">
+          <div className="logo" style={{ fontSize: '1.1rem' }}>
+            <Scissors size={20} />
+            <span>BarbaSys</span>
+          </div>
+          <button className="secondary" style={{ padding: '0.5rem' }} onClick={() => setIsSidebarOpen(true)}>
+            <Menu size={24} />
+          </button>
+        </header>
+      )}
       
-      <Sidebar isOpen={isSidebarOpen} toggleSidebar={() => setIsSidebarOpen(false)} />
+      {!isCustomer && <Sidebar isOpen={isSidebarOpen} toggleSidebar={() => setIsSidebarOpen(false)} />}
       
       <main className="content">
         {children}
@@ -163,6 +170,12 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
     </div>
   );
 };
+
+function HomeSelector() {
+  const { user } = useAuth();
+  if (user?.role === 'CUSTOMER') return <CustomerPortal />;
+  return <Dashboard />;
+}
 
 function App() {
   return (
@@ -172,9 +185,11 @@ function App() {
           <Layout>
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/discovery" element={<ShopDiscovery />} />
+            <Route path="/book/:shopId" element={<BookingFlow />} />
             
             <Route element={<ProtectedRoute />}>
-              <Route path="/" element={<Dashboard />} />
+              <Route path="/" element={<HomeSelector />} />
               <Route path="/my-schedule" element={<MySchedule />} />
               <Route path="/pos" element={<POS />} />
               <Route path="/sales" element={<SalesHistory />} />

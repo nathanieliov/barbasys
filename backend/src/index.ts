@@ -37,6 +37,8 @@ import { ListUsers } from './use-cases/ListUsers.js';
 import { UpdateUser } from './use-cases/UpdateUser.js';
 import { DeleteUser } from './use-cases/DeleteUser.js';
 import { UpdateProfile } from './use-cases/UpdateProfile.js';
+import { SendOTP } from './use-cases/SendOTP.js';
+import { VerifyOTP } from './use-cases/VerifyOTP.js';
 
 import { protect, authorize } from './middleware/auth-middleware.js';
 
@@ -79,11 +81,54 @@ const listUsers = new ListUsers(userRepo);
 const updateUser = new UpdateUser(userRepo);
 const deleteUser = new DeleteUser(userRepo);
 const updateProfile = new UpdateProfile(userRepo, barberRepo);
+const sendOTP = new SendOTP(userRepo, customerRepo);
+const verifyOTP = new VerifyOTP(userRepo);
 
 app.use(cors());
 app.use(express.json());
 
+// Public Discovery
+app.get('/api/public/shops', (req, res) => {
+  try {
+    const shops = db.prepare('SELECT * FROM shops').all();
+    res.json(shops);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/public/shops/:id', (req, res) => {
+  try {
+    const shop = db.prepare('SELECT * FROM shops WHERE id = ?').get(req.params.id);
+    const services = db.prepare('SELECT * FROM services WHERE shop_id = ? AND is_active = 1').all(req.params.id);
+    const barbers = db.prepare('SELECT * FROM barbers WHERE shop_id = ? AND is_active = 1').all(req.params.id);
+    res.json({ shop, services, barbers });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Auth
+app.post('/api/auth/otp/send', async (req, res) => {
+  const { email } = req.body;
+  try {
+    const result = await sendOTP.execute(email);
+    res.json(result);
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.post('/api/auth/otp/verify', async (req, res) => {
+  const { email, code } = req.body;
+  try {
+    const result = await verifyOTP.execute(email, code);
+    res.json(result);
+  } catch (err: any) {
+    res.status(401).json({ error: err.message });
+  }
+});
+
 app.post('/api/auth/login', async (req, res) => {
   const { username, password } = req.body;
   console.log(`Login attempt: ${username}`);

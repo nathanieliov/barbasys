@@ -175,6 +175,18 @@ body {
   }
 }
 
+.customer-layout .content {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+@media (min-width: 769px) {
+  .customer-layout .content {
+    padding: 3rem 2rem;
+  }
+}
+
 /* Components */
 .card {
   background: var(--card);

@@ -34,6 +34,7 @@ describe('Auth Use Cases', () => {
         ...userData, 
         password_hash: 'hashed',
         barber_id: null,
+        customer_id: null,
         shop_id: null,
         created_at: new Date().toISOString()
       });
@@ -44,13 +45,13 @@ describe('Auth Use Cases', () => {
     });
 
     it('should throw if username exists', async () => {
-      vi.mocked(mockUserRepo.findByUsername).mockResolvedValue({ id: 1, username: 'exists', email: 'ex@ex.com', password_hash: 'h', role: 'BARBER', barber_id: null, shop_id: 1, created_at: '' } as any);
+      vi.mocked(mockUserRepo.findByUsername).mockResolvedValue({ id: 1, username: 'exists', email: 'ex@ex.com', password_hash: 'h', role: 'BARBER', barber_id: null, customer_id: null, shop_id: 1, created_at: '' } as any);
       await expect(registerUseCase.execute({ username: 'exists' } as any)).rejects.toThrow('Username already exists');
     });
 
     it('should throw if email exists', async () => {
       vi.mocked(mockUserRepo.findByUsername).mockResolvedValue(null);
-      vi.mocked(mockUserRepo.findByEmail).mockResolvedValue({ id: 1, username: 'exists', email: 'exists@example.com', password_hash: 'h', role: 'BARBER', barber_id: null, shop_id: 1, created_at: '' } as any);
+      vi.mocked(mockUserRepo.findByEmail).mockResolvedValue({ id: 1, username: 'exists', email: 'exists@example.com', password_hash: 'h', role: 'BARBER', barber_id: null, customer_id: null, shop_id: 1, created_at: '' } as any);
       await expect(registerUseCase.execute({ username: 'new', email: 'exists@example.com' } as any)).rejects.toThrow('Email already exists');
     });
   });
@@ -69,6 +70,7 @@ describe('Auth Use Cases', () => {
         shop_id: 1,
         email: 'user1@example.com',
         barber_id: null,
+        customer_id: null,
         created_at: new Date().toISOString()
       };
       vi.mocked(mockUserRepo.findByUsername).mockResolvedValue(mockUser);
@@ -91,6 +93,7 @@ describe('Auth Use Cases', () => {
         role: 'OWNER' as UserRole,
         email: 'user1@example.com',
         barber_id: null,
+        customer_id: null,
         shop_id: 1,
         created_at: new Date().toISOString()
       };

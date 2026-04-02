@@ -5,7 +5,7 @@ import { UserRole } from '../domain/entities.js';
 export class RegisterUseCase {
   constructor(private userRepository: UserRepository) {}
 
-  async execute(data: { username: string; email: string; password_hash: string; role: UserRole; barber_id?: number | null; shop_id?: number | null; fullname?: string }) {
+  async execute(data: { username: string; email: string; password_hash: string; role: UserRole; barber_id?: number | null; customer_id?: number | null; shop_id?: number | null; fullname?: string }) {
     const existingUsername = await this.userRepository.findByUsername(data.username);
     if (existingUsername) {
       throw new Error('Username already exists');
@@ -23,6 +23,7 @@ export class RegisterUseCase {
       ...data,
       password_hash,
       barber_id: data.barber_id || null,
+      customer_id: data.customer_id || null,
       shop_id: data.shop_id || null,
       fullname: data.fullname || null
     });
@@ -33,6 +34,7 @@ export class RegisterUseCase {
       email: user.email,
       role: user.role,
       barber_id: user.barber_id,
+      customer_id: user.customer_id,
       shop_id: user.shop_id,
       fullname: user.fullname
     };

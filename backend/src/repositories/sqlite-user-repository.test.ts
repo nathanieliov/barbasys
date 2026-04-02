@@ -16,6 +16,7 @@ describe('SQLiteUserRepository', () => {
       password_hash: 'hashed',
       role: 'BARBER' as const,
       barber_id: null,
+      customer_id: null,
       shop_id: 1
     };
 
@@ -60,6 +61,7 @@ describe('SQLiteUserRepository', () => {
       password_hash: 'hashed',
       role: 'MANAGER' as const,
       barber_id: null,
+      customer_id: null,
       shop_id: 1,
       fullname: 'Initial Name'
     };

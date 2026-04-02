@@ -10,6 +10,7 @@ export interface CreateAppointmentRequest {
   recurring_rule?: 'weekly' | 'biweekly' | 'monthly' | null;
   occurrences?: number;
   shop_id: number;
+  notes?: string | null;
 }
 
 export interface CreateAppointmentResponse {
@@ -25,7 +26,7 @@ export class CreateAppointment {
   ) {}
 
   async execute(request: CreateAppointmentRequest): Promise<CreateAppointmentResponse> {
-    const { barber_id, customer_id, service_id, start_time, recurring_rule, occurrences = 1, shop_id } = request;
+    const { barber_id, customer_id, service_id, start_time, recurring_rule, occurrences = 1, shop_id, notes } = request;
     const recurring_id = recurring_rule ? Math.random().toString(36).substring(2, 15) : null;
 
     const service = await this.serviceRepo.findById(service_id);
@@ -66,7 +67,8 @@ export class CreateAppointment {
         recurring_id,
         recurring_rule,
         shop_id,
-        status: 'scheduled'
+        status: 'scheduled',
+        notes
       } as any);
       createdIds.push(id);
     }

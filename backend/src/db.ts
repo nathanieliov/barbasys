@@ -98,11 +98,15 @@ db.exec(`
     fullname TEXT,
     email TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
-    role TEXT NOT NULL CHECK(role IN ('OWNER', 'MANAGER', 'BARBER')),
+    role TEXT NOT NULL CHECK(role IN ('OWNER', 'MANAGER', 'BARBER', 'CUSTOMER')),
     barber_id INTEGER,
+    customer_id INTEGER,
     shop_id INTEGER,
+    otp_code TEXT,
+    otp_expires DATETIME,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (barber_id) REFERENCES barbers(id) ON DELETE SET NULL,
+    FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL,
     FOREIGN KEY (shop_id) REFERENCES shops(id) ON DELETE SET NULL
   );
 
@@ -145,6 +149,7 @@ db.exec(`
     recurring_id TEXT, -- UUID or unique string to group a series
     recurring_rule TEXT, -- NULL, 'weekly', 'biweekly', 'monthly'
     shop_id INTEGER,
+    notes TEXT,
     FOREIGN KEY (barber_id) REFERENCES barbers(id) ON DELETE CASCADE,
     FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL,
     FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE CASCADE,
@@ -203,8 +208,13 @@ try { db.exec('ALTER TABLE barbers ADD COLUMN fixed_period TEXT CHECK(fixed_peri
 try { db.exec('ALTER TABLE barbers ADD COLUMN is_active INTEGER DEFAULT 1'); } catch (e) {}
 try { db.exec('ALTER TABLE barbers ADD COLUMN fullname TEXT'); } catch (e) {}
 try { db.exec('UPDATE barbers SET fullname = name WHERE fullname IS NULL'); } catch (e) {}
+try { db.exec('ALTER TABLE users ADD COLUMN role TEXT CHECK(role IN (\'OWNER\', \'MANAGER\', \'BARBER\', \'CUSTOMER\'))'); } catch (e) {}
+try { db.exec('ALTER TABLE users ADD COLUMN customer_id INTEGER'); } catch (e) {}
+try { db.exec('ALTER TABLE users ADD COLUMN otp_code TEXT'); } catch (e) {}
+try { db.exec('ALTER TABLE users ADD COLUMN otp_expires DATETIME'); } catch (e) {}
 try { db.exec('ALTER TABLE users ADD COLUMN fullname TEXT'); } catch (e) {}
 try { db.exec('UPDATE users SET fullname = username WHERE fullname IS NULL'); } catch (e) {}
+try { db.exec('ALTER TABLE appointments ADD COLUMN notes TEXT'); } catch (e) {}
 try { db.exec('ALTER TABLE services ADD COLUMN is_active INTEGER DEFAULT 1'); } catch (e) {}
 try { db.exec('ALTER TABLE products ADD COLUMN is_active INTEGER DEFAULT 1'); } catch (e) {}
 try { db.exec('ALTER TABLE suppliers ADD COLUMN is_active INTEGER DEFAULT 1'); } catch (e) {}

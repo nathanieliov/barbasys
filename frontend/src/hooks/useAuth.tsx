@@ -5,8 +5,9 @@ interface User {
   id: number;
   username: string;
   email: string;
-  role: 'OWNER' | 'MANAGER' | 'BARBER';
+  role: 'OWNER' | 'MANAGER' | 'BARBER' | 'CUSTOMER';
   barber_id: number | null;
+  customer_id: number | null;
   shop_id: number | null;
   fullname?: string | null;
 }
