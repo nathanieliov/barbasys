@@ -11,7 +11,7 @@ export default function Barbers() {
   const [fullname, setFullname] = useState('');
   const [serviceRate, setServiceRate] = useState('0.6');
   const [productRate, setProductRate] = useState('0.1');
-  const [paymentModel, setPaymentModel] = useState<'COMMISSION' | 'FIXED'>('COMMISSION');
+  const [paymentModel, setPaymentModel] = useState<'COMMISSION' | 'FIXED' | 'FIXED_FEE'>('COMMISSION');
   const [fixedAmount, setFixedAmount] = useState('1000');
   const [fixedPeriod, setFixedPeriod] = useState<'MONTHLY' | 'WEEKLY' | 'BIWEEKLY'>('MONTHLY');
 
@@ -118,10 +118,12 @@ export default function Barbers() {
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.5rem' }}>
-              {b.payment_model === 'FIXED' ? (
+              {b.payment_model === 'FIXED' || b.payment_model === 'FIXED_FEE' ? (
                 <div style={{ gridColumn: '1 / -1', background: 'rgba(79, 70, 229, 0.05)', padding: '0.75rem', borderRadius: '0.75rem', border: '1px solid rgba(79, 70, 229, 0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '800', marginBottom: '0.25rem' }}>Fixed Salary</div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '800', marginBottom: '0.25rem' }}>
+                      {b.payment_model === 'FIXED' ? 'Fixed Salary' : 'Monthly Fee'}
+                    </div>
                     <div style={{ fontSize: '1.25rem', fontWeight: '900', color: 'var(--primary)' }}>${b.fixed_amount?.toLocaleString()}</div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
@@ -198,22 +200,30 @@ export default function Barbers() {
 
               <div style={{ marginBottom: '1.25rem' }}>
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>Payment Model</label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem' }}>
                   <button 
                     type="button"
                     className={paymentModel === 'COMMISSION' ? '' : 'secondary'}
                     onClick={() => setPaymentModel('COMMISSION')}
-                    style={{ padding: '0.75rem', fontSize: '0.85rem' }}
+                    style={{ padding: '0.75rem 0.25rem', fontSize: '0.75rem' }}
                   >
-                    Commission Rate
+                    Commission
                   </button>
                   <button 
                     type="button"
                     className={paymentModel === 'FIXED' ? '' : 'secondary'}
                     onClick={() => setPaymentModel('FIXED')}
-                    style={{ padding: '0.75rem', fontSize: '0.85rem' }}
+                    style={{ padding: '0.75rem 0.25rem', fontSize: '0.75rem' }}
                   >
                     Fixed Salary
+                  </button>
+                  <button 
+                    type="button"
+                    className={paymentModel === 'FIXED_FEE' ? '' : 'secondary'}
+                    onClick={() => setPaymentModel('FIXED_FEE')}
+                    style={{ padding: '0.75rem 0.25rem', fontSize: '0.75rem' }}
+                  >
+                    Fixed Fee (Rent)
                   </button>
                 </div>
               </div>
@@ -263,7 +273,9 @@ export default function Barbers() {
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
                   <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>Fixed Amount ($)</label>
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>
+                      {paymentModel === 'FIXED' ? 'Salary Amount ($)' : 'Fee Amount ($)'}
+                    </label>
                     <input 
                       type="number" 
                       value={fixedAmount} 

@@ -44,9 +44,9 @@ async function seed() {
   const ramonId = db.prepare('INSERT INTO barbers (name, fullname, payment_model, service_commission_rate, product_commission_rate, shop_id) VALUES (?, ?, ?, ?, ?, ?)')
     .run('Ramon', 'Ramón Rodríguez', 'COMMISSION', 0.6, 0.1, shopId).lastInsertRowid;
 
-  // Leo: Fixed RD$45,000 Monthly
+  // Leo: Fixed Fee (Rent) RD$10,000 Monthly
   const leoId = db.prepare('INSERT INTO barbers (name, fullname, payment_model, fixed_amount, fixed_period, shop_id) VALUES (?, ?, ?, ?, ?, ?)')
-    .run('Leo', 'Leonardo Tejeda', 'FIXED', 45000, 'MONTHLY', shopId).lastInsertRowid;
+    .run('Leo', 'Leonardo Tejeda', 'FIXED_FEE', 10000, 'MONTHLY', shopId).lastInsertRowid;
 
   // Set Shifts
   const shiftInsert = db.prepare('INSERT INTO barber_shifts (barber_id, day_of_week, start_time, end_time) VALUES (?, ?, ?, ?)');

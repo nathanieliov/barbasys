@@ -1,5 +1,5 @@
 export type UserRole = 'OWNER' | 'MANAGER' | 'BARBER';
-export type PaymentModel = 'COMMISSION' | 'FIXED';
+export type PaymentModel = 'COMMISSION' | 'FIXED' | 'FIXED_FEE';
 export type FixedPeriod = 'MONTHLY' | 'WEEKLY' | 'BIWEEKLY';
 
 export interface Barber {

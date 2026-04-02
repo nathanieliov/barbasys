@@ -27,7 +27,7 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     fullname TEXT,
-    payment_model TEXT DEFAULT 'COMMISSION' CHECK(payment_model IN ('COMMISSION', 'FIXED')),
+    payment_model TEXT DEFAULT 'COMMISSION' CHECK(payment_model IN ('COMMISSION', 'FIXED', 'FIXED_FEE')),
     service_commission_rate REAL DEFAULT 0.5,
     product_commission_rate REAL DEFAULT 0.1,
     fixed_amount REAL,
@@ -197,7 +197,7 @@ if (shopsCount.count === 0) {
 const defaultShopId = (db.prepare('SELECT id FROM shops LIMIT 1').get() as { id: number }).id;
 
 // 2. Migration for existing databases
-try { db.exec('ALTER TABLE barbers ADD COLUMN payment_model TEXT DEFAULT \'COMMISSION\' CHECK(payment_model IN (\'COMMISSION\', \'FIXED\'))'); } catch (e) {}
+try { db.exec('ALTER TABLE barbers ADD COLUMN payment_model TEXT DEFAULT \'COMMISSION\' CHECK(payment_model IN (\'COMMISSION\', \'FIXED\', \'FIXED_FEE\'))'); } catch (e) {}
 try { db.exec('ALTER TABLE barbers ADD COLUMN fixed_amount REAL'); } catch (e) {}
 try { db.exec('ALTER TABLE barbers ADD COLUMN fixed_period TEXT CHECK(fixed_period IN (\'MONTHLY\', \'WEEKLY\', \'BIWEEKLY\'))'); } catch (e) {}
 try { db.exec('ALTER TABLE barbers ADD COLUMN is_active INTEGER DEFAULT 1'); } catch (e) {}

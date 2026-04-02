@@ -68,7 +68,7 @@ export class SQLiteBarberRepository implements IBarberRepository {
       let product_commission = 0;
 
       if (row.payment_model === 'FIXED' && row.fixed_amount) {
-        // Calculate fixed amount for the period
+        // Calculate fixed salary for the period (Owner pays Barber)
         const start = new Date(startDate);
         const end = new Date(endDate);
         const diffTime = Math.abs(end.getTime() - start.getTime());
@@ -78,8 +78,23 @@ export class SQLiteBarberRepository implements IBarberRepository {
         if (row.fixed_period === 'WEEKLY') periodDays = 7;
         else if (row.fixed_period === 'BIWEEKLY') periodDays = 14;
 
-        // Pro-rated fixed amount based on days in report range
         service_commission = (row.fixed_amount / periodDays) * diffDays;
+      } else if (row.payment_model === 'FIXED_FEE' && row.fixed_amount) {
+        // Barber pays Owner a fixed fee, keeps rest
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        const diffTime = Math.abs(end.getTime() - start.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+        let periodDays = 30;
+        if (row.fixed_period === 'WEEKLY') periodDays = 7;
+        else if (row.fixed_period === 'BIWEEKLY') periodDays = 14;
+
+        const proRatedFee = (row.fixed_amount / periodDays) * diffDays;
+        
+        // Barber payout is all sales minus the fee
+        service_commission = (row.total_service_sales + row.total_product_sales) - proRatedFee;
+        product_commission = 0; // Already included in service_commission for this model simplify
       } else {
         service_commission = row.total_service_sales * row.service_commission_rate;
         product_commission = row.total_product_sales * row.product_commission_rate;
