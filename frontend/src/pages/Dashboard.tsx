@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../api/apiClient';
-import { TrendingUp, Users, DollarSign, Calendar, Star, ShoppingCart, Package } from 'lucide-react';
+import { TrendingUp, Users, DollarSign, Calendar, Clock, ShoppingCart, Package } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useSettings } from '../hooks/useSettings';
 import { formatCurrency } from '../utils/format';
@@ -9,6 +9,7 @@ export default function Dashboard() {
   const { settings } = useSettings();
   const [stats, setStats] = useState<any>(null);
   const [weeklyStats, setWeeklyStats] = useState<any>(null);
+  const [nextAppointment, setNextAppointment] = useState<any>(null);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -25,7 +26,17 @@ export default function Dashboard() {
     const startDateStr = start.toISOString().split('T')[0];
     const endDateStr = end.toISOString().split('T')[0];
     apiClient.get(`/reports?startDate=${startDateStr}&endDate=${endDateStr}`).then(res => setWeeklyStats(res.data));
-  }, []);
+
+    if (user?.role === 'BARBER') {
+      apiClient.get('/appointments').then(res => {
+        const now = new Date();
+        const future = res.data
+          .filter((a: any) => a.status === 'scheduled' && new Date(a.start_time) > now)
+          .sort((a: any, b: any) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
+        if (future.length > 0) setNextAppointment(future[0]);
+      });
+    }
+  }, [user]);
 
   const isBarber = user?.role === 'BARBER';
   
@@ -100,13 +111,17 @@ export default function Dashboard() {
         )}
 
         {isBarber && (
-          <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <div style={{ background: 'rgba(245, 158, 11, 0.1)', color: 'var(--warning)', padding: '0.75rem', borderRadius: '0.75rem' }}>
-              <Star size={24} />
+          <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'var(--primary)', color: 'white' }}>
+            <div style={{ background: 'rgba(255, 255, 255, 0.2)', padding: '0.75rem', borderRadius: '0.75rem' }}>
+              <Clock size={24} />
             </div>
             <div>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: '600' }}>Tips Today</p>
-              <h2 style={{ marginBottom: 0, fontSize: '1.5rem', fontWeight: '800' }}>{displayCurrency(myCommissions?.tips || 0)}</h2>
+              <p style={{ opacity: 0.8, fontSize: '0.85rem', fontWeight: '600' }}>Next Appointment</p>
+              <h2 style={{ marginBottom: 0, fontSize: '1.25rem', fontWeight: '800' }}>
+                {nextAppointment ? (
+                  `${new Date(nextAppointment.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${nextAppointment.customer_name || 'Guest'}`
+                ) : 'No more today'}
+              </h2>
             </div>
           </div>
         )}
@@ -168,22 +183,36 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {!isBarber && (
-          <div className="card">
-            <h2 style={{ marginBottom: '1.5rem' }}>Quick Actions</h2>
-            <div style={{ display: 'grid', gap: '1rem' }}>
-              <button className="secondary" style={{ justifyContent: 'flex-start', padding: '1rem' }} onClick={() => window.location.href='/pos'}>
-                <ShoppingCart size={18} style={{ marginRight: '0.75rem' }} /> Start New Sale
-              </button>
-              <button className="secondary" style={{ justifyContent: 'flex-start', padding: '1rem' }} onClick={() => window.location.href='/schedule'}>
-                <Calendar size={18} style={{ marginRight: '0.75rem' }} /> View Schedule
-              </button>
-              <button className="secondary" style={{ justifyContent: 'flex-start', padding: '1rem' }} onClick={() => window.location.href='/inventory'}>
-                <Package size={18} style={{ marginRight: '0.75rem' }} /> Check Inventory
-              </button>
-            </div>
+        <div className="card">
+          <h2 style={{ marginBottom: '1.5rem' }}>Quick Actions</h2>
+          <div style={{ display: 'grid', gap: '1rem' }}>
+            {isBarber ? (
+              <>
+                <button className="primary" style={{ justifyContent: 'flex-start', padding: '1.25rem' }} onClick={() => window.location.href='/my-schedule'}>
+                  <Calendar size={20} style={{ marginRight: '0.75rem' }} /> Go to My Schedule
+                </button>
+                <button className="secondary" style={{ justifyContent: 'flex-start', padding: '1rem' }} onClick={() => window.location.href='/pos'}>
+                  <ShoppingCart size={18} style={{ marginRight: '0.75rem' }} /> Start New Sale
+                </button>
+                <button className="secondary" style={{ justifyContent: 'flex-start', padding: '1rem' }} onClick={() => window.location.href='/customers'}>
+                  <Users size={18} style={{ marginRight: '0.75rem' }} /> Search Customer
+                </button>
+              </>
+            ) : (
+              <>
+                <button className="secondary" style={{ justifyContent: 'flex-start', padding: '1rem' }} onClick={() => window.location.href='/pos'}>
+                  <ShoppingCart size={18} style={{ marginRight: '0.75rem' }} /> Start New Sale
+                </button>
+                <button className="secondary" style={{ justifyContent: 'flex-start', padding: '1rem' }} onClick={() => window.location.href='/schedule'}>
+                  <Calendar size={18} style={{ marginRight: '0.75rem' }} /> View Schedule
+                </button>
+                <button className="secondary" style={{ justifyContent: 'flex-start', padding: '1rem' }} onClick={() => window.location.href='/inventory'}>
+                  <Package size={18} style={{ marginRight: '0.75rem' }} /> Check Inventory
+                </button>
+              </>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

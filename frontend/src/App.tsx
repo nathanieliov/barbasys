@@ -12,6 +12,7 @@ import Barbers from './pages/Barbers';
 import Settings from './pages/Settings';
 import Customers from './pages/Customers';
 import Schedule from './pages/Schedule';
+import MySchedule from './pages/MySchedule';
 import Shifts from './pages/Shifts';
 import Suppliers from './pages/Suppliers';
 import Analytics from './pages/Analytics';
@@ -61,10 +62,11 @@ const Sidebar = ({ isOpen, toggleSidebar }: { isOpen: boolean, toggleSidebar: ()
 
   const navItems = [
     { to: "/", icon: <LayoutDashboard size={20} />, label: "Dashboard" },
+    { to: "/my-schedule", icon: <CalendarIcon size={20} />, label: "My Schedule", roles: ['BARBER'] },
     { to: "/pos", icon: <ShoppingCart size={20} />, label: "POS (Sales)" },
     { to: "/sales", icon: <Receipt size={20} />, label: "Sales Log" },
-    { to: "/schedule", icon: <CalendarIcon size={20} />, label: "Schedule" },
-    { to: "/shifts", icon: <Clock size={20} />, label: "Shifts" },
+    { to: "/schedule", icon: <CalendarIcon size={20} />, label: "Shop Calendar", admin: true },
+    { to: "/shifts", icon: <Clock size={20} />, label: "Shifts", admin: true },
     { to: "/inventory", icon: <Package size={20} />, label: "Inventory" },
     { to: "/services", icon: <Scissors size={20} />, label: "Services", admin: true },
     { to: "/suppliers", icon: <Truck size={20} />, label: "Suppliers", admin: true },
@@ -108,6 +110,7 @@ const Sidebar = ({ isOpen, toggleSidebar }: { isOpen: boolean, toggleSidebar: ()
         <ul className="nav-links">
           {navItems.map(item => {
             if (item.admin && !isAdmin) return null;
+            if (item.roles && !item.roles.includes(user.role)) return null;
             const isActive = location.pathname === item.to;
             return (
               <li key={item.to}>
@@ -172,16 +175,17 @@ function App() {
             
             <Route element={<ProtectedRoute />}>
               <Route path="/" element={<Dashboard />} />
+              <Route path="/my-schedule" element={<MySchedule />} />
               <Route path="/pos" element={<POS />} />
               <Route path="/sales" element={<SalesHistory />} />
-              <Route path="/schedule" element={<Schedule />} />
-              <Route path="/shifts" element={<Shifts />} />
               <Route path="/inventory" element={<Inventory />} />
               <Route path="/customers" element={<Customers />} />
               <Route path="/profile" element={<UserProfile />} />
             </Route>
 
             <Route element={<ProtectedRoute roles={['OWNER', 'MANAGER']} />}>
+              <Route path="/schedule" element={<Schedule />} />
+              <Route path="/shifts" element={<Shifts />} />
               <Route path="/reports" element={<Reports />} />
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/expenses" element={<Expenses />} />
