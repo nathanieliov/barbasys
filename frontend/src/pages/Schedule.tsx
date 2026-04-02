@@ -73,19 +73,22 @@ export default function Schedule() {
   };
 
   const handleCheckIn = (appointment: any) => {
-    navigate('/pos', { 
-      state: { 
-        appointmentId: appointment.id,
-        barberId: appointment.barber_id,
-        customerId: appointment.customer_id,
-        service: {
-          id: appointment.service_id,
-          name: appointment.service_name,
-          price: services.find(s => s.id === appointment.service_id)?.price || 0,
-          type: 'service'
+    navigate(`/pos?appointmentId=${appointment.id}`);
+  };
+
+  const updateStatus = async (id: number, status: string) => {
+    try {
+      await apiClient.patch(`/appointments/${id}`, { status });
+      if (status === 'completed') {
+        if (window.confirm('Appointment marked as completed! Would you like to process the payment now?')) {
+          navigate(`/pos?appointmentId=${id}`);
+          return;
         }
-      } 
-    });
+      }
+      fetchData();
+    } catch (err) {
+      alert('Failed to update status');
+    }
   };
 
   const changeDate = (days: number) => {
@@ -167,9 +170,17 @@ export default function Schedule() {
               </div>
 
               {a.status === 'scheduled' && (
-                <button style={{ width: '100%', gap: '0.5rem', padding: '0.875rem' }} onClick={() => handleCheckIn(a)}>
-                  <CheckCircle size={18} /> Start Check-in
-                </button>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button style={{ flex: 2, gap: '0.5rem', padding: '0.875rem' }} onClick={() => handleCheckIn(a)}>
+                    <CheckCircle size={18} /> Start Check-in
+                  </button>
+                  <button className="secondary" style={{ flex: 1, color: 'var(--success)', border: '1px solid var(--success)', padding: '0.875rem' }} onClick={() => updateStatus(a.id, 'completed')}>
+                    Done
+                  </button>
+                  <button className="secondary" style={{ padding: '0.875rem', color: 'var(--danger)', border: '1px solid var(--danger)' }} onClick={() => updateStatus(a.id, 'cancelled')}>
+                    <X size={18} />
+                  </button>
+                </div>
               )}
             </div>
           ))

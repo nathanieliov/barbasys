@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import apiClient from '../api/apiClient';
 import { Trash2, ShoppingCart, User, Plus, X } from 'lucide-react';
 import { calculatePOSTotals } from '../utils/pos';
-import { useLocation } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useSettings } from '../hooks/useSettings';
 import { formatCurrency } from '../utils/format';
@@ -10,8 +10,8 @@ import { formatCurrency } from '../utils/format';
 export default function POS() {
   const { settings } = useSettings();
   const { user } = useAuth();
-  const location = useLocation();
-  const appointmentData = location.state;
+  const [searchParams] = useSearchParams();
+  const appointmentId = searchParams.get('appointmentId');
 
   const [barbers, setBarbers] = useState<any[]>([]);
   const [services, setServices] = useState<any[]>([]);
@@ -40,23 +40,33 @@ export default function POS() {
     }).catch(() => {});
     apiClient.get('/services').then(res => setServices(res.data)).catch(() => {});
     apiClient.get('/inventory').then(res => setProducts(res.data)).catch(() => {});
+  }, [user]);
 
-    if (appointmentData) {
-      setSelectedBarber(appointmentData.barberId.toString());
-      if (appointmentData.service) {
-        setCart([{ ...appointmentData.service, cartId: Date.now() }]);
-      }
-      if (appointmentData.customerId) {
-        apiClient.get('/customers').then(res => {
-          const customer = res.data.find((c: any) => c.id === appointmentData.customerId);
-          if (customer) {
-            setCustomerEmail(customer.email || '');
-            setCustomerPhone(customer.phone || '');
+  useEffect(() => {
+    if (appointmentId) {
+      apiClient.get('/appointments').then(res => {
+        const appt = res.data.find((a: any) => a.id === parseInt(appointmentId));
+        if (appt) {
+          setSelectedBarber(appt.barber_id.toString());
+          apiClient.get(`/services`).then(servicesRes => {
+            const service = servicesRes.data.find((s: any) => s.id === appt.service_id);
+            if (service) {
+              setCart([{ ...service, type: 'service', cartId: Date.now() }]);
+            }
+          });
+          if (appt.customer_id) {
+            apiClient.get('/customers').then(custRes => {
+              const customer = custRes.data.find((c: any) => c.id === appt.customer_id);
+              if (customer) {
+                setCustomerEmail(customer.email || '');
+                setCustomerPhone(customer.phone || '');
+              }
+            });
           }
-        });
-      }
+        }
+      });
     }
-  }, [appointmentData]);
+  }, [appointmentId]);
 
   const addToCart = (item: any, type: string) => {
     setCart([...cart, { ...item, type, cartId: Date.now() }]);
@@ -79,8 +89,8 @@ export default function POS() {
         discount_amount: discountAmount || 0
       });
 
-      if (appointmentData?.appointmentId) {
-        await apiClient.patch(`/appointments/${appointmentData.appointmentId}`, { status: 'completed' });
+      if (appointmentId) {
+        await apiClient.patch(`/appointments/${appointmentId}`, { status: 'completed' });
       }
 
       setSaleSuccess(true);
@@ -112,9 +122,9 @@ export default function POS() {
             </div>
           )}
         </div>
-        {appointmentData && (
+        {appointmentId && (
           <div className="status-badge status-scheduled" style={{ padding: '0.5rem 1rem' }}>
-            Check-in: Appt #{appointmentData.appointmentId}
+            Check-in: Appt #{appointmentId}
           </div>
         )}
       </div>

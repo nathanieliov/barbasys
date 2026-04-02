@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../api/apiClient';
 import { Calendar, CheckCircle, XCircle, ChevronRight, Phone, MessageSquare } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export default function MySchedule() {
+  const navigate = useNavigate();
   const [appointments, setAppointments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -21,6 +23,12 @@ export default function MySchedule() {
   const updateStatus = async (id: number, status: string) => {
     try {
       await apiClient.patch(`/appointments/${id}`, { status });
+      if (status === 'completed') {
+        if (window.confirm('Appointment marked as completed! Would you like to process the payment now?')) {
+          navigate(`/pos?appointmentId=${id}`);
+          return;
+        }
+      }
       fetchMySchedule();
     } catch (err) {
       alert('Failed to update status');
@@ -96,7 +104,7 @@ export default function MySchedule() {
                   <MessageSquare size={14} /> SMS
                 </button>
                 <button 
-                  onClick={() => window.location.href = `/pos?appointmentId=${appt.id}`}
+                  onClick={() => navigate(`/pos?appointmentId=${appt.id}`)}
                   disabled={appt.status !== 'scheduled'}
                   style={{ flex: 2, fontSize: '0.8rem', padding: '0.5rem', gap: '0.4rem' }}
                 >
