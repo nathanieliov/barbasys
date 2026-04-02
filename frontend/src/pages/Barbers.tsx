@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../api/apiClient';
 import { UserPlus, User, X, Percent, Phone, Mail, Trash2, Edit2 } from 'lucide-react';
+import { useSettings } from '../hooks/useSettings';
+import { formatCurrency } from '../utils/format';
 
 export default function Barbers() {
+  const { settings } = useSettings();
   const [barbers, setBarbers] = useState<any[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [editingBarber, setEditingBarber] = useState<any>(null);
@@ -56,8 +59,8 @@ export default function Barbers() {
       payment_model: paymentModel,
       service_commission_rate: parseFloat(serviceRate),
       product_commission_rate: parseFloat(productRate),
-      fixed_amount: paymentModel === 'FIXED' ? parseFloat(fixedAmount) : null,
-      fixed_period: paymentModel === 'FIXED' ? fixedPeriod : null
+      fixed_amount: paymentModel !== 'COMMISSION' ? parseFloat(fixedAmount) : null,
+      fixed_period: paymentModel !== 'COMMISSION' ? fixedPeriod : null
     };
 
     try {
@@ -122,13 +125,15 @@ export default function Barbers() {
                 <div style={{ gridColumn: '1 / -1', background: 'rgba(79, 70, 229, 0.05)', padding: '0.75rem', borderRadius: '0.75rem', border: '1px solid rgba(79, 70, 229, 0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
                     <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '800', marginBottom: '0.25rem' }}>
-                      {b.payment_model === 'FIXED' ? 'Fixed Salary' : 'Monthly Fee'}
+                      {b.payment_model === 'FIXED' ? 'Salary' : 'Rental Fee'}
                     </div>
-                    <div style={{ fontSize: '1.25rem', fontWeight: '900', color: 'var(--primary)' }}>${b.fixed_amount?.toLocaleString()}</div>
+                    <div style={{ fontSize: '1.25rem', fontWeight: '900', color: 'var(--primary)' }}>
+                      {formatCurrency(b.fixed_amount, settings.currency_symbol)}
+                    </div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '800', marginBottom: '0.25rem' }}>Period</div>
-                    <div style={{ fontSize: '0.9rem', fontWeight: '700', color: 'var(--text-main)' }}>{b.fixed_period}</div>
+                    <div style={{ fontSize: '0.9rem', fontWeight: '700', color: 'var(--text-main)' }}>{b.fixed_period?.toLowerCase()}</div>
                   </div>
                 </div>
               ) : (
