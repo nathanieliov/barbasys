@@ -204,7 +204,78 @@ if (shopsCount.count === 0) {
 const defaultShopId = (db.prepare('SELECT id FROM shops LIMIT 1').get() as { id: number }).id;
 
 // 2. Migration for existing databases
-try { db.exec('ALTER TABLE barbers ADD COLUMN payment_model TEXT DEFAULT \'COMMISSION\' CHECK(payment_model IN (\'COMMISSION\', \'FIXED\', \'FIXED_FEE\'))'); } catch (e) {}
+try {
+  const usersSchema = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='users'").get() as { sql: string };
+  if (usersSchema && !usersSchema.sql.includes('CUSTOMER')) {
+    console.log('🔄 Migrating users table to support CUSTOMER role...');
+    db.transaction(() => {
+      db.exec(`
+        CREATE TABLE users_new (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          username TEXT NOT NULL UNIQUE,
+          fullname TEXT,
+          email TEXT NOT NULL UNIQUE,
+          password_hash TEXT NOT NULL,
+          role TEXT NOT NULL CHECK(role IN ('OWNER', 'MANAGER', 'BARBER', 'CUSTOMER')),
+          barber_id INTEGER,
+          customer_id INTEGER,
+          shop_id INTEGER,
+          otp_code TEXT,
+          otp_expires DATETIME,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (barber_id) REFERENCES barbers(id) ON DELETE SET NULL,
+          FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL,
+          FOREIGN KEY (shop_id) REFERENCES shops(id) ON DELETE SET NULL
+        )
+      `);
+      db.exec(`
+        INSERT INTO users_new (id, username, fullname, email, password_hash, role, barber_id, customer_id, shop_id, otp_code, otp_expires, created_at)
+        SELECT id, username, fullname, email, password_hash, role, barber_id, customer_id, shop_id, otp_code, otp_expires, created_at FROM users
+      `);
+      db.exec('DROP TABLE users');
+      db.exec('ALTER TABLE users_new RENAME TO users');
+    })();
+    console.log('✅ Users table migrated successfully.');
+  }
+} catch (e) {
+  console.error('Migration error:', e);
+}
+
+try {
+  const barbersSchema = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='barbers'").get() as { sql: string };
+  if (barbersSchema && !barbersSchema.sql.includes('FIXED_FEE')) {
+    console.log('🔄 Migrating barbers table to support FIXED_FEE model...');
+    db.transaction(() => {
+      db.exec(`
+        CREATE TABLE barbers_new (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          fullname TEXT,
+          slug TEXT UNIQUE,
+          payment_model TEXT DEFAULT 'COMMISSION' CHECK(payment_model IN ('COMMISSION', 'FIXED', 'FIXED_FEE')),
+          service_commission_rate REAL DEFAULT 0.5,
+          product_commission_rate REAL DEFAULT 0.1,
+          fixed_amount REAL,
+          fixed_period TEXT CHECK(fixed_period IN ('MONTHLY', 'WEEKLY', 'BIWEEKLY')),
+          shop_id INTEGER,
+          is_active INTEGER DEFAULT 1,
+          FOREIGN KEY (shop_id) REFERENCES shops(id) ON DELETE CASCADE
+        )
+      `);
+      // We need to check which columns exist before copying to be safe
+      const info = db.prepare("PRAGMA table_info(barbers)").all() as any[];
+      const cols = info.map(c => c.name).filter(c => ['id', 'name', 'fullname', 'slug', 'payment_model', 'service_commission_rate', 'product_commission_rate', 'fixed_amount', 'fixed_period', 'shop_id', 'is_active'].includes(c));
+      const colList = cols.join(', ');
+      db.exec(`INSERT INTO barbers_new (${colList}) SELECT ${colList} FROM barbers`);
+      db.exec('DROP TABLE barbers');
+      db.exec('ALTER TABLE barbers_new RENAME TO barbers');
+    })();
+    console.log('✅ Barbers table migrated successfully.');
+  }
+} catch (e) {
+  console.error('Barbers migration error:', e);
+}
+
 try { db.exec('ALTER TABLE barbers ADD COLUMN fixed_amount REAL'); } catch (e) {}
 try { db.exec('ALTER TABLE barbers ADD COLUMN fixed_period TEXT CHECK(fixed_period IN (\'MONTHLY\', \'WEEKLY\', \'BIWEEKLY\'))'); } catch (e) {}
 try { db.exec('ALTER TABLE barbers ADD COLUMN slug TEXT'); } catch (e) {}
