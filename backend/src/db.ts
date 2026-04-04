@@ -27,6 +27,7 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     fullname TEXT,
+    slug TEXT UNIQUE,
     payment_model TEXT DEFAULT 'COMMISSION' CHECK(payment_model IN ('COMMISSION', 'FIXED', 'FIXED_FEE')),
     service_commission_rate REAL DEFAULT 0.5,
     product_commission_rate REAL DEFAULT 0.1,
@@ -86,6 +87,7 @@ db.exec(`
     name TEXT,
     email TEXT UNIQUE,
     phone TEXT UNIQUE,
+    birthday DATE,
     last_visit DATETIME,
     notes TEXT,
     tags TEXT, -- Comma-separated tags
@@ -205,6 +207,9 @@ const defaultShopId = (db.prepare('SELECT id FROM shops LIMIT 1').get() as { id:
 try { db.exec('ALTER TABLE barbers ADD COLUMN payment_model TEXT DEFAULT \'COMMISSION\' CHECK(payment_model IN (\'COMMISSION\', \'FIXED\', \'FIXED_FEE\'))'); } catch (e) {}
 try { db.exec('ALTER TABLE barbers ADD COLUMN fixed_amount REAL'); } catch (e) {}
 try { db.exec('ALTER TABLE barbers ADD COLUMN fixed_period TEXT CHECK(fixed_period IN (\'MONTHLY\', \'WEEKLY\', \'BIWEEKLY\'))'); } catch (e) {}
+try { db.exec('ALTER TABLE barbers ADD COLUMN slug TEXT'); } catch (e) {}
+try { db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_barbers_slug ON barbers(slug)'); } catch (e) {}
+try { db.exec('ALTER TABLE customers ADD COLUMN birthday DATE'); } catch (e) {}
 try { db.exec('ALTER TABLE barbers ADD COLUMN is_active INTEGER DEFAULT 1'); } catch (e) {}
 try { db.exec('ALTER TABLE barbers ADD COLUMN fullname TEXT'); } catch (e) {}
 try { db.exec('UPDATE barbers SET fullname = name WHERE fullname IS NULL'); } catch (e) {}

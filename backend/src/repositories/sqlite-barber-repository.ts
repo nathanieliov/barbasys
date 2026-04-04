@@ -10,14 +10,19 @@ export class SQLiteBarberRepository implements IBarberRepository {
   }
 
   async findById(id: number): Promise<Barber | null> {
-    const result = this.db.prepare('SELECT * FROM barbers WHERE id = ? AND is_active = 1').get(id);
+    const result = this.db.prepare('SELECT * FROM barbers WHERE id = ?').get(id);
+    return (result as Barber) || null;
+  }
+
+  async findBySlug(slug: string): Promise<Barber | null> {
+    const result = this.db.prepare('SELECT * FROM barbers WHERE slug = ? AND is_active = 1').get(slug);
     return (result as Barber) || null;
   }
 
   async create(barber: Omit<Barber, 'id'>): Promise<number> {
     const result = this.db.prepare(
-      'INSERT INTO barbers (name, fullname, payment_model, service_commission_rate, product_commission_rate, fixed_amount, fixed_period, shop_id, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
-    ).run(barber.name, barber.fullname, barber.payment_model || 'COMMISSION', barber.service_commission_rate, barber.product_commission_rate, barber.fixed_amount, barber.fixed_period, barber.shop_id, barber.is_active ?? 1);
+      'INSERT INTO barbers (name, fullname, slug, payment_model, service_commission_rate, product_commission_rate, fixed_amount, fixed_period, shop_id, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    ).run(barber.name, barber.fullname, barber.slug || null, barber.payment_model || 'COMMISSION', barber.service_commission_rate, barber.product_commission_rate, barber.fixed_amount, barber.fixed_period, barber.shop_id, barber.is_active ?? 1);
     return Number(result.lastInsertRowid);
   }
 
@@ -27,6 +32,7 @@ export class SQLiteBarberRepository implements IBarberRepository {
 
     const name = barber.name ?? existing.name;
     const fullname = barber.fullname ?? existing.fullname;
+    const slug = barber.slug ?? existing.slug;
     const payment_model = barber.payment_model ?? existing.payment_model;
     const service_commission_rate = barber.service_commission_rate ?? existing.service_commission_rate;
     const product_commission_rate = barber.product_commission_rate ?? existing.product_commission_rate;
@@ -34,8 +40,8 @@ export class SQLiteBarberRepository implements IBarberRepository {
     const fixed_period = barber.fixed_period ?? existing.fixed_period;
 
     this.db.prepare(
-      'UPDATE barbers SET name = ?, fullname = ?, payment_model = ?, service_commission_rate = ?, product_commission_rate = ?, fixed_amount = ?, fixed_period = ? WHERE id = ?'
-    ).run(name, fullname, payment_model, service_commission_rate, product_commission_rate, fixed_amount, fixed_period, barber.id);
+      'UPDATE barbers SET name = ?, fullname = ?, slug = ?, payment_model = ?, service_commission_rate = ?, product_commission_rate = ?, fixed_amount = ?, fixed_period = ? WHERE id = ?'
+    ).run(name, fullname, slug, payment_model, service_commission_rate, product_commission_rate, fixed_amount, fixed_period, barber.id);
   }
 
   async delete(id: number): Promise<void> {

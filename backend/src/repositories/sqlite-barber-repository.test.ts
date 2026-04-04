@@ -14,6 +14,7 @@ describe('SQLiteBarberRepository', () => {
     const id = await repo.create({ 
       name: 'Test Barber', 
       fullname: 'Test Barber Fullname',
+      slug: null,
       payment_model: 'COMMISSION',
       service_commission_rate: 0.6, 
       product_commission_rate: 0.1, 
@@ -34,6 +35,7 @@ describe('SQLiteBarberRepository', () => {
     const id = await repo.create({ 
       name: 'Fixed Barber', 
       fullname: 'Fixed Barber Fullname',
+      slug: null,
       payment_model: 'FIXED',
       service_commission_rate: 0, 
       product_commission_rate: 0, 
@@ -59,6 +61,7 @@ describe('SQLiteBarberRepository', () => {
     const id = await repo.create({ 
       name: 'To Delete', 
       fullname: 'To Delete Fullname',
+      slug: null,
       payment_model: 'COMMISSION',
       service_commission_rate: 0.5, 
       product_commission_rate: 0.1, 

@@ -20,8 +20,10 @@ import Expenses from './pages/Expenses';
 import UserProfile from './pages/UserProfile';
 import Users from './pages/Users';
 import Login from './pages/Login';
+import Landing from './pages/Landing';
 import ShopDiscovery from './pages/ShopDiscovery';
 import BookingFlow from './pages/BookingFlow';
+import BarberDirect from './pages/BarberDirect';
 import CustomerPortal from './pages/CustomerPortal';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider, useAuth } from './hooks/useAuth';
@@ -173,7 +175,8 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 
 function HomeSelector() {
   const { user } = useAuth();
-  if (user?.role === 'CUSTOMER') return <CustomerPortal />;
+  if (!user) return <Landing />;
+  if (user.role === 'CUSTOMER') return <CustomerPortal />;
   return <Dashboard />;
 }
 
@@ -184,12 +187,13 @@ function App() {
         <Router>
           <Layout>
           <Routes>
+            <Route path="/" element={<HomeSelector />} />
             <Route path="/login" element={<Login />} />
             <Route path="/discovery" element={<ShopDiscovery />} />
             <Route path="/book/:shopId" element={<BookingFlow />} />
+            <Route path="/b/:slug" element={<BarberDirect />} />
             
             <Route element={<ProtectedRoute />}>
-              <Route path="/" element={<HomeSelector />} />
               <Route path="/my-schedule" element={<MySchedule />} />
               <Route path="/pos" element={<POS />} />
               <Route path="/sales" element={<SalesHistory />} />

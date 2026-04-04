@@ -6,6 +6,7 @@ export interface Barber {
   id: number;
   name: string;
   fullname: string;
+  slug?: string | null;
   payment_model: PaymentModel;
   service_commission_rate: number;
   product_commission_rate: number;
@@ -13,6 +14,17 @@ export interface Barber {
   fixed_period: FixedPeriod | null;
   shop_id: number | null;
   is_active: number;
+}
+
+export interface Customer {
+  id: number;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  birthday?: string | null;
+  last_visit: string | null;
+  notes: string | null;
+  created_at: string;
 }
 
 export interface Sale {

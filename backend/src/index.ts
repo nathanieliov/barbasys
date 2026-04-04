@@ -82,7 +82,7 @@ const updateUser = new UpdateUser(userRepo);
 const deleteUser = new DeleteUser(userRepo);
 const updateProfile = new UpdateProfile(userRepo, barberRepo);
 const sendOTP = new SendOTP(userRepo, customerRepo);
-const verifyOTP = new VerifyOTP(userRepo);
+const verifyOTP = new VerifyOTP(userRepo, customerRepo);
 
 app.use(cors());
 app.use(express.json());
@@ -103,6 +103,19 @@ app.get('/api/public/shops/:id', (req, res) => {
     const services = db.prepare('SELECT * FROM services WHERE shop_id = ? AND is_active = 1').all(req.params.id);
     const barbers = db.prepare('SELECT * FROM barbers WHERE shop_id = ? AND is_active = 1').all(req.params.id);
     res.json({ shop, services, barbers });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/public/barbers/:slug', async (req, res) => {
+  try {
+    const barber = await barberRepo.findBySlug(req.params.slug);
+    if (!barber) return res.status(404).json({ error: 'Barber not found' });
+    
+    const shop = db.prepare('SELECT * FROM shops WHERE id = ?').get(barber.shop_id);
+    const services = db.prepare('SELECT * FROM services WHERE shop_id = ? AND is_active = 1').all(barber.shop_id);
+    res.json({ barber, shop, services });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

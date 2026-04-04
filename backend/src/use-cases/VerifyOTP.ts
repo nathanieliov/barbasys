@@ -1,8 +1,12 @@
 import { UserRepository } from '../repositories/user-repository.interface.js';
+import { ICustomerRepository } from '../repositories/customer-repository.interface.js';
 import jwt, { SignOptions } from 'jsonwebtoken';
 
 export class VerifyOTP {
-  constructor(private userRepo: UserRepository) {}
+  constructor(
+    private userRepo: UserRepository,
+    private customerRepo: ICustomerRepository
+  ) {}
 
   async execute(email: string, code: string) {
     const user = await this.userRepo.findByEmail(email);
@@ -14,6 +18,16 @@ export class VerifyOTP {
     const now = new Date();
     if (user.otp_expires && new Date(user.otp_expires) < now) {
       throw new Error('OTP expired');
+    }
+
+    // Check if customer profile is incomplete
+    let requires_profile_completion = false;
+    if (user.customer_id) {
+      // Direct DB query here for simplicity or use customerRepo if findById is added
+      const customer = await this.customerRepo.findByEmailOrPhone(email, null);
+      if (customer && (!customer.name || !customer.birthday)) {
+        requires_profile_completion = true;
+      }
     }
 
     // Clear OTP
@@ -50,7 +64,8 @@ export class VerifyOTP {
         customer_id: user.customer_id,
         shop_id: user.shop_id,
         fullname: user.fullname
-      }
+      },
+      requires_profile_completion
     };
   }
 }

@@ -14,9 +14,17 @@ export class SQLiteCustomerRepository implements ICustomerRepository {
 
   async create(customer: Partial<Customer>): Promise<number> {
     const result = this.db.prepare(
-      'INSERT INTO customers (email, phone, last_visit) VALUES (?, ?, ?)'
-    ).run(customer.email || null, customer.phone || null, customer.last_visit || null);
+      'INSERT INTO customers (name, email, phone, last_visit, birthday) VALUES (?, ?, ?, ?, ?)'
+    ).run(customer.name || null, customer.email || null, customer.phone || null, customer.last_visit || null, customer.birthday || null);
     return Number(result.lastInsertRowid);
+  }
+
+  async update(customer: Partial<Customer> & { id: number }): Promise<void> {
+    const columns = Object.keys(customer).filter(k => k !== 'id');
+    const values = columns.map(k => (customer as any)[k]);
+    const setClause = columns.map(k => `${k} = ?`).join(', ');
+    
+    this.db.prepare(`UPDATE customers SET ${setClause} WHERE id = ?`).run(...values, customer.id);
   }
 
   async updateLastVisit(id: number): Promise<void> {
