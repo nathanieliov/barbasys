@@ -432,7 +432,7 @@ app.get('/api/appointments', protect, (req, res) => {
               WHERE ai.appointment_id = a.id) as services_summary
       FROM appointments a
       JOIN barbers b ON a.barber_id = b.id
-      JOIN shops sh ON a.shop_id = sh.id
+      LEFT JOIN shops sh ON a.shop_id = sh.id
       WHERE a.customer_id = ?
       ORDER BY a.start_time DESC
     `;

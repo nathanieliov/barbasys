@@ -25,7 +25,7 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
   const [cart, setCart] = useState<Array<{ id: number, name: string, price: number, duration: number, quantity: number }>>([]);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedTime, setSelectedTime] = useState('');
-  const [notes] = useState('');
+  const [notes, setNotes] = useState('');
   
   // Auth & Profile State
   const [email, setEmail] = useState('');
@@ -51,6 +51,13 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
       }).finally(() => setLoading(false));
     }
   }, [shopId]);
+
+  // Handle auto-advancing after login
+  useEffect(() => {
+    if (user?.customer_id && step === 4 && !requiresProfile) {
+      setStep(5);
+    }
+  }, [user, step, requiresProfile]);
 
   const addToCart = (service: any) => {
     setCart(prev => {
@@ -99,15 +106,11 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
     setError('');
     try {
       const res = await apiClient.post('/auth/otp/verify', { email, code: otp });
-      // Call login from useAuth
       login(res.data.token, res.data.user);
-      
       if (res.data.requires_profile_completion) {
         setRequiresProfile(true);
-      } else {
-        // Successful login, no profile needed, jump to final step
-        setStep(5);
       }
+      // auto-advance will be handled by useEffect
     } catch (err: any) {
       setError('Invalid code.');
     } finally {
@@ -119,9 +122,8 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
     e.preventDefault();
     setSubmitting(true);
     try {
-      // Use the token we just got (already in apiClient because of login call)
       await apiClient.patch('/auth/profile', { fullname, birthday });
-      // Refresh user info in auth context if needed or just proceed
+      // Logic inside backend will update the customer record
       setStep(5);
     } catch (err) {
       setError('Failed to save profile info.');
@@ -133,13 +135,17 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
   const handleBook = async () => {
     setSubmitting(true);
     setError('');
+    
+    // Ensure shopId is correct
+    const finalShopId = selectedBarber?.shop_id || shopId;
+
     try {
       await apiClient.post('/appointments', {
         barber_id: selectedBarber.id,
         services: cart.map(item => ({ id: item.id, quantity: item.quantity })),
         customer_id: user?.customer_id || null,
         start_time: `${selectedDate}T${selectedTime}:00`,
-        shop_id: parseInt(shopId!.toString()),
+        shop_id: finalShopId ? parseInt(finalShopId.toString()) : null,
         notes
       });
       setSuccess(true);
@@ -344,6 +350,10 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
                 </div>
               </div>
             </div>
+          </div>
+          <div style={{ marginBottom: '1.5rem' }}>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-muted)' }}>ADDITIONAL NOTES</label>
+            <textarea placeholder="Optional notes for your barber..." value={notes} onChange={e => setNotes(e.target.value)} style={{ minHeight: '80px' }} />
           </div>
           <button className="primary" style={{ width: '100%', padding: '1.25rem', fontSize: '1.1rem' }} onClick={handleBook} disabled={submitting}>Confirm Booking</button>
         </section>
