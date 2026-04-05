@@ -102,6 +102,7 @@ export interface Appointment {
   customer_id: number | null;
   service_id: number;
   start_time: string;
+  total_duration_minutes: number;
   status: 'scheduled' | 'completed' | 'cancelled';
   shop_id: number | null;
   notes?: string | null;

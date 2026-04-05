@@ -144,18 +144,28 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     barber_id INTEGER,
     customer_id INTEGER,
-    service_id INTEGER,
+    service_id INTEGER, -- Primary service (for backwards compatibility)
     start_time DATETIME NOT NULL,
-    status TEXT DEFAULT 'scheduled', -- scheduled, completed, cancelled
+    total_duration_minutes INTEGER DEFAULT 30,
+    status TEXT DEFAULT 'scheduled',
     reminder_sent INTEGER DEFAULT 0,
-    recurring_id TEXT, -- UUID or unique string to group a series
-    recurring_rule TEXT, -- NULL, 'weekly', 'biweekly', 'monthly'
+    recurring_id TEXT,
+    recurring_rule TEXT,
     shop_id INTEGER,
     notes TEXT,
     FOREIGN KEY (barber_id) REFERENCES barbers(id) ON DELETE CASCADE,
     FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL,
-    FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE CASCADE,
     FOREIGN KEY (shop_id) REFERENCES shops(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS appointment_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    appointment_id INTEGER,
+    service_id INTEGER,
+    quantity INTEGER DEFAULT 1,
+    price_at_booking REAL,
+    FOREIGN KEY (appointment_id) REFERENCES appointments(id) ON DELETE CASCADE,
+    FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE CASCADE
   );
 
   CREATE TABLE IF NOT EXISTS barber_shifts (

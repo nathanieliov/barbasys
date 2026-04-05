@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import apiClient from '../api/apiClient';
-import { Clock, Scissors, User, ChevronLeft, CheckCircle, AlertCircle, Mail, Key, Cake, Loader2 } from 'lucide-react';
+import { User, ChevronLeft, CheckCircle, AlertCircle, Mail, Key, Cake, Loader2, Plus, Minus, Trash2 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { useSettings } from '../hooks/useSettings';
+import { formatCurrency } from '../utils/format';
 
 interface BookingFlowProps {
   preSelectedBarber?: any;
@@ -12,6 +14,7 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
   const { shopId: routeShopId } = useParams();
   const navigate = useNavigate();
   const { user, login } = useAuth();
+  const { settings } = useSettings();
   
   const [step, setStep] = useState(preSelectedBarber ? 2 : 1);
   const [shop, setShop] = useState<any>(null);
@@ -19,10 +22,10 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
   const [services, setServices] = useState<any[]>([]);
   
   const [selectedBarber, setSelectedBarber] = useState<any>(preSelectedBarber || null);
-  const [selectedService, setSelectedService] = useState<any>(null);
+  const [cart, setCart] = useState<Array<{ id: number, name: string, price: number, duration: number, quantity: number }>>([]);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedTime, setSelectedTime] = useState('');
-  const [notes, setNotes] = useState('');
+  const [notes] = useState('');
   
   // Auth & Profile State
   const [email, setEmail] = useState('');
@@ -49,6 +52,33 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
     }
   }, [shopId]);
 
+  const addToCart = (service: any) => {
+    setCart(prev => {
+      const existing = prev.find(item => item.id === service.id);
+      if (existing) {
+        return prev.map(item => item.id === service.id ? { ...item, quantity: item.quantity + 1 } : item);
+      }
+      return [...prev, { id: service.id, name: service.name, price: service.price, duration: service.duration_minutes, quantity: 1 }];
+    });
+  };
+
+  const removeFromCart = (id: number) => {
+    setCart(prev => prev.filter(item => item.id !== id));
+  };
+
+  const updateQuantity = (id: number, delta: number) => {
+    setCart(prev => prev.map(item => {
+      if (item.id === id) {
+        const newQty = Math.max(1, item.quantity + delta);
+        return { ...item, quantity: newQty };
+      }
+      return item;
+    }));
+  };
+
+  const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const totalDuration = cart.reduce((sum, item) => sum + (item.duration * item.quantity), 0);
+
   const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
@@ -73,7 +103,7 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
       if (res.data.requires_profile_completion) {
         setRequiresProfile(true);
       } else {
-        setStep(5); // Go to final confirmation
+        setStep(5);
       }
     } catch (err: any) {
       setError('Invalid code.');
@@ -86,7 +116,6 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
     e.preventDefault();
     setSubmitting(true);
     try {
-      // Update customer profile in backend
       await apiClient.patch('/auth/profile', { fullname, birthday });
       setStep(5);
     } catch (err) {
@@ -102,7 +131,7 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
     try {
       await apiClient.post('/appointments', {
         barber_id: selectedBarber.id,
-        service_id: selectedService.id,
+        services: cart.map(item => ({ id: item.id, quantity: item.quantity })),
         customer_id: user?.customer_id || null,
         start_time: `${selectedDate}T${selectedTime}:00`,
         shop_id: parseInt(shopId!.toString()),
@@ -124,12 +153,12 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
         <div style={{ background: 'var(--success)', color: 'white', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 2rem', boxShadow: '0 10px 15px -3px rgba(16, 185, 129, 0.3)' }}>
           <CheckCircle size={48} />
         </div>
-        <h1 style={{ fontSize: '1.75rem', fontWeight: '900', marginBottom: '1rem' }}>You're all set!</h1>
+        <h1 style={{ fontSize: '1.75rem', fontWeight: '900', marginBottom: '1rem' }}>Success!</h1>
         <p style={{ color: 'var(--text-muted)', marginBottom: '2.5rem' }}>
-          We've booked your <strong>{selectedService.name}</strong> at <strong>{shop.name}</strong>. See you soon!
+          Your appointment at <strong>{shop.name}</strong> is confirmed.
         </p>
         <button className="primary" style={{ width: '100%', padding: '1.25rem' }} onClick={() => navigate('/')}>
-          View My Bookings
+          Go to My Dashboard
         </button>
       </div>
     );
@@ -179,27 +208,50 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
 
       {step === 2 && (
         <section>
-          <h2 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '1.25rem' }}>Select a Service</h2>
-          <div style={{ display: 'grid', gap: '1rem' }}>
+          <h2 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '1.25rem' }}>Select Services</h2>
+          <div style={{ display: 'grid', gap: '1rem', marginBottom: '2rem' }}>
             {services.map(s => (
-              <div key={s.id} className="card" style={{ padding: '1.25rem', cursor: 'pointer', border: '1px solid var(--border)' }} onClick={() => { setSelectedService(s); setStep(3); }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <div style={{ fontWeight: '700', marginBottom: '0.25rem' }}>{s.name}</div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{s.duration_minutes} mins</div>
-                  </div>
-                  <div style={{ fontWeight: '800', color: 'var(--primary)' }}>${s.price}</div>
+              <div key={s.id} className="card" style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontWeight: '700' }}>{s.name}</div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{s.duration_minutes} mins • {formatCurrency(s.price, settings.currency_symbol)}</div>
                 </div>
+                <button className="secondary" style={{ padding: '0.5rem' }} onClick={() => addToCart(s)}>
+                  <Plus size={18} />
+                </button>
               </div>
             ))}
           </div>
+
+          {cart.length > 0 && (
+            <div className="card" style={{ padding: '1.25rem', background: '#f9fafb', border: '1px solid var(--primary)', position: 'sticky', bottom: '1rem' }}>
+              <h3 style={{ fontSize: '0.9rem', textTransform: 'uppercase', marginBottom: '1rem', color: 'var(--primary)' }}>Your Selection</h3>
+              <div style={{ display: 'grid', gap: '0.75rem', marginBottom: '1.25rem' }}>
+                {cart.map(item => (
+                  <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ fontSize: '0.9rem', fontWeight: '600' }}>{item.name} x{item.quantity}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <button className="secondary" style={{ padding: '0.25rem' }} onClick={() => updateQuantity(item.id, -1)}><Minus size={14} /></button>
+                      <button className="secondary" style={{ padding: '0.25rem' }} onClick={() => updateQuantity(item.id, 1)}><Plus size={14} /></button>
+                      <button className="secondary" style={{ padding: '0.25rem', color: 'var(--danger)' }} onClick={() => removeFromCart(item.id)}><Trash2 size={14} /></button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: '800', borderTop: '1px solid var(--border)', paddingTop: '0.75rem' }}>
+                <span>Total: {totalDuration} mins</span>
+                <span>{formatCurrency(totalAmount, settings.currency_symbol)}</span>
+              </div>
+              <button className="primary" style={{ width: '100%', marginTop: '1.25rem' }} onClick={() => setStep(3)}>Continue to Schedule</button>
+            </div>
+          )}
         </section>
       )}
 
       {step === 3 && (
         <section>
           <h2 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '1.25rem' }}>Pick Date & Time</h2>
-          <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} style={{ fontSize: '1.1rem', fontWeight: '700' }} />
+          <input type="date" value={selectedDate} min={new Date().toISOString().split('T')[0]} onChange={e => setSelectedDate(e.target.value)} style={{ fontSize: '1.1rem', fontWeight: '700' }} />
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', marginTop: '1.5rem' }}>
             {times.map(t => (
               <button key={t} className="secondary" onClick={() => { setSelectedTime(t); setStep(user ? 5 : 4); }} style={{ padding: '0.75rem 0', fontWeight: '700' }}>{t}</button>
@@ -244,9 +296,9 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
           ) : (
             <form onSubmit={handleCompleteProfile}>
               <h2 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '0.5rem' }}>Almost there!</h2>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1.5rem' }}>Since it's your first time, we need a few more details.</p>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1.5rem' }}>Tell us your name and birthday.</p>
               <div className="form-group">
-                <label>Your Full Name</label>
+                <label>Full Name</label>
                 <div className="input-with-icon">
                   <User size={18} className="input-icon" />
                   <input type="text" placeholder="John Doe" value={fullname} onChange={e => setFullname(e.target.value)} required />
@@ -260,7 +312,7 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
                 </div>
               </div>
               <button type="submit" className="primary" style={{ width: '100%', padding: '1rem' }} disabled={submitting}>
-                Save & Continue
+                Complete Profile
               </button>
             </form>
           )}
@@ -269,27 +321,26 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
 
       {step === 5 && (
         <section>
-          <h2 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '1.25rem' }}>Final Confirmation</h2>
+          <h2 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '1.25rem' }}>Review & Confirm</h2>
           <div className="card" style={{ padding: '1.5rem', background: 'rgba(79, 70, 229, 0.03)', border: '1px solid var(--primary)', marginBottom: '1.5rem' }}>
-            <div style={{ display: 'grid', gap: '1rem' }}>
-              <div style={{ display: 'flex', gap: '0.75rem' }}>
-                <Scissors size={18} color="var(--primary)" />
-                <span style={{ fontWeight: '700' }}>{selectedService?.name} (${selectedService?.price})</span>
+            <div style={{ display: 'grid', gap: '1.25rem' }}>
+              <div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '800', marginBottom: '0.5rem' }}>Services</div>
+                <div style={{ fontWeight: '700' }}>{cart.map(i => `${i.name} (x${i.quantity})`).join(', ')}</div>
               </div>
-              <div style={{ display: 'flex', gap: '0.75rem' }}>
-                <User size={18} color="var(--primary)" />
-                <span style={{ fontWeight: '700' }}>{selectedBarber?.fullname || selectedBarber?.name}</span>
-              </div>
-              <div style={{ display: 'flex', gap: '0.75rem' }}>
-                <Clock size={18} color="var(--primary)" />
-                <span style={{ fontWeight: '700' }}>{selectedDate} at {selectedTime}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '800', marginBottom: '0.5rem' }}>Barber</div>
+                  <div style={{ fontWeight: '700' }}>{selectedBarber?.fullname || selectedBarber?.name}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '800', marginBottom: '0.5rem' }}>Time</div>
+                  <div style={{ fontWeight: '700' }}>{selectedTime}</div>
+                </div>
               </div>
             </div>
           </div>
-          <textarea placeholder="Notes for your barber (optional)" value={notes} onChange={e => setNotes(e.target.value)} style={{ marginBottom: '1.5rem', minHeight: '80px' }} />
-          <button className="primary" style={{ width: '100%', padding: '1.25rem', fontSize: '1.1rem' }} onClick={handleBook} disabled={submitting}>
-            Confirm Appointment
-          </button>
+          <button className="primary" style={{ width: '100%', padding: '1.25rem', fontSize: '1.1rem' }} onClick={handleBook} disabled={submitting}>Confirm Booking</button>
         </section>
       )}
     </div>

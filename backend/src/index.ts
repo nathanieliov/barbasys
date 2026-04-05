@@ -211,17 +211,27 @@ app.get('/api/auth/me', protect, async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch current user' });
   }
 });
-
 app.patch('/api/auth/profile', protect, async (req, res) => {
   const userId = req.user?.id;
   try {
     const user = await updateProfile.execute({ ...req.body, id: userId! });
+
+    // If it's a customer, also update the customer record with birthday/name
+    if (user.role === 'CUSTOMER' && user.customer_id) {
+      await customerRepo.update({
+        id: user.customer_id,
+        name: req.body.fullname || user.fullname,
+        birthday: req.body.birthday
+      });
+    }
+
     res.json({ success: true, user: {
       id: user.id,
       username: user.username,
       email: user.email,
       role: user.role,
       barber_id: user.barber_id,
+      customer_id: user.customer_id,
       shop_id: user.shop_id,
       fullname: user.fullname
     }});
@@ -396,18 +406,37 @@ app.get('/api/appointments', protect, (req, res) => {
   const shopId = req.user?.shop_id;
   const date = req.query.date || new Date().toISOString().split('T')[0];
   let query = `
-    SELECT a.*, b.name as barber_name, c.name as customer_name, s.name as service_name
+    SELECT a.*, b.name as barber_name, c.name as customer_name,
+           (SELECT group_concat(s.name || ' x' || ai.quantity, ', ') 
+            FROM appointment_items ai 
+            JOIN services s ON ai.service_id = s.id 
+            WHERE ai.appointment_id = a.id) as services_summary
     FROM appointments a
     JOIN barbers b ON a.barber_id = b.id
     LEFT JOIN customers c ON a.customer_id = c.id
-    JOIN services s ON a.service_id = s.id
-    WHERE date(a.start_time) = ? AND a.shop_id = ?
+    WHERE date(a.start_time) = ? AND (a.shop_id = ? OR ? IS NULL)
   `;
-  const params: any[] = [date, shopId];
+  const params: any[] = [date, shopId, shopId];
 
   if (req.user?.role === 'BARBER') {
     query += ' AND a.barber_id = ?';
     params.push(req.user.barber_id);
+  }
+
+  if (req.user?.role === 'CUSTOMER') {
+    query = `
+      SELECT a.*, b.name as barber_name, sh.name as shop_name,
+             (SELECT group_concat(s.name || ' x' || ai.quantity, ', ') 
+              FROM appointment_items ai 
+              JOIN services s ON ai.service_id = s.id 
+              WHERE ai.appointment_id = a.id) as services_summary
+      FROM appointments a
+      JOIN barbers b ON a.barber_id = b.id
+      JOIN shops sh ON a.shop_id = sh.id
+      WHERE a.customer_id = ?
+      ORDER BY a.start_time DESC
+    `;
+    return res.json(db.prepare(query).all(req.user.customer_id));
   }
 
   query += ' ORDER BY a.start_time ASC';
@@ -415,9 +444,23 @@ app.get('/api/appointments', protect, (req, res) => {
   res.json(appointments);
 });
 
+app.get('/api/appointments/:id/items', protect, (req, res) => {
+  try {
+    const items = db.prepare(`
+      SELECT ai.*, s.name, s.price, s.duration_minutes 
+      FROM appointment_items ai
+      JOIN services s ON ai.service_id = s.id
+      WHERE ai.appointment_id = ?
+    `).all(req.params.id);
+    res.json(items);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post('/api/appointments', protect, async (req, res) => {
-  const shopId = req.user?.shop_id;
-  const { send_confirmation, barber_id, customer_id, service_id, start_time } = req.body;
+  const shopId = req.user?.shop_id || req.body.shop_id;
+  const { send_confirmation, barber_id, customer_id, services, start_time } = req.body;
   
   if (req.user?.role === 'BARBER' && req.user.barber_id !== barber_id) {
     return res.status(403).json({ error: 'Cannot book for another barber' });
@@ -429,16 +472,16 @@ app.post('/api/appointments', protect, async (req, res) => {
     // Send confirmation if requested
     if (send_confirmation && result.ids.length > 0) {
       const barber = db.prepare('SELECT name FROM barbers WHERE id = ?').get(barber_id) as any;
-      const service = db.prepare('SELECT name FROM services WHERE id = ?').get(service_id) as any;
+      const primaryService = services && services.length > 0 ? db.prepare('SELECT name FROM services WHERE id = ?').get(services[0].id) as any : null;
       const customer = customer_id ? db.prepare('SELECT name, email, phone FROM customers WHERE id = ?').get(customer_id) as any : null;
 
-      if (barber && service) {
+      if (barber && primaryService) {
         sendAppointmentNotification({
           customer_name: customer?.name,
           customer_email: customer?.email,
           customer_phone: customer?.phone,
           start_time,
-          service_name: service.name,
+          service_name: primaryService.name + (services.length > 1 ? ` (+${services.length - 1} more)` : ''),
           barber_name: barber.name,
           type: 'confirmation'
         });

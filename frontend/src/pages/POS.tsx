@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import apiClient from '../api/apiClient';
-import { Trash2, ShoppingCart, User, Plus, X } from 'lucide-react';
+import { Trash2, ShoppingCart, User, Plus, X, Scissors } from 'lucide-react';
 import { calculatePOSTotals } from '../utils/pos';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
@@ -48,12 +48,20 @@ export default function POS() {
         const appt = res.data.find((a: any) => a.id === parseInt(appointmentId));
         if (appt) {
           setSelectedBarber(appt.barber_id.toString());
-          apiClient.get(`/services`).then(servicesRes => {
-            const service = servicesRes.data.find((s: any) => s.id === appt.service_id);
-            if (service) {
-              setCart([{ ...service, type: 'service', cartId: Date.now() }]);
-            }
+          
+          apiClient.get(`/appointments/${appointmentId}/items`).then(itemsRes => {
+            const finalItems = itemsRes.data.flatMap((item: any) => 
+              Array.from({ length: item.quantity }, () => ({
+                id: item.service_id,
+                name: item.name,
+                price: item.price,
+                type: 'service',
+                cartId: Math.random()
+              }))
+            );
+            setCart(finalItems);
           });
+
           if (appt.customer_id) {
             apiClient.get('/customers').then(custRes => {
               const customer = custRes.data.find((c: any) => c.id === appt.customer_id);
@@ -77,13 +85,11 @@ export default function POS() {
   };
 
   const submitSale = async () => {
-    if (!selectedBarber || cart.length === 0) return alert('Select barber and items');
-    
     try {
       await apiClient.post('/sales', {
         barber_id: parseInt(selectedBarber),
-        customer_email: customerEmail.trim() || null,
-        customer_phone: customerPhone.trim() || null,
+        customer_email: customerEmail || undefined,
+        customer_phone: customerPhone || undefined,
         items: cart.map(i => ({ id: i.id, name: i.name, type: i.type, price: i.price })),
         tip_amount: tipAmount || 0,
         discount_amount: discountAmount || 0
@@ -111,12 +117,25 @@ export default function POS() {
 
   const { subtotal, taxAmount, total } = calculatePOSTotals(cart, tipAmount || 0, discountAmount || 0, taxRate);
 
+  if (saleSuccess) {
+    return (
+      <div className="card" style={{ textAlign: 'center', padding: '4rem' }}>
+        <div style={{ background: 'var(--success)', color: 'white', width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
+          <CheckCircle size={32} />
+        </div>
+        <h2 style={{ marginBottom: '1rem' }}>Payment Successful!</h2>
+        <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>The transaction has been recorded and the inventory updated.</p>
+        <button onClick={resetPOS}>New Transaction</button>
+      </div>
+    );
+  }
+
   return (
     <div className="pos-container">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <h1 style={{ marginBottom: '0.25rem' }}>Point of Sale</h1>
-          {user?.role === 'BARBER' && (
+          {user && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary)', fontWeight: '700', fontSize: '0.9rem' }}>
               <User size={16} /> Professional: {user.fullname || user.username}
             </div>
@@ -131,42 +150,26 @@ export default function POS() {
       
       <div className="pos-grid">
         <div className="items-section">
-          {user?.role !== 'BARBER' && (
-            <div className="card">
-              <h2>1. Select Professional</h2>
-              <div style={{ position: 'relative' }}>
-                <User size={18} style={{ position: 'absolute', left: '0.75rem', top: '0.75rem', color: 'var(--text-muted)' }} />
-                <select 
-                  value={selectedBarber} 
-                  onChange={e => setSelectedBarber(e.target.value)}
-                  style={{ paddingLeft: '2.5rem' }}
-                >
-                  <option value="">Choose barber...</option>
-                  {barbers.map(b => <option key={b.id} value={b.id}>{b.fullname || b.name}</option>)}
-                  </select>
-
-              </div>
-            </div>
-          )}
-
-          <div className="card">
-            <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              {user?.role === 'BARBER' ? '1. Services' : '2. Services'}
+          <div className="card" style={{ marginBottom: '1.5rem' }}>
+            <h2 style={{ fontSize: '1.1rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Scissors size={20} color="var(--primary)" /> Services
             </h2>
             <div className="item-list-grid">
               {services.map(s => (
                 <button key={s.id} className="secondary" onClick={() => addToCart(s, 'service')} style={{ flexDirection: 'column', alignItems: 'flex-start', padding: '1rem', height: 'auto', textAlign: 'left', minHeight: '100px' }}>
                   <span style={{ fontWeight: '700', fontSize: '0.9rem', marginBottom: '0.25rem' }}>{s.name}</span>
                   <span style={{ color: 'var(--primary)', fontWeight: '700' }}>{formatCurrency(s.price, settings.currency_symbol)}</span>
-                  <div style={{ marginTop: 'auto', alignSelf: 'flex-end', background: 'var(--primary)', color: 'white', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 4px rgba(79, 70, 229, 0.3)' }}>
+                  <div style={{ marginTop: 'auto', alignSelf: 'flex-end', background: 'white', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 4px rgba(79, 70, 229, 0.3)' }}>
                     <Plus size={18} />
                   </div>
                 </button>
               ))}
             </div>
+          </div>
 
-            <h2 style={{ marginTop: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              {user?.role === 'BARBER' ? '2. Products' : '3. Products'}
+          <div className="card">
+            <h2 style={{ fontSize: '1.1rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <ShoppingCart size={20} color="var(--primary)" /> Products
             </h2>
             <div className="item-list-grid">
               {products.map(p => (
@@ -174,9 +177,9 @@ export default function POS() {
                   <span style={{ fontWeight: '700', fontSize: '0.9rem', marginBottom: '0.25rem' }}>{p.name}</span>
                   <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center', marginTop: 'auto' }}>
                     <span style={{ color: 'var(--primary)', fontWeight: '700' }}>{formatCurrency(p.price, settings.currency_symbol)}</span>
-                    <span style={{ fontSize: '0.7rem', color: p.stock < 5 ? 'var(--danger)' : 'var(--text-muted)', fontWeight: '600' }}>Stock: {p.stock}</span>
+                    <span style={{ fontSize: '0.7rem', color: p.stock < 5 ? 'var(--danger)' : 'var(--text-muted)', fontWeight: '700' }}>Stock: {p.stock}</span>
                   </div>
-                  <div style={{ marginTop: '0.5rem', alignSelf: 'flex-end', background: 'var(--primary)', color: 'white', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 4px rgba(79, 70, 229, 0.3)' }}>
+                  <div style={{ marginTop: '0.5rem', alignSelf: 'flex-end', background: 'white', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 4px rgba(79, 70, 229, 0.3)' }}>
                     <Plus size={18} />
                   </div>
                 </button>
@@ -185,38 +188,54 @@ export default function POS() {
           </div>
         </div>
 
-        <div className="summary-section hide-mobile">
-          <div className="card" style={{ position: 'sticky', top: '2rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
-              <ShoppingCart size={24} color="var(--primary)" />
-              <h2 style={{ marginBottom: 0 }}>Cart Summary</h2>
+        <div className="cart-section">
+          <div className="card" style={{ position: 'sticky', top: '2rem', display: 'flex', flexDirection: 'column', minHeight: 'calc(100vh - 8rem)' }}>
+            <h2 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <ShoppingCart size={24} color="var(--primary)" /> Current Cart
+            </h2>
+
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Serving Professional</label>
+              <div style={{ position: 'relative' }}>
+                <User size={18} style={{ position: 'absolute', left: '0.75rem', top: '0.75rem', color: 'var(--text-muted)' }} />
+                <select 
+                  value={selectedBarber} 
+                  onChange={e => setSelectedBarber(e.target.value)}
+                  style={{ paddingLeft: '2.5rem', fontWeight: '700' }}
+                >
+                  <option value="">Select a professional...</option>
+                  {barbers.map(b => <option key={b.id} value={b.id}>{b.fullname || b.name}</option>)}
+                </select>
+              </div>
             </div>
 
-            <div style={{ minHeight: '100px', maxHeight: '400px', overflowY: 'auto', paddingRight: '0.5rem' }}>
-              {cart.map(item => (
-                <div key={item.cartId} style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 0', borderBottom: '1px solid var(--border)' }}>
-                  <div>
-                    <div style={{ fontWeight: '700', fontSize: '0.95rem' }}>{item.name}</div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.025em' }}>{item.type}</div>
-                  </div>
-                  <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                    <span style={{ fontWeight: '700' }}>{formatCurrency(item.price, settings.currency_symbol)}</span>
-                    <button className="secondary" style={{ padding: '0.5rem', color: 'var(--danger)', borderColor: 'transparent', borderRadius: '0.5rem' }} onClick={() => removeFromCart(item.cartId)}>
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </div>
-              ))}
-              {cart.length === 0 && (
+            <div style={{ flex: 1, overflowY: 'auto', marginBottom: '1.5rem' }}>
+              {cart.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-muted)' }}>
-                  <ShoppingCart size={48} style={{ margin: '0 auto 1.5rem', opacity: 0.1 }} />
-                  <p style={{ fontWeight: '600' }}>Your cart is empty</p>
-                  <p style={{ fontSize: '0.8rem', marginTop: '0.5rem' }}>Select services or products to begin checkout.</p>
+                  <ShoppingCart size={48} style={{ opacity: 0.1, marginBottom: '1rem' }} />
+                  <p>Cart is empty</p>
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gap: '0.75rem' }}>
+                  {cart.map(item => (
+                    <div key={item.cartId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem', background: '#f9fafb', borderRadius: '0.75rem', border: '1px solid var(--border)' }}>
+                      <div>
+                        <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>{item.name}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'capitalize' }}>{item.type}</div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                        <span style={{ fontWeight: '700' }}>{formatCurrency(item.price, settings.currency_symbol)}</span>
+                        <button className="secondary" style={{ padding: '0.5rem', color: 'var(--danger)', borderColor: 'transparent', borderRadius: '0.5rem' }} onClick={() => removeFromCart(item.cartId)}>
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
             
-            <div style={{ marginTop: '2rem', background: '#f9fafb', padding: '1.25rem', borderRadius: '1rem', border: '1px solid var(--border)' }}>
+            <div style={{ marginTop: 'auto', background: '#f9fafb', padding: '1.25rem', borderRadius: '1rem', border: '1px solid var(--border)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', color: 'var(--text-muted)', fontWeight: '600', fontSize: '0.9rem' }}>
                 <span>Subtotal</span>
                 <span>{formatCurrency(subtotal, settings.currency_symbol)}</span>
@@ -240,7 +259,7 @@ export default function POS() {
             <button 
               disabled={cart.length === 0}
               onClick={() => setShowCheckout(true)}
-              style={{ width: '100%', marginTop: '1.5rem', padding: '1.1rem', fontSize: '1.1rem', borderRadius: '1rem', boxShadow: '0 4px 6px -1px rgba(79, 70, 229, 0.2)' }}
+              style={{ width: '100%', marginTop: '1.25rem', padding: '1rem', fontSize: '1.1rem' }}
             >
               Review & Checkout
             </button>
@@ -248,139 +267,49 @@ export default function POS() {
         </div>
       </div>
 
-      {/* Mobile Floating Cart Bar */}
-      <div className="mobile-cart-bar show-mobile">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <div style={{ position: 'relative', background: 'white', color: 'var(--primary)', padding: '0.75rem', borderRadius: '0.75rem' }}>
-              <ShoppingCart size={24} />
-              {cart.length > 0 && (
-                <span style={{ position: 'absolute', top: '-8px', right: '-8px', background: 'var(--danger)', color: 'white', fontSize: '0.7rem', width: '20px', height: '20px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', border: '2px solid var(--primary)' }}>
-                  {cart.length}
-                </span>
-              )}
-            </div>
-            <div>
-              <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', fontWeight: '800', opacity: 0.8 }}>Current Total</div>
-              <div style={{ fontSize: '1.25rem', fontWeight: '900' }}>{formatCurrency(total, settings.currency_symbol)}</div>
-            </div>
-          </div>
-          <button 
-            disabled={cart.length === 0}
-            onClick={() => setShowCheckout(true)}
-            style={{ background: 'white', color: 'var(--primary)', padding: '0.75rem 1.25rem', borderRadius: '0.75rem', fontWeight: '800' }}
-          >
-            Checkout
-          </button>
-        </div>
-      </div>
-
-      <style dangerouslySetInnerHTML={{ __html: `
-        @media (max-width: 1023px) {
-          .hide-mobile { display: none !important; }
-          .pos-container { padding-bottom: 80px; }
-        }
-        @media (min-width: 1024px) {
-          .show-mobile { display: none !important; }
-        }
-        .mobile-cart-bar {
-          position: fixed;
-          bottom: 1.5rem;
-          left: 1.5rem;
-          right: 1.5rem;
-          background: var(--primary);
-          color: white;
-          padding: 1rem 1.25rem;
-          border-radius: 1.25rem;
-          box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.5);
-          z-index: 100;
-          display: flex;
-        }
-      `}} />
-
-      {/* Checkout Modal (Full screen on mobile) */}
       {showCheckout && (
         <div className="modal-overlay">
-          <div className="modal-content">
-            {saleSuccess ? (
-              <div style={{ textAlign: 'center', padding: '2rem 0' }}>
-                <div style={{ background: 'var(--success)', color: 'white', width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
-                  <ShoppingCart size={32} />
-                </div>
-                <h2>Sale Completed!</h2>
-                <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>The transaction has been recorded successfully.</p>
-                <button onClick={resetPOS} style={{ width: '100%', padding: '1rem' }}>
-                  New Sale
-                </button>
+          <div className="modal-content" style={{ maxWidth: '400px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h2 style={{ margin: 0 }}>Checkout</h2>
+              <button className="secondary" onClick={() => setShowCheckout(false)} style={{ padding: '0.5rem' }}><X size={20} /></button>
+            </div>
+
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: '700' }}>CUSTOMER CONTACT (OPTIONAL)</label>
+              <input type="email" placeholder="Email" value={customerEmail} onChange={e => setCustomerEmail(e.target.value)} style={{ marginBottom: '0.5rem' }} />
+              <input type="tel" placeholder="Phone" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: '700' }}>TIPS ($)</label>
+                <input type="number" value={tipAmount} onChange={e => setTipAmount(parseFloat(e.target.value) || 0)} style={{ fontWeight: '700' }} />
               </div>
-            ) : (
-              <>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                  <h2>Finalize Sale</h2>
-                  <button className="secondary" style={{ padding: '0.5rem' }} onClick={() => setShowCheckout(false)}>
-                    <X size={20} />
-                  </button>
-                </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: '700' }}>DISCOUNT ($)</label>
+                <input type="number" value={discountAmount} onChange={e => setDiscountAmount(parseFloat(e.target.value) || 0)} style={{ fontWeight: '700' }} />
+              </div>
+            </div>
 
-                <div style={{ display: 'grid', gap: '1rem' }}>
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Discount ($)</label>
-                    <input 
-                      type="number" 
-                      min="0"
-                      step="0.01"
-                      value={discountAmount || ''}
-                      onChange={e => setDiscountAmount(parseFloat(e.target.value) || 0)}
-                      placeholder="0.00"
-                    />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Tip ($)</label>
-                    <input 
-                      type="number" 
-                      min="0"
-                      step="0.01"
-                      value={tipAmount || ''}
-                      onChange={e => setTipAmount(parseFloat(e.target.value) || 0)}
-                      placeholder="0.00"
-                    />
-                  </div>
+            <div style={{ background: 'var(--primary)', color: 'white', padding: '1.5rem', borderRadius: '1rem', textAlign: 'center', marginTop: '1rem', marginBottom: '1.5rem' }}>
+              <div style={{ opacity: 0.8, fontSize: '0.9rem' }}>Amount Due</div>
+              <div style={{ fontSize: '2.5rem', fontWeight: '900' }}>{formatCurrency(total, settings.currency_symbol)}</div>
+            </div>
 
-                  <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1rem', marginTop: '0.5rem' }}>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Customer Email (Receipt)</label>
-                    <input 
-                      type="email" 
-                      placeholder="name@example.com" 
-                      value={customerEmail}
-                      onChange={e => setCustomerEmail(e.target.value)}
-                    />
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Customer Phone</label>
-                    <input 
-                      type="tel" 
-                      placeholder="+1 (555) 000-0000" 
-                      value={customerPhone}
-                      onChange={e => setCustomerPhone(e.target.value)}
-                    />
-                    {(customerEmail || customerPhone) && (
-                      <p style={{ fontSize: '0.75rem', color: 'var(--success)', marginTop: '0.5rem', fontWeight: '600' }}>
-                        ✓ Digital receipt will be sent automatically.
-                      </p>
-                    )}
-                    </div>
-                  <div style={{ background: 'var(--primary)', color: 'white', padding: '1.5rem', borderRadius: '1rem', textAlign: 'center', marginTop: '1rem' }}>
-                    <div style={{ opacity: 0.8, fontSize: '0.9rem' }}>Amount Due</div>
-                    <div style={{ fontSize: '2.5rem', fontWeight: '900' }}>{formatCurrency(total, settings.currency_symbol)}</div>
-                  </div>
-
-                  <button onClick={submitSale} style={{ width: '100%', padding: '1.25rem', fontSize: '1.25rem', marginTop: '0.5rem' }}>
-                    Complete Payment
-                  </button>
-                </div>
-              </>
-            )}
+            <button onClick={submitSale} style={{ width: '100%', padding: '1.25rem', fontSize: '1.1rem' }}>
+              Complete Payment
+            </button>
           </div>
         </div>
       )}
     </div>
   );
 }
+
+const CheckCircle = ({ size }: { size: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+  </svg>
+);

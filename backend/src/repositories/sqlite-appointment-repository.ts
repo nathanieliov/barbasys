@@ -7,18 +7,25 @@ export class SQLiteAppointmentRepository implements IAppointmentRepository {
 
   async create(appointment: Omit<Appointment, 'id' | 'status' | 'reminder_sent'> & { recurring_id?: string | null, recurring_rule?: string | null }): Promise<number> {
     const result = this.db.prepare(
-      'INSERT INTO appointments (barber_id, customer_id, service_id, start_time, recurring_id, recurring_rule, shop_id, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+      'INSERT INTO appointments (barber_id, customer_id, service_id, start_time, total_duration_minutes, recurring_id, recurring_rule, shop_id, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
     ).run(
       appointment.barber_id,
       appointment.customer_id,
       appointment.service_id,
       appointment.start_time,
+      appointment.total_duration_minutes || 30,
       appointment.recurring_id || null,
       appointment.recurring_rule || null,
       appointment.shop_id,
       appointment.notes || null
     );
     return Number(result.lastInsertRowid);
+  }
+
+  async addItem(item: { appointment_id: number, service_id: number, quantity: number, price_at_booking: number }): Promise<void> {
+    this.db.prepare(
+      'INSERT INTO appointment_items (appointment_id, service_id, quantity, price_at_booking) VALUES (?, ?, ?, ?)'
+    ).run(item.appointment_id, item.service_id, item.quantity, item.price_at_booking);
   }
 
   async findById(id: number): Promise<Appointment | null> {
@@ -34,9 +41,8 @@ export class SQLiteAppointmentRepository implements IAppointmentRepository {
   async checkConflict(barberId: number, startTime: string, endTime: string): Promise<boolean> {
     const conflict = this.db.prepare(`
       SELECT a.id FROM appointments a
-      JOIN services s ON a.service_id = s.id
       WHERE a.barber_id = ? AND a.status != 'cancelled'
-      AND ((datetime(a.start_time) < datetime(?)) AND (datetime(a.start_time, '+' || s.duration_minutes || ' minutes') > datetime(?)))
+      AND ((datetime(a.start_time) < datetime(?)) AND (datetime(a.start_time, '+' || a.total_duration_minutes || ' minutes') > datetime(?)))
     `).get(barberId, endTime, startTime);
     return !!conflict;
   }

@@ -25,6 +25,7 @@ import ShopDiscovery from './pages/ShopDiscovery';
 import BookingFlow from './pages/BookingFlow';
 import BarberDirect from './pages/BarberDirect';
 import CustomerPortal from './pages/CustomerPortal';
+import MyBookings from './pages/MyBookings';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { SettingsProvider } from './hooks/useSettings';
@@ -192,6 +193,7 @@ function App() {
             <Route path="/discovery" element={<ShopDiscovery />} />
             <Route path="/book/:shopId" element={<BookingFlow />} />
             <Route path="/b/:slug" element={<BarberDirect />} />
+            <Route path="/my-bookings" element={<MyBookings />} />
             
             <Route element={<ProtectedRoute />}>
               <Route path="/my-schedule" element={<MySchedule />} />

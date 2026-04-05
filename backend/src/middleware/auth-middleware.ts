@@ -8,6 +8,7 @@ interface TokenPayload {
   username: string;
   role: UserRole;
   barber_id: number | null;
+  customer_id: number | null;
   shop_id: number | null;
   fullname?: string | null;
 }
@@ -35,7 +36,7 @@ export const protect = (req: Request, res: Response, next: NextFunction) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret') as TokenPayload;
     
     // Fetch fresh user data from DB to ensure roles/ids are not stale
-    const user = db.prepare('SELECT id, username, role, barber_id, shop_id, fullname FROM users WHERE id = ?').get(decoded.id) as any;
+    const user = db.prepare('SELECT id, username, role, barber_id, customer_id, shop_id, fullname FROM users WHERE id = ?').get(decoded.id) as any;
     
     if (!user) {
       return res.status(401).json({ error: 'User no longer exists' });
@@ -46,6 +47,7 @@ export const protect = (req: Request, res: Response, next: NextFunction) => {
       username: user.username,
       role: user.role,
       barber_id: user.barber_id,
+      customer_id: user.customer_id,
       shop_id: user.shop_id,
       fullname: user.fullname
     };

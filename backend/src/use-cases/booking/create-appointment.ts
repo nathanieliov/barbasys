@@ -5,7 +5,7 @@ import { IServiceRepository } from '../../repositories/service-repository.interf
 export interface CreateAppointmentRequest {
   barber_id: number;
   customer_id: number | null;
-  service_id: number;
+  services: Array<{ id: number, quantity: number }>; // Multiple services support
   start_time: string;
   recurring_rule?: 'weekly' | 'biweekly' | 'monthly' | null;
   occurrences?: number;
@@ -26,12 +26,21 @@ export class CreateAppointment {
   ) {}
 
   async execute(request: CreateAppointmentRequest): Promise<CreateAppointmentResponse> {
-    const { barber_id, customer_id, service_id, start_time, recurring_rule, occurrences = 1, shop_id, notes } = request;
+    const { barber_id, customer_id, services, start_time, recurring_rule, occurrences = 1, shop_id, notes } = request;
     const recurring_id = recurring_rule ? Math.random().toString(36).substring(2, 15) : null;
 
-    const service = await this.serviceRepo.findById(service_id);
-    if (!service) throw new Error('Service not found');
+    if (!services || services.length === 0) throw new Error('At least one service is required');
 
+    // Fetch all requested services to calculate total duration and get prices
+    const serviceDetails = await Promise.all(
+      services.map(async (s) => {
+        const detail = await this.serviceRepo.findById(s.id);
+        if (!detail) throw new Error(`Service with ID ${s.id} not found`);
+        return { ...detail, requestedQuantity: s.quantity };
+      })
+    );
+
+    const totalDuration = serviceDetails.reduce((sum, s) => sum + (s.duration_minutes * s.requestedQuantity), 0);
     const createdIds: number[] = [];
 
     for (let i = 0; i < occurrences; i++) {
@@ -41,7 +50,7 @@ export class CreateAppointment {
       if (recurring_rule === 'monthly') currentStart.setMonth(currentStart.getMonth() + i);
 
       const startTimeStr = currentStart.toISOString().replace('T', ' ').substring(0, 19);
-      const endTimeDate = new Date(currentStart.getTime() + service.duration_minutes * 60000);
+      const endTimeDate = new Date(currentStart.getTime() + totalDuration * 60000);
       const endTimeStr = endTimeDate.toISOString().replace('T', ' ').substring(0, 19);
 
       const dayOfWeek = currentStart.getDay();
@@ -53,24 +62,36 @@ export class CreateAppointment {
         throw new Error(`Barber not working on ${currentStart.toLocaleDateString()} at ${timeStr}`);
       }
 
-      // Conflict Detection
+      // Conflict Detection (now uses combined duration)
       const hasConflict = await this.appointmentRepo.checkConflict(barber_id, startTimeStr, endTimeStr);
       if (hasConflict) {
         throw new Error(`Conflict on ${currentStart.toLocaleDateString()} at ${timeStr}`);
       }
 
-      const id = await this.appointmentRepo.create({
+      const appointmentId = await this.appointmentRepo.create({
         barber_id,
         customer_id,
-        service_id,
+        service_id: services[0].id, // Primary service
         start_time: startTimeStr,
+        total_duration_minutes: totalDuration,
         recurring_id,
         recurring_rule,
         shop_id,
         status: 'scheduled',
         notes
       } as any);
-      createdIds.push(id);
+
+      // Add each service item
+      for (const s of serviceDetails) {
+        await this.appointmentRepo.addItem({
+          appointment_id: appointmentId,
+          service_id: s.id,
+          quantity: s.requestedQuantity,
+          price_at_booking: s.price
+        });
+      }
+
+      createdIds.push(appointmentId);
     }
 
     return { ids: createdIds, recurring_id };
