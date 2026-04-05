@@ -99,10 +99,13 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
     setError('');
     try {
       const res = await apiClient.post('/auth/otp/verify', { email, code: otp });
+      // Call login from useAuth
       login(res.data.token, res.data.user);
+      
       if (res.data.requires_profile_completion) {
         setRequiresProfile(true);
       } else {
+        // Successful login, no profile needed, jump to final step
         setStep(5);
       }
     } catch (err: any) {
@@ -116,7 +119,9 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
     e.preventDefault();
     setSubmitting(true);
     try {
+      // Use the token we just got (already in apiClient because of login call)
       await apiClient.patch('/auth/profile', { fullname, birthday });
+      // Refresh user info in auth context if needed or just proceed
       setStep(5);
     } catch (err) {
       setError('Failed to save profile info.');

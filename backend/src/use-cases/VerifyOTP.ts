@@ -20,14 +20,26 @@ export class VerifyOTP {
       throw new Error('OTP expired');
     }
 
+    // Ensure user has a linked customer record (allow Barbers to act as Customers)
+    let customerId = user.customer_id;
+    if (!customerId) {
+      const existingCustomer = await this.customerRepo.findByEmailOrPhone(email, null);
+      if (existingCustomer) {
+        customerId = existingCustomer.id;
+      } else {
+        customerId = await this.customerRepo.create({
+          email,
+          last_visit: new Date().toISOString()
+        });
+      }
+      await this.userRepo.update({ id: user.id, customer_id: customerId });
+    }
+
     // Check if customer profile is incomplete
     let requires_profile_completion = false;
-    if (user.customer_id) {
-      // Direct DB query here for simplicity or use customerRepo if findById is added
-      const customer = await this.customerRepo.findByEmailOrPhone(email, null);
-      if (customer && (!customer.name || !customer.birthday)) {
-        requires_profile_completion = true;
-      }
+    const customer = await this.customerRepo.findByEmailOrPhone(email, null);
+    if (customer && (!customer.name || !customer.birthday)) {
+      requires_profile_completion = true;
     }
 
     // Clear OTP
@@ -46,7 +58,7 @@ export class VerifyOTP {
         id: user.id, 
         username: user.username, 
         role: user.role, 
-        customer_id: user.customer_id,
+        customer_id: customerId,
         shop_id: user.shop_id,
         fullname: user.fullname
       },
@@ -61,7 +73,7 @@ export class VerifyOTP {
         username: user.username,
         email: user.email,
         role: user.role,
-        customer_id: user.customer_id,
+        customer_id: customerId,
         shop_id: user.shop_id,
         fullname: user.fullname
       },

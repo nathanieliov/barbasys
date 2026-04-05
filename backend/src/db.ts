@@ -286,6 +286,43 @@ try {
   console.error('Barbers migration error:', e);
 }
 
+try {
+  const apptsSchema = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='appointments'").get() as { sql: string };
+  if (apptsSchema && !apptsSchema.sql.includes('total_duration_minutes')) {
+    console.log('🔄 Migrating appointments table to support total_duration_minutes...');
+    db.transaction(() => {
+      db.exec(`
+        CREATE TABLE appointments_new (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          barber_id INTEGER,
+          customer_id INTEGER,
+          service_id INTEGER,
+          start_time DATETIME NOT NULL,
+          total_duration_minutes INTEGER DEFAULT 30,
+          status TEXT DEFAULT 'scheduled',
+          reminder_sent INTEGER DEFAULT 0,
+          recurring_id TEXT,
+          recurring_rule TEXT,
+          shop_id INTEGER,
+          notes TEXT,
+          FOREIGN KEY (barber_id) REFERENCES barbers(id) ON DELETE CASCADE,
+          FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL,
+          FOREIGN KEY (shop_id) REFERENCES shops(id) ON DELETE CASCADE
+        )
+      `);
+      db.exec(`
+        INSERT INTO appointments_new (id, barber_id, customer_id, service_id, start_time, status, reminder_sent, recurring_id, recurring_rule, shop_id, notes)
+        SELECT id, barber_id, customer_id, service_id, start_time, status, reminder_sent, recurring_id, recurring_rule, shop_id, notes FROM appointments
+      `);
+      db.exec('DROP TABLE appointments');
+      db.exec('ALTER TABLE appointments_new RENAME TO appointments');
+    })();
+    console.log('✅ Appointments table migrated successfully.');
+  }
+} catch (e) {
+  console.error('Appointments migration error:', e);
+}
+
 try { db.exec('ALTER TABLE barbers ADD COLUMN fixed_amount REAL'); } catch (e) {}
 try { db.exec('ALTER TABLE barbers ADD COLUMN fixed_period TEXT CHECK(fixed_period IN (\'MONTHLY\', \'WEEKLY\', \'BIWEEKLY\'))'); } catch (e) {}
 try { db.exec('ALTER TABLE barbers ADD COLUMN slug TEXT'); } catch (e) {}

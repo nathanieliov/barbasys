@@ -11,10 +11,6 @@ export class SendOTP {
   async execute(email: string) {
     let user = await this.userRepo.findByEmail(email);
     
-    if (user && user.role !== 'CUSTOMER') {
-      throw new Error('This email is registered for the professional team. Please use the Professional Sign In.');
-    }
-
     if (!user) {
       // Find or create customer record
       let customer = await this.customerRepo.findByEmailOrPhone(email, null);
@@ -29,8 +25,7 @@ export class SendOTP {
         });
       }
 
-      // Create CUSTOMER user
-      // Passwordless users still need a password hash for the system, we use a random one
+      // Create CUSTOMER user for new emails
       const dummyPassword = await bcrypt.hash(Math.random().toString(36), 10);
       
       user = await this.userRepo.create({
@@ -40,15 +35,17 @@ export class SendOTP {
         role: 'CUSTOMER',
         barber_id: null,
         customer_id: customerId,
-        shop_id: null, // Scoped to shops via Discovery
-        fullname: email.split('@')[0]
+        shop_id: null,
+        fullname: email.split('@')[0],
+        otp_code: null,
+        otp_expires: null
       });
     }
 
-    // Generate 6-digit OTP
+    // Generate 6-digit OTP for any user (Customer, Barber, or Admin)
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const expires = new Date();
-    expires.setMinutes(expires.getMinutes() + 10); // 10 minutes expiry
+    expires.setMinutes(expires.getMinutes() + 10);
 
     await this.userRepo.update({
       id: user.id,
@@ -56,7 +53,6 @@ export class SendOTP {
       otp_expires: expires.toISOString()
     });
 
-    // SIMULATION: Log the OTP
     console.log(`[OTP SIMULATION] Code for ${email}: ${otp}`);
     
     return { success: true, message: 'OTP sent successfully' };
