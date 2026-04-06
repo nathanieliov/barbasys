@@ -100,3 +100,8 @@ export interface GetAvailabilityRequest {
 }
 
 export type GetAvailabilityResponse = string[]; // ["09:00", "09:15", ...]
+
+export interface CancelAppointmentRequest {
+  appointment_id: number;
+  reason?: string;
+}
