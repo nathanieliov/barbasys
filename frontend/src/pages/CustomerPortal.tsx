@@ -32,8 +32,8 @@ export default function CustomerPortal() {
     setLoading(true);
     try {
       const [apptsRes, salesRes] = await Promise.all([
-        apiClient.get('/appointments'),
-        apiClient.get('/sales')
+        apiClient.get('/appointments?as=customer'),
+        apiClient.get('/sales?as=customer')
       ]);
       setAppointments(apptsRes.data);
       setSales(salesRes.data);
@@ -72,7 +72,7 @@ export default function CustomerPortal() {
     }
   };
 
-  if (!user || user.role !== 'CUSTOMER') {
+  if (!user) {
     return (
       <div className="login-page" style={{ padding: '1rem' }}>
         <div className="login-card">

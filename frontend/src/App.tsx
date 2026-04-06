@@ -147,13 +147,12 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { user } = useAuth();
   
-  if (!user) return <>{children}</>;
-
-  const isCustomer = user.role === 'CUSTOMER';
+  const isCustomer = user?.role === 'CUSTOMER';
+  const isStaff = user && !isCustomer;
 
   return (
     <div className={`app-container ${isCustomer ? 'customer-layout' : ''}`}>
-      {!isCustomer && (
+      {isStaff && (
         <header className="mobile-header">
           <div className="logo" style={{ fontSize: '1.1rem' }}>
             <Scissors size={20} />
@@ -165,7 +164,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
         </header>
       )}
       
-      {!isCustomer && <Sidebar isOpen={isSidebarOpen} toggleSidebar={() => setIsSidebarOpen(false)} />}
+      {isStaff && <Sidebar isOpen={isSidebarOpen} toggleSidebar={() => setIsSidebarOpen(false)} />}
       
       <main className="content">
         {children}

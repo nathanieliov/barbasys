@@ -35,6 +35,9 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
   const [birthday, setBirthday] = useState('');
   const [requiresProfile, setRequiresProfile] = useState(false);
 
+  const [availableSlots, setAvailableSlots] = useState<string[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -58,6 +61,22 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
       setStep(5);
     }
   }, [user, step, requiresProfile]);
+
+  useEffect(() => {
+    if (selectedBarber && selectedDate && cart.length > 0) {
+      const totalDur = cart.reduce((sum, item) => sum + (item.duration * item.quantity), 0);
+      setLoadingSlots(true);
+      apiClient.get(`/public/barbers/${selectedBarber.id}/availability`, {
+        params: { date: selectedDate, duration: totalDur }
+      }).then(res => {
+        setAvailableSlots(res.data);
+      }).catch(err => {
+        console.error('Failed to fetch slots', err);
+      }).finally(() => {
+        setLoadingSlots(false);
+      });
+    }
+  }, [selectedBarber, selectedDate, cart]);
 
   const addToCart = (service: any) => {
     setCart(prev => {
@@ -168,14 +187,12 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
         <p style={{ color: 'var(--text-muted)', marginBottom: '2.5rem' }}>
           Your appointment at <strong>{shop.name}</strong> is confirmed.
         </p>
-        <button className="primary" style={{ width: '100%', padding: '1.25rem' }} onClick={() => navigate('/')}>
+        <button className="primary" style={{ width: '100%', padding: '1.25rem' }} onClick={() => navigate('/my-bookings')}>
           Go to My Dashboard
         </button>
       </div>
     );
   }
-
-  const times = ['09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'];
 
   return (
     <div className="booking-flow" style={{ maxWidth: '500px', margin: '0 auto', padding: '1rem' }}>
@@ -263,10 +280,25 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
         <section>
           <h2 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '1.25rem' }}>Pick Date & Time</h2>
           <input type="date" value={selectedDate} min={new Date().toISOString().split('T')[0]} onChange={e => setSelectedDate(e.target.value)} style={{ fontSize: '1.1rem', fontWeight: '700' }} />
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', marginTop: '1.5rem' }}>
-            {times.map(t => (
-              <button key={t} className="secondary" onClick={() => { setSelectedTime(t); setStep(user ? 5 : 4); }} style={{ padding: '0.75rem 0', fontWeight: '700' }}>{t}</button>
-            ))}
+          
+          <div style={{ marginTop: '1.5rem' }}>
+            {loadingSlots ? (
+              <div style={{ textAlign: 'center', padding: '2rem' }}>
+                <Loader2 size={32} className="spinner" style={{ margin: '0 auto' }} />
+                <p style={{ marginTop: '0.5rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>Finding free slots...</p>
+              </div>
+            ) : availableSlots.length === 0 ? (
+              <div className="card" style={{ textAlign: 'center', padding: '2rem', border: '1px dashed var(--border)' }}>
+                <AlertCircle size={32} style={{ margin: '0 auto 1rem', opacity: 0.2 }} />
+                <p style={{ color: 'var(--text-muted)' }}>No slots available for this date. Try another day.</p>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
+                {availableSlots.map(t => (
+                  <button key={t} className="secondary" onClick={() => { setSelectedTime(t); setStep(user ? 5 : 4); }} style={{ padding: '0.75rem 0', fontWeight: '700' }}>{t}</button>
+                ))}
+              </div>
+            )}
           </div>
         </section>
       )}
