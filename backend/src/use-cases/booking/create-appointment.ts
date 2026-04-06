@@ -1,22 +1,7 @@
 import { IAppointmentRepository } from '../../repositories/appointment-repository.interface.js';
 import { IBarberShiftRepository } from '../../repositories/barber-shift-repository.interface.js';
 import { IServiceRepository } from '../../repositories/service-repository.interface.js';
-
-export interface CreateAppointmentRequest {
-  barber_id: number;
-  customer_id: number | null;
-  services: Array<{ id: number, quantity: number }>; // Multiple services support
-  start_time: string;
-  recurring_rule?: 'weekly' | 'biweekly' | 'monthly' | null;
-  occurrences?: number;
-  shop_id: number;
-  notes?: string | null;
-}
-
-export interface CreateAppointmentResponse {
-  ids: number[];
-  recurring_id: string | null;
-}
+import { CreateAppointmentRequest, CreateAppointmentResponse } from '@barbasys/shared';
 
 export class CreateAppointment {
   constructor(
@@ -74,12 +59,13 @@ export class CreateAppointment {
         service_id: services[0].id, // Primary service
         start_time: startTimeStr,
         total_duration_minutes: totalDuration,
-        recurring_id,
-        recurring_rule,
-        shop_id,
         status: 'scheduled',
-        notes
-      } as any);
+        reminder_sent: 0,
+        recurring_id,
+        recurring_rule: recurring_rule || null,
+        shop_id,
+        notes: notes || null
+      });
 
       // Add each service item
       for (const s of serviceDetails) {

@@ -5,15 +5,17 @@ import { IAppointmentRepository } from './appointment-repository.interface.js';
 export class SQLiteAppointmentRepository implements IAppointmentRepository {
   constructor(private db: Database) {}
 
-  async create(appointment: Omit<Appointment, 'id' | 'status' | 'reminder_sent'> & { recurring_id?: string | null, recurring_rule?: string | null }): Promise<number> {
+  async create(appointment: Omit<Appointment, 'id'>): Promise<number> {
     const result = this.db.prepare(
-      'INSERT INTO appointments (barber_id, customer_id, service_id, start_time, total_duration_minutes, recurring_id, recurring_rule, shop_id, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+      'INSERT INTO appointments (barber_id, customer_id, service_id, start_time, total_duration_minutes, status, reminder_sent, recurring_id, recurring_rule, shop_id, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
     ).run(
       appointment.barber_id,
       appointment.customer_id,
       appointment.service_id,
       appointment.start_time,
       appointment.total_duration_minutes || 30,
+      appointment.status || 'scheduled',
+      appointment.reminder_sent || 0,
       appointment.recurring_id || null,
       appointment.recurring_rule || null,
       appointment.shop_id,
@@ -34,7 +36,7 @@ export class SQLiteAppointmentRepository implements IAppointmentRepository {
 
   async findByBarberAndDateRange(barberId: number, start: string, end: string): Promise<Appointment[]> {
     return this.db.prepare(
-      'SELECT * FROM appointments WHERE barber_id = ? AND start_time >= ? AND start_time <= ? AND status != "cancelled"'
+      "SELECT * FROM appointments WHERE barber_id = ? AND start_time >= ? AND start_time <= ? AND status != 'cancelled'"
     ).all(barberId, start, end) as Appointment[];
   }
 

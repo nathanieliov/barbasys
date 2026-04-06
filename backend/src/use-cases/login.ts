@@ -26,6 +26,7 @@ export class LoginUseCase {
         username: user.username, 
         role: user.role, 
         barber_id: user.barber_id, 
+        customer_id: user.customer_id,
         shop_id: user.shop_id,
         fullname: user.fullname
       },
@@ -41,6 +42,7 @@ export class LoginUseCase {
         email: user.email,
         role: user.role,
         barber_id: user.barber_id,
+        customer_id: user.customer_id,
         shop_id: user.shop_id,
         fullname: user.fullname
       }

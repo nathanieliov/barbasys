@@ -74,6 +74,6 @@ describe('SQLiteBarberRepository', () => {
     await repo.delete(id);
     
     const barber = await repo.findById(id);
-    expect(barber).toBeNull();
+    expect(barber?.is_active).toBe(0);
   });
 });

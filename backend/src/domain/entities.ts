@@ -104,6 +104,9 @@ export interface Appointment {
   start_time: string;
   total_duration_minutes: number;
   status: 'scheduled' | 'completed' | 'cancelled';
+  reminder_sent: number;
+  recurring_id: string | null;
+  recurring_rule: string | null;
   shop_id: number | null;
   notes?: string | null;
 }
