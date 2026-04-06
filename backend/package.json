@@ -5,7 +5,7 @@
   "description": "",
   "main": "dist/index.js",
   "scripts": {
-    "dev": "NODE_OPTIONS='--loader ts-node/esm --no-warnings' nodemon src/index.ts",
+    "dev": "nodemon --exec tsx src/index.ts",
     "start": "node dist/index.js",
     "build": "npx tsc",
     "test": "vitest run",
