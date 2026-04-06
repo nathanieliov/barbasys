@@ -57,9 +57,46 @@ export interface Appointment {
   id: number;
   barber_id: number;
   customer_id: number | null;
-  service_id: number;
+  service_id: number; // Primary service for legacy
   start_time: string;
+  total_duration_minutes: number;
   status: 'scheduled' | 'completed' | 'cancelled';
+  reminder_sent: number;
+  recurring_id: string | null;
+  recurring_rule: string | null;
   shop_id: number | null;
   notes?: string | null;
 }
+
+export interface AppointmentItem {
+  id: number;
+  appointment_id: number;
+  service_id: number;
+  quantity: number;
+  price_at_booking: number;
+}
+
+// DTOs
+export interface CreateAppointmentRequest {
+  barber_id: number;
+  customer_id: number | null;
+  services: Array<{ id: number, quantity: number }>;
+  start_time: string;
+  recurring_rule?: 'weekly' | 'biweekly' | 'monthly' | null;
+  occurrences?: number;
+  shop_id: number;
+  notes?: string | null;
+}
+
+export interface CreateAppointmentResponse {
+  ids: number[];
+  recurring_id: string | null;
+}
+
+export interface GetAvailabilityRequest {
+  barber_id: number;
+  date: string; // YYYY-MM-DD
+  duration: number;
+}
+
+export type GetAvailabilityResponse = string[]; // ["09:00", "09:15", ...]
