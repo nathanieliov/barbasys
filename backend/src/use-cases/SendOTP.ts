@@ -57,7 +57,11 @@ export class SendOTP {
       otp_expires: expires.toISOString()
     });
 
-    console.log(`[OTP SIMULATION] Code for ${email}: ${otp}`);
+    console.log('--------------------------------------------------');
+    console.log(`🔑 [OTP SIMULATION]`);
+    console.log(`📧 Email: ${email}`);
+    console.log(`🔢 Code:  ${otp}`);
+    console.log('--------------------------------------------------');
     
     return { success: true, message: 'OTP sent successfully' };
   }

@@ -9,6 +9,7 @@ export class VerifyOTP {
   ) {}
 
   async execute(email: string, code: string) {
+    console.log(`🔐 [OTP VERIFICATION] Attempt for ${email} with code ${code}`);
     const user = await this.userRepo.findByEmail(email);
     
     if (!user || !user.otp_code || user.otp_code !== code) {
