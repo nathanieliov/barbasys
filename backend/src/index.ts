@@ -24,6 +24,7 @@ import { UpdateService } from './use-cases/update-service.js';
 import { DeleteService } from './use-cases/delete-service.js';
 import { GetService } from './use-cases/get-service.js';
 import { CreateAppointment } from './use-cases/booking/create-appointment.js';
+import { GetAvailableSlots } from './use-cases/booking/GetAvailableSlots.js';
 import { ProcessSale } from './use-cases/pos/ProcessSale.js';
 import { GetCommissionsReport } from './use-cases/reports/GetCommissionsReport.js';
 import { ExportSalesCSV } from './use-cases/reports/ExportSalesCSV.js';
@@ -68,6 +69,7 @@ const updateService = new UpdateService(serviceRepo);
 const deleteService = new DeleteService(serviceRepo);
 const getService = new GetService(serviceRepo);
 const createAppointment = new CreateAppointment(appointmentRepo, shiftRepo, serviceRepo);
+const getAvailableSlots = new GetAvailableSlots(appointmentRepo, shiftRepo, db);
 const processSale = new ProcessSale(saleRepo, customerRepo, barberRepo, productRepo, db);
 const getCommissionsReport = new GetCommissionsReport(saleRepo, barberRepo, expenseRepo);
 const exportSalesCSV = new ExportSalesCSV(saleRepo);
@@ -116,6 +118,21 @@ app.get('/api/public/barbers/:slug', async (req, res) => {
     const shop = db.prepare('SELECT * FROM shops WHERE id = ?').get(barber.shop_id);
     const services = db.prepare('SELECT * FROM services WHERE shop_id = ? AND is_active = 1').all(barber.shop_id);
     res.json({ barber, shop, services });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/public/barbers/:id/availability', async (req, res) => {
+  const { id } = req.params;
+  const { date, duration } = req.query;
+  try {
+    const slots = await getAvailableSlots.execute({ 
+      barber_id: Number(id), 
+      date: date as string, 
+      duration: Number(duration || 30) 
+    });
+    res.json(slots);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -204,6 +221,7 @@ app.get('/api/auth/me', protect, async (req, res) => {
       email: user.email,
       role: user.role,
       barber_id: user.barber_id,
+      customer_id: user.customer_id,
       shop_id: user.shop_id,
       fullname: user.fullname
     });
@@ -405,6 +423,24 @@ app.get('/api/customers/:id/history', protect, (req, res) => {
 app.get('/api/appointments', protect, (req, res) => {
   const shopId = req.user?.shop_id;
   const date = req.query.date || new Date().toISOString().split('T')[0];
+  const asCustomer = req.query.as === 'customer';
+
+  if ((req.user?.role === 'CUSTOMER' || asCustomer) && req.user?.customer_id) {
+    const query = `
+      SELECT a.*, b.name as barber_name, sh.name as shop_name,
+             (SELECT group_concat(s.name || ' x' || ai.quantity, ', ') 
+              FROM appointment_items ai 
+              JOIN services s ON ai.service_id = s.id 
+              WHERE ai.appointment_id = a.id) as services_summary
+      FROM appointments a
+      JOIN barbers b ON a.barber_id = b.id
+      LEFT JOIN shops sh ON a.shop_id = sh.id
+      WHERE a.customer_id = ?
+      ORDER BY a.start_time DESC
+    `;
+    return res.json(db.prepare(query).all(req.user.customer_id));
+  }
+
   let query = `
     SELECT a.*, b.name as barber_name, c.name as customer_name,
            (SELECT group_concat(s.name || ' x' || ai.quantity, ', ') 
@@ -421,22 +457,6 @@ app.get('/api/appointments', protect, (req, res) => {
   if (req.user?.role === 'BARBER') {
     query += ' AND a.barber_id = ?';
     params.push(req.user.barber_id);
-  }
-
-  if (req.user?.role === 'CUSTOMER') {
-    query = `
-      SELECT a.*, b.name as barber_name, sh.name as shop_name,
-             (SELECT group_concat(s.name || ' x' || ai.quantity, ', ') 
-              FROM appointment_items ai 
-              JOIN services s ON ai.service_id = s.id 
-              WHERE ai.appointment_id = a.id) as services_summary
-      FROM appointments a
-      JOIN barbers b ON a.barber_id = b.id
-      LEFT JOIN shops sh ON a.shop_id = sh.id
-      WHERE a.customer_id = ?
-      ORDER BY a.start_time DESC
-    `;
-    return res.json(db.prepare(query).all(req.user.customer_id));
   }
 
   query += ' ORDER BY a.start_time ASC';
@@ -460,14 +480,27 @@ app.get('/api/appointments/:id/items', protect, (req, res) => {
 
 app.post('/api/appointments', protect, async (req, res) => {
   const shopId = req.user?.shop_id || req.body.shop_id;
-  const { send_confirmation, barber_id, customer_id, services, start_time } = req.body;
+  let { send_confirmation, barber_id, services, service_id, start_time } = req.body;
+  
+  if (!services && service_id) {
+    services = [{ id: service_id, quantity: 1 }];
+  }
+  
+  // Robust customer_id selection: prioritize token id if it's a customer booking for themselves
+  let customer_id = req.body.customer_id;
+  if (req.user?.role === 'CUSTOMER' && req.user.customer_id) {
+    customer_id = req.user.customer_id;
+  } else if (!customer_id && req.user?.customer_id) {
+    // If a staff member is booking for themselves
+    customer_id = req.user.customer_id;
+  }
   
   if (req.user?.role === 'BARBER' && req.user.barber_id !== barber_id) {
     return res.status(403).json({ error: 'Cannot book for another barber' });
   }
 
   try {
-    const result = await createAppointment.execute({ ...req.body, shop_id: shopId });
+    const result = await createAppointment.execute({ ...req.body, shop_id: shopId, customer_id, services });
     
     // Send confirmation if requested
     if (send_confirmation && result.ids.length > 0) {
@@ -808,7 +841,20 @@ app.post('/api/sales', protect, async (req, res) => {
 
 app.get('/api/sales', protect, async (req, res) => {
   const shopId = req.user?.shop_id;
-  const { startDate, endDate, barberId: queryBarberId } = req.query;
+  const { startDate, endDate, barberId: queryBarberId, as: asParam } = req.query;
+
+  if ((req.user?.role === 'CUSTOMER' || asParam === 'customer') && req.user?.customer_id) {
+    const query = `
+      SELECT s.id, s.timestamp, s.total_amount, b.name as barber_name,
+             (SELECT group_concat(name, ', ') FROM sale_items si JOIN services srv ON si.item_id = srv.id WHERE si.sale_id = s.id AND si.type = 'service') as services,
+             (SELECT group_concat(name, ', ') FROM sale_items si JOIN products p ON si.item_id = p.id WHERE si.sale_id = s.id AND si.type = 'product') as products
+      FROM sales s
+      JOIN barbers b ON s.barber_id = b.id
+      WHERE s.customer_id = ?
+      ORDER BY s.timestamp DESC
+    `;
+    return res.json(db.prepare(query).all(req.user.customer_id));
+  }
 
   let barberIdToFilter: number | undefined | null = undefined;
   if (req.user?.role === 'BARBER') {

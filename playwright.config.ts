@@ -3,13 +3,14 @@ import path from 'path';
 
 export default defineConfig({
   testDir: './e2e',
+  timeout: 60000,
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined, 
   reporter: 'html',
   use: {
-    baseURL: 'http://localhost:4173', // Vite preview port
+    baseURL: 'http://localhost:5173', // Dev server port
     trace: 'on-first-retry',
   },
   projects: [
@@ -24,6 +25,13 @@ export default defineConfig({
         storageState: 'playwright/.auth/user.json',
       },
       dependencies: ['setup'],
+    },
+    {
+      name: 'booking-flow',
+      use: { 
+        ...devices['Desktop Chrome'],
+      },
+      testMatch: /booking-flow\.spec\.ts/,
     },
   ],
   webServer: {
