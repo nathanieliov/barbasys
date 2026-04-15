@@ -15,6 +15,8 @@ export interface User {
   fullname?: string | null;
   otp_code?: string | null;
   otp_expires?: string | null;
+  otp_requests_count?: number | null;
+  last_otp_request_at?: string | null;
 }
 
 export interface Barber {

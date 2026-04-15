@@ -46,6 +46,22 @@ export class SendOTP {
       });
     }
 
+    // Check rate limit (max 3 times in 15 minutes)
+    const now = new Date();
+    const fifteenMinutesAgo = new Date(now.getTime() - 15 * 60 * 1000);
+    
+    let otpRequestsCount = user.otp_requests_count || 0;
+    let lastRequestAt = user.last_otp_request_at ? new Date(user.last_otp_request_at) : null;
+
+    if (lastRequestAt && lastRequestAt < fifteenMinutesAgo) {
+      // Reset count if last request was more than 15 minutes ago
+      otpRequestsCount = 0;
+    }
+
+    if (otpRequestsCount >= 3) {
+      throw new Error('Too many OTP requests. Please try again in 15 minutes.');
+    }
+
     // Generate 6-digit OTP for any user (Customer, Barber, or Admin)
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const expires = new Date();
@@ -54,7 +70,9 @@ export class SendOTP {
     await this.userRepo.update({
       id: user.id,
       otp_code: otp,
-      otp_expires: expires.toISOString()
+      otp_expires: expires.toISOString(),
+      otp_requests_count: otpRequestsCount + 1,
+      last_otp_request_at: now.toISOString()
     });
 
     console.log('--------------------------------------------------');

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import apiClient from '../api/apiClient';
 import { User, ChevronLeft, CheckCircle, AlertCircle, Mail, Key, Cake, Loader2, Plus, Minus, Trash2 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
@@ -13,10 +13,14 @@ interface BookingFlowProps {
 export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
   const { shopId: routeShopId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, login } = useAuth();
   const { settings } = useSettings();
   
-  const [step, setStep] = useState(preSelectedBarber ? 2 : 1);
+  const rescheduleId = location.state?.rescheduleId;
+  const initialBarberId = location.state?.barberId;
+
+  const [step, setStep] = useState(preSelectedBarber || initialBarberId ? 2 : 1);
   const [shop, setShop] = useState<any>(null);
   const [barbers, setBarbers] = useState<any[]>([]);
   const [services, setServices] = useState<any[]>([]);
@@ -25,7 +29,7 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
   const [cart, setCart] = useState<Array<{ id: number, name: string, price: number, duration: number, quantity: number }>>([]);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedTime, setSelectedTime] = useState('');
-  const [notes, setNotes] = useState('');
+  const [notes, setNotes] = useState(location.state?.notes || '');
   
   // Auth & Profile State
   const [email, setEmail] = useState('');
@@ -51,9 +55,31 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
         setShop(res.data.shop);
         setBarbers(res.data.barbers);
         setServices(res.data.services);
+        
+        // Auto-select barber if initialBarberId is provided (rescheduling)
+        if (initialBarberId && res.data.barbers) {
+          const b = res.data.barbers.find((barber: any) => barber.id === initialBarberId);
+          if (b) setSelectedBarber(b);
+        }
       }).finally(() => setLoading(false));
+
+      // Pre-load cart for rescheduling
+      if (rescheduleId) {
+        apiClient.get(`/appointments/${rescheduleId}/items`).then(res => {
+          const loadedCart = res.data.map((item: any) => ({
+            id: item.service_id,
+            name: item.name,
+            price: item.price,
+            duration: item.duration_minutes,
+            quantity: item.quantity
+          }));
+          setCart(loadedCart);
+        }).catch(err => {
+          console.error('Failed to pre-load appointment items', err);
+        });
+      }
     }
-  }, [shopId]);
+  }, [shopId, initialBarberId, rescheduleId]);
 
   // Handle auto-advancing after login
   useEffect(() => {
@@ -131,7 +157,20 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
       }
       // auto-advance will be handled by useEffect
     } catch (err: any) {
-      setError('Invalid code.');
+      setError(err.response?.data?.error || 'Invalid code.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleResendOTP = async () => {
+    setError('');
+    setSubmitting(true);
+    try {
+      await apiClient.post('/auth/otp/send', { email });
+      alert('Verification code resent!');
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to resend code.');
     } finally {
       setSubmitting(false);
     }
@@ -159,14 +198,23 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
     const finalShopId = selectedBarber?.shop_id || shopId;
 
     try {
-      await apiClient.post('/appointments', {
-        barber_id: selectedBarber.id,
-        services: cart.map(item => ({ id: item.id, quantity: item.quantity })),
-        customer_id: user?.customer_id || null,
-        start_time: `${selectedDate}T${selectedTime}:00`,
-        shop_id: finalShopId ? parseInt(finalShopId.toString()) : null,
-        notes
-      });
+      if (rescheduleId) {
+        await apiClient.put(`/appointments/${rescheduleId}`, {
+          barber_id: selectedBarber.id,
+          services: cart.map(item => ({ id: item.id, quantity: item.quantity })),
+          start_time: `${selectedDate}T${selectedTime}:00`,
+          notes
+        });
+      } else {
+        await apiClient.post('/appointments', {
+          barber_id: selectedBarber.id,
+          services: cart.map(item => ({ id: item.id, quantity: item.quantity })),
+          customer_id: user?.customer_id || null,
+          start_time: `${selectedDate}T${selectedTime}:00`,
+          shop_id: finalShopId ? parseInt(finalShopId.toString()) : null,
+          notes
+        });
+      }
       setSuccess(true);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to book appointment.');
@@ -183,9 +231,9 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
         <div style={{ background: 'var(--success)', color: 'white', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 2rem', boxShadow: '0 10px 15px -3px rgba(16, 185, 129, 0.3)' }}>
           <CheckCircle size={48} />
         </div>
-        <h1 style={{ fontSize: '1.75rem', fontWeight: '900', marginBottom: '1rem' }}>Success!</h1>
+        <h1 style={{ fontSize: '1.75rem', fontWeight: '900', marginBottom: '1rem' }}>{rescheduleId ? 'Updated!' : 'Success!'}</h1>
         <p style={{ color: 'var(--text-muted)', marginBottom: '2.5rem' }}>
-          Your appointment at <strong>{shop.name}</strong> is confirmed.
+          Your appointment at <strong>{shop?.name}</strong> is {rescheduleId ? 'updated' : 'confirmed'}.
         </p>
         <button className="primary" style={{ width: '100%', padding: '1.25rem' }} onClick={() => navigate('/my-bookings')}>
           Go to My Dashboard
@@ -334,6 +382,14 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
                 <button type="submit" className="primary" style={{ width: '100%', padding: '1rem' }} disabled={submitting}>
                   Verify & Continue
                 </button>
+                <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
+                  <button type="button" onClick={handleResendOTP} disabled={submitting} style={{ flex: 1, background: 'none', border: '1px solid var(--border)', borderRadius: '0.75rem', padding: '0.5rem', fontSize: '0.85rem', color: 'var(--text-main)', cursor: 'pointer' }}>
+                    Resend Code
+                  </button>
+                  <button type="button" onClick={() => setOtpStep('ID')} style={{ flex: 1, background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '0.85rem', cursor: 'pointer' }}>
+                    Change email
+                  </button>
+                </div>
               </form>
             )
           ) : (
@@ -383,9 +439,9 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
               </div>
             </div>
           </div>
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-muted)' }}>ADDITIONAL NOTES</label>
-            <textarea placeholder="Optional notes for your barber..." value={notes} onChange={e => setNotes(e.target.value)} style={{ minHeight: '80px' }} />
+          <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+            <label style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: '800' }}>Additional Notes</label>
+            <textarea placeholder="Optional notes for your barber..." value={notes} onChange={e => setNotes(e.target.value)} style={{ minHeight: '80px', marginTop: '0.5rem' }} />
           </div>
           <button className="primary" style={{ width: '100%', padding: '1.25rem', fontSize: '1.1rem' }} onClick={handleBook} disabled={submitting}>Confirm Booking</button>
         </section>

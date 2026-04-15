@@ -43,11 +43,13 @@ export class VerifyOTP {
       requires_profile_completion = true;
     }
 
-    // Clear OTP
+    // Clear OTP and reset requests count
     await this.userRepo.update({
       id: user.id,
       otp_code: null,
-      otp_expires: null
+      otp_expires: null,
+      otp_requests_count: 0,
+      last_otp_request_at: null
     });
 
     const options: SignOptions = {

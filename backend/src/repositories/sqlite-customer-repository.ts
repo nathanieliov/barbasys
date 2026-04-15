@@ -5,6 +5,10 @@ import { ICustomerRepository } from './customer-repository.interface.js';
 export class SQLiteCustomerRepository implements ICustomerRepository {
   constructor(private db: Database) {}
 
+  async findById(id: number): Promise<Customer | null> {
+    return this.db.prepare('SELECT * FROM customers WHERE id = ?').get(id) as Customer | null;
+  }
+
   async findByEmailOrPhone(email: string | null, phone: string | null): Promise<Customer | null> {
     if (!email && !phone) return null;
     const query = 'SELECT * FROM customers WHERE (email = ? AND email IS NOT NULL) OR (phone = ? AND phone IS NOT NULL)';

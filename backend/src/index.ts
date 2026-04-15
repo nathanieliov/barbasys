@@ -25,6 +25,8 @@ import { DeleteService } from './use-cases/delete-service.js';
 import { GetService } from './use-cases/get-service.js';
 import { CreateAppointment } from './use-cases/booking/create-appointment.js';
 import { GetAvailableSlots } from './use-cases/booking/GetAvailableSlots.js';
+import { CancelAppointment } from './use-cases/booking/CancelAppointment.js';
+import { UpdateAppointment } from './use-cases/booking/UpdateAppointment.js';
 import { ProcessSale } from './use-cases/pos/ProcessSale.js';
 import { GetCommissionsReport } from './use-cases/reports/GetCommissionsReport.js';
 import { ExportSalesCSV } from './use-cases/reports/ExportSalesCSV.js';
@@ -69,7 +71,9 @@ const updateService = new UpdateService(serviceRepo);
 const deleteService = new DeleteService(serviceRepo);
 const getService = new GetService(serviceRepo);
 const createAppointment = new CreateAppointment(appointmentRepo, shiftRepo, serviceRepo);
+const cancelAppointment = new CancelAppointment(appointmentRepo, customerRepo, barberRepo, serviceRepo);
 const getAvailableSlots = new GetAvailableSlots(appointmentRepo, shiftRepo, db);
+const updateAppointment = new UpdateAppointment(appointmentRepo, serviceRepo, shiftRepo);
 const processSale = new ProcessSale(saleRepo, customerRepo, barberRepo, productRepo, db);
 const getCommissionsReport = new GetCommissionsReport(saleRepo, barberRepo, expenseRepo);
 const exportSalesCSV = new ExportSalesCSV(saleRepo);
@@ -527,31 +531,56 @@ app.post('/api/appointments', protect, async (req, res) => {
   }
 });
 
+app.post('/api/appointments/:id/cancel', protect, async (req, res) => {
+  const { id } = req.params;
+  try {
+    await cancelAppointment.execute({
+      appointment_id: Number(id),
+      user_id: req.user!.id,
+      user_role: req.user!.role,
+      customer_id: req.user!.customer_id,
+      reason: req.body.reason
+    });
+    res.json({ success: true });
+  } catch (err: any) {
+    if (err.message.includes('Unauthorized')) {
+      return res.status(403).json({ error: err.message });
+    }
+    if (err.message.includes('not found')) {
+      return res.status(404).json({ error: err.message });
+    }
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.put('/api/appointments/:id', protect, async (req, res) => {
+  const { id } = req.params;
+  const user = req.user!;
+
+  try {
+    await updateAppointment.execute({
+      appointment_id: Number(id),
+      user_id: user.id,
+      user_role: user.role,
+      customer_id: user.customer_id,
+      new_start_time: req.body.start_time,
+      new_barber_id: req.body.barber_id,
+      new_services: req.body.services,
+      new_notes: req.body.notes
+    });
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
 app.patch('/api/appointments/:id', protect, (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
   
   if (status === 'cancelled') {
-    const apt = db.prepare(`
-      SELECT a.*, b.name as barber_name, s.name as service_name, c.name as customer_name, c.email, c.phone
-      FROM appointments a
-      JOIN barbers b ON a.barber_id = b.id
-      JOIN services s ON a.service_id = s.id
-      LEFT JOIN customers c ON a.customer_id = c.id
-      WHERE a.id = ?
-    `).get(id) as any;
-
-    if (apt) {
-      sendAppointmentNotification({
-        customer_name: apt.customer_name,
-        customer_email: apt.email,
-        customer_phone: apt.phone,
-        start_time: apt.start_time,
-        service_name: apt.service_name,
-        barber_name: apt.barber_name,
-        type: 'cancellation'
-      });
-    }
+    // Logic moved to /cancel endpoint for better security and validation
+    return res.status(400).json({ error: 'Use /api/appointments/:id/cancel for cancellations' });
   }
 
   db.prepare('UPDATE appointments SET status = ? WHERE id = ?').run(status, id);

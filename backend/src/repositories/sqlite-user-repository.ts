@@ -39,8 +39,21 @@ export class SQLiteUserRepository implements UserRepository {
 
   async create(user: Omit<User, 'id' | 'created_at'>): Promise<User> {
     const info = db.prepare(
-      'INSERT INTO users (username, email, password_hash, role, barber_id, customer_id, shop_id, fullname, otp_code, otp_expires) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-    ).run(user.username, user.email, user.password_hash, user.role, user.barber_id || null, user.customer_id || null, user.shop_id || null, user.fullname || null, user.otp_code || null, user.otp_expires || null);
+      'INSERT INTO users (username, email, password_hash, role, barber_id, customer_id, shop_id, fullname, otp_code, otp_expires, otp_requests_count, last_otp_request_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    ).run(
+      user.username, 
+      user.email, 
+      user.password_hash, 
+      user.role, 
+      user.barber_id || null, 
+      user.customer_id || null, 
+      user.shop_id || null, 
+      user.fullname || null, 
+      user.otp_code || null, 
+      user.otp_expires || null,
+      user.otp_requests_count || 0,
+      user.last_otp_request_at || null
+    );
     
     return {
       ...user,
@@ -62,10 +75,12 @@ export class SQLiteUserRepository implements UserRepository {
     const fullname = user.fullname ?? existing.fullname;
     const otp_code = user.otp_code !== undefined ? user.otp_code : existing.otp_code;
     const otp_expires = user.otp_expires !== undefined ? user.otp_expires : existing.otp_expires;
+    const otp_requests_count = user.otp_requests_count !== undefined ? user.otp_requests_count : existing.otp_requests_count;
+    const last_otp_request_at = user.last_otp_request_at !== undefined ? user.last_otp_request_at : existing.last_otp_request_at;
 
     db.prepare(
-      'UPDATE users SET username = ?, email = ?, role = ?, barber_id = ?, customer_id = ?, password_hash = ?, fullname = ?, otp_code = ?, otp_expires = ? WHERE id = ?'
-    ).run(username, email, role, barber_id, customer_id, password_hash, fullname, otp_code, otp_expires, user.id);
+      'UPDATE users SET username = ?, email = ?, role = ?, barber_id = ?, customer_id = ?, password_hash = ?, fullname = ?, otp_code = ?, otp_expires = ?, otp_requests_count = ?, last_otp_request_at = ? WHERE id = ?'
+    ).run(username, email, role, barber_id, customer_id, password_hash, fullname, otp_code, otp_expires, otp_requests_count, last_otp_request_at, user.id);
 
     return (await this.findById(user.id))!;
   }

@@ -66,9 +66,33 @@ export default function CustomerPortal() {
       const res = await apiClient.post('/auth/otp/verify', { email, code: otp });
       login(res.data.token, res.data.user);
     } catch (err: any) {
-      setError('Invalid code.');
+      setError(err.response?.data?.error || 'Invalid code.');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleResendOTP = async () => {
+    setError('');
+    setIsSubmitting(true);
+    try {
+      await apiClient.post('/auth/otp/send', { email });
+      alert('Verification code resent!');
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to resend code.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCancel = async (id: number) => {
+    if (!window.confirm('Are you sure you want to cancel this appointment?')) return;
+    
+    try {
+      await apiClient.post(`/appointments/${id}/cancel`);
+      fetchPortalData();
+    } catch (err: any) {
+      alert(err.response?.data?.error || 'Failed to cancel appointment');
     }
   };
 
@@ -111,9 +135,14 @@ export default function CustomerPortal() {
               <button type="submit" className="login-button" disabled={isSubmitting}>
                 {isSubmitting ? <Loader2 size={18} className="spinner" /> : 'Verify & Sign In'}
               </button>
-              <button type="button" onClick={() => setOtpStep('ID')} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', width: '100%', marginTop: '1rem', cursor: 'pointer', fontSize: '0.85rem' }}>
-                Back to email
-              </button>
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                <button type="button" onClick={handleResendOTP} disabled={isSubmitting} style={{ flex: 1, background: 'none', border: '1px solid var(--border)', borderRadius: '0.75rem', padding: '0.5rem', color: 'var(--text-main)', cursor: 'pointer', fontSize: '0.85rem' }}>
+                  Resend Code
+                </button>
+                <button type="button" onClick={() => setOtpStep('ID')} style={{ flex: 1, background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.85rem' }}>
+                  Back to email
+                </button>
+              </div>
             </form>
           )}
           <button onClick={() => navigate('/')} style={{ background: 'none', border: 'none', color: 'var(--primary)', width: '100%', marginTop: '2rem', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 'bold' }}>
@@ -157,7 +186,7 @@ export default function CustomerPortal() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
                         <Clock size={14} color="var(--primary)" />
                         <span style={{ fontWeight: '800', fontSize: '0.9rem' }}>
-                          {new Date(appt.start_time).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })} at {new Date(appt.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {new Date(appt.start_time.replace(' ', 'T')).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })} at {new Date(appt.start_time.replace(' ', 'T')).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
                       <h3 style={{ fontSize: '1.1rem', margin: '0 0 0.25rem 0' }}>{appt.services_summary || 'Haircut'}</h3>
@@ -165,6 +194,48 @@ export default function CustomerPortal() {
                     </div>
                     <span className={`status-badge status-${appt.status}`} style={{ fontSize: '0.65rem' }}>{appt.status}</span>
                   </div>
+                  
+                  {appt.status === 'scheduled' && (
+                    <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                      <button 
+                        className="secondary" 
+                        style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', borderColor: 'var(--border)' }}
+                        onClick={() => {
+                          const newNotes = window.prompt('Update notes:', appt.notes || '');
+                          if (newNotes !== null) {
+                            apiClient.put(`/appointments/${appt.id}`, { notes: newNotes })
+                              .then(() => fetchPortalData())
+                              .catch(err => alert(err.response?.data?.error || 'Failed to update appointment'));
+                          }
+                        }}
+                      >
+                        Notes
+                      </button>
+                      <button 
+                        className="secondary" 
+                        style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', borderColor: 'var(--border)' }}
+                        onClick={() => {
+                          // Pass appointment info to BookingFlow for rescheduling
+                          navigate(`/booking/${appt.shop_id}`, { 
+                            state: { 
+                              rescheduleId: appt.id, 
+                              barberId: appt.barber_id,
+                              notes: appt.notes 
+                            } 
+                          });
+                        }}
+                      >
+                        Reschedule
+                      </button>
+                      <button 
+                        className="secondary" 
+                        style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', color: 'var(--danger)', borderColor: 'rgba(239, 68, 68, 0.2)' }}
+                        onClick={() => handleCancel(appt.id)}
+                      >
+                        Cancel Appointment
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

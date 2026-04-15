@@ -48,12 +48,12 @@ describe('Appointment Booking CRUD', () => {
     expect(res.body.find((a: any) => a.id === appointmentId)).toBeDefined();
   });
 
-  it('should update appointment status', async () => {
+  it('should cancel an appointment', async () => {
     const res = await request(app)
-      .patch(`/api/appointments/${appointmentId}`)
+      .post(`/api/appointments/${appointmentId}/cancel`)
       .set('Authorization', `Bearer ${token}`)
       .send({
-        status: 'cancelled'
+        reason: 'Client requested'
       });
 
     expect(res.status).toBe(200);

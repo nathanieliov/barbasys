@@ -106,6 +106,8 @@ db.exec(`
     shop_id INTEGER,
     otp_code TEXT,
     otp_expires DATETIME,
+    otp_requests_count INTEGER DEFAULT 0,
+    last_otp_request_at DATETIME,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (barber_id) REFERENCES barbers(id) ON DELETE SET NULL,
     FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL,
@@ -335,6 +337,8 @@ try { db.exec('ALTER TABLE users ADD COLUMN role TEXT CHECK(role IN (\'OWNER\', 
 try { db.exec('ALTER TABLE users ADD COLUMN customer_id INTEGER'); } catch (e) {}
 try { db.exec('ALTER TABLE users ADD COLUMN otp_code TEXT'); } catch (e) {}
 try { db.exec('ALTER TABLE users ADD COLUMN otp_expires DATETIME'); } catch (e) {}
+try { db.exec('ALTER TABLE users ADD COLUMN otp_requests_count INTEGER DEFAULT 0'); } catch (e) {}
+try { db.exec('ALTER TABLE users ADD COLUMN last_otp_request_at DATETIME'); } catch (e) {}
 try { db.exec('ALTER TABLE users ADD COLUMN fullname TEXT'); } catch (e) {}
 try { db.exec('UPDATE users SET fullname = username WHERE fullname IS NULL'); } catch (e) {}
 try { db.exec('ALTER TABLE appointments ADD COLUMN notes TEXT'); } catch (e) {}

@@ -26,11 +26,16 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      // Only redirect if we are not already on the login page
-      if (!window.location.pathname.includes('/login')) {
-        window.location.href = '/login';
+      // Don't redirect if we are on login/verify paths as they handle their own errors
+      const isAuthPath = error.config.url?.includes('/auth/otp/verify') || error.config.url?.includes('/auth/login');
+      
+      if (!isAuthPath) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        // Only redirect if we are not already on the login page
+        if (!window.location.pathname.includes('/login')) {
+          window.location.href = '/login';
+        }
       }
     }
     return Promise.reject(error);

@@ -78,7 +78,14 @@ export default function Schedule() {
 
   const updateStatus = async (id: number, status: string) => {
     try {
-      await apiClient.patch(`/appointments/${id}`, { status });
+      if (status === 'cancelled') {
+        const reason = window.prompt('Optional: Reason for cancellation?');
+        if (reason === null) return; // User clicked cancel
+        await apiClient.post(`/appointments/${id}/cancel`, { reason });
+      } else {
+        await apiClient.patch(`/appointments/${id}`, { status });
+      }
+
       if (status === 'completed') {
         if (window.confirm('Appointment marked as completed! Would you like to process the payment now?')) {
           navigate(`/pos?appointmentId=${id}`);
@@ -86,8 +93,8 @@ export default function Schedule() {
         }
       }
       fetchData();
-    } catch (err) {
-      alert('Failed to update status');
+    } catch (err: any) {
+      alert(err.response?.data?.error || 'Failed to update status');
     }
   };
 

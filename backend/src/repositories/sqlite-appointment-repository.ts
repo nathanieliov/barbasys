@@ -30,6 +30,31 @@ export class SQLiteAppointmentRepository implements IAppointmentRepository {
     ).run(item.appointment_id, item.service_id, item.quantity, item.price_at_booking);
   }
 
+  async updateStatus(id: number, status: 'scheduled' | 'completed' | 'cancelled'): Promise<void> {
+    this.db.prepare('UPDATE appointments SET status = ? WHERE id = ?').run(status, id);
+  }
+
+  async update(appointment: Partial<Appointment> & { id: number }): Promise<void> {
+    const existing = await this.findById(appointment.id);
+    if (!existing) throw new Error('Appointment not found');
+
+    const barber_id = appointment.barber_id ?? existing.barber_id;
+    const customer_id = appointment.customer_id !== undefined ? appointment.customer_id : existing.customer_id;
+    const service_id = appointment.service_id ?? existing.service_id;
+    const start_time = appointment.start_time ?? existing.start_time;
+    const total_duration_minutes = appointment.total_duration_minutes ?? existing.total_duration_minutes;
+    const status = appointment.status ?? existing.status;
+    const notes = appointment.notes !== undefined ? appointment.notes : existing.notes;
+
+    this.db.prepare(
+      'UPDATE appointments SET barber_id = ?, customer_id = ?, service_id = ?, start_time = ?, total_duration_minutes = ?, status = ?, notes = ? WHERE id = ?'
+    ).run(barber_id, customer_id, service_id, start_time, total_duration_minutes, status, notes, appointment.id);
+  }
+
+  async clearItems(appointment_id: number): Promise<void> {
+    this.db.prepare('DELETE FROM appointment_items WHERE appointment_id = ?').run(appointment_id);
+  }
+
   async findById(id: number): Promise<Appointment | null> {
     return this.db.prepare('SELECT * FROM appointments WHERE id = ?').get(id) as Appointment | null;
   }
