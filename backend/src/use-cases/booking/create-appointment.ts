@@ -34,17 +34,30 @@ export class CreateAppointment {
       if (recurring_rule === 'biweekly') currentStart.setDate(currentStart.getDate() + (i * 14));
       if (recurring_rule === 'monthly') currentStart.setMonth(currentStart.getMonth() + i);
 
-      const startTimeStr = currentStart.toISOString().replace('T', ' ').substring(0, 19);
+      // Use local time for storage to ensure consistency with availability checks
+      const offset = currentStart.getTimezoneOffset();
+      const localDate = new Date(currentStart.getTime() - (offset * 60 * 1000));
+      const startTimeStr = localDate.toISOString().replace('T', ' ').substring(0, 19);
+      
       const endTimeDate = new Date(currentStart.getTime() + totalDuration * 60000);
-      const endTimeStr = endTimeDate.toISOString().replace('T', ' ').substring(0, 19);
+      const endOffset = endTimeDate.getTimezoneOffset();
+      const localEndDate = new Date(endTimeDate.getTime() - (endOffset * 60 * 1000));
+      const endTimeStr = localEndDate.toISOString().replace('T', ' ').substring(0, 19);
 
       const dayOfWeek = currentStart.getDay();
       const timeStr = currentStart.toTimeString().split(' ')[0].substring(0, 5);
+      const endTimeStrShort = endTimeDate.toTimeString().split(' ')[0].substring(0, 5);
 
-      // Shift Validation
-      const isWorking = await this.barberShiftRepo.isBarberWorking(barber_id, dayOfWeek, timeStr);
+      // Shift Validation (Check the whole range now)
+      const isWorking = await this.barberShiftRepo.checkRangeWorking(barber_id, dayOfWeek, timeStr, endTimeStrShort);
       if (!isWorking) {
-        throw new Error(`Barber not working on ${currentStart.toLocaleDateString()} at ${timeStr}`);
+        throw new Error(`Barber not working on ${currentStart.toLocaleDateString()} for the full duration from ${timeStr} to ${endTimeStrShort}`);
+      }
+
+      // Time Off Validation
+      const hasTimeOff = await this.barberShiftRepo.checkTimeOffConflict(barber_id, startTimeStr, endTimeStr);
+      if (hasTimeOff) {
+        throw new Error(`Conflict with barber time off on ${currentStart.toLocaleDateString()} at ${timeStr}`);
       }
 
       // Conflict Detection (now uses combined duration)

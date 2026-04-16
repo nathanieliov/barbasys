@@ -13,6 +13,8 @@ describe('GetAvailableSlots Use Case', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // Set system time to a point before the test dates
+    vi.setSystemTime(new Date('2026-04-01T00:00:00'));
   });
 
   it('should return available slots based on shifts', async () => {

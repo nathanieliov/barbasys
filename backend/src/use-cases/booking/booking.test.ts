@@ -6,7 +6,7 @@ import { IServiceRepository } from '../../repositories/service-repository.interf
 
 describe('CreateAppointment Use Case', () => {
   const mockAptRepo = { create: vi.fn(), checkConflict: vi.fn(), addItem: vi.fn() } as unknown as IAppointmentRepository;
-  const mockShiftRepo = { isBarberWorking: vi.fn() } as unknown as IBarberShiftRepository;
+  const mockShiftRepo = { isBarberWorking: vi.fn(), checkRangeWorking: vi.fn(), checkTimeOffConflict: vi.fn() } as unknown as IBarberShiftRepository;
   const mockDb = { findById: vi.fn() } as any; // Not used but maybe needed by constructor? 
   const mockServiceRepo = { findById: vi.fn() } as unknown as IServiceRepository;
 
@@ -18,7 +18,8 @@ describe('CreateAppointment Use Case', () => {
 
   it('should create a single appointment successfully', async () => {
     vi.mocked(mockServiceRepo.findById).mockResolvedValue({ id: 1, duration_minutes: 30, price: 500 } as any);
-    vi.mocked(mockShiftRepo.isBarberWorking).mockResolvedValue(true);
+    vi.mocked(mockShiftRepo.checkRangeWorking).mockResolvedValue(true);
+    vi.mocked(mockShiftRepo.checkTimeOffConflict).mockResolvedValue(false);
     vi.mocked(mockAptRepo.checkConflict).mockResolvedValue(false);
     vi.mocked(mockAptRepo.create).mockResolvedValue(101);
 
@@ -37,7 +38,8 @@ describe('CreateAppointment Use Case', () => {
 
   it('should throw if barber not working', async () => {
     vi.mocked(mockServiceRepo.findById).mockResolvedValue({ id: 1, duration_minutes: 30 } as any);
-    vi.mocked(mockShiftRepo.isBarberWorking).mockResolvedValue(false);
+    vi.mocked(mockShiftRepo.checkRangeWorking).mockResolvedValue(false);
+    vi.mocked(mockShiftRepo.checkTimeOffConflict).mockResolvedValue(false);
 
     await expect(useCase.execute({
       barber_id: 1,
@@ -50,7 +52,8 @@ describe('CreateAppointment Use Case', () => {
 
   it('should throw if conflict exists', async () => {
     vi.mocked(mockServiceRepo.findById).mockResolvedValue({ id: 1, duration_minutes: 30 } as any);
-    vi.mocked(mockShiftRepo.isBarberWorking).mockResolvedValue(true);
+    vi.mocked(mockShiftRepo.checkRangeWorking).mockResolvedValue(true);
+    vi.mocked(mockShiftRepo.checkTimeOffConflict).mockResolvedValue(false);
     vi.mocked(mockAptRepo.checkConflict).mockResolvedValue(true);
 
     await expect(useCase.execute({
@@ -68,7 +71,8 @@ describe('CreateAppointment Use Case', () => {
     vi.mocked(mockServiceRepo.findById)
       .mockResolvedValueOnce(s1 as any)
       .mockResolvedValueOnce(s2 as any);
-    vi.mocked(mockShiftRepo.isBarberWorking).mockResolvedValue(true);
+    vi.mocked(mockShiftRepo.checkRangeWorking).mockResolvedValue(true);
+    vi.mocked(mockShiftRepo.checkTimeOffConflict).mockResolvedValue(false);
     vi.mocked(mockAptRepo.checkConflict).mockResolvedValue(false);
     vi.mocked(mockAptRepo.create).mockResolvedValue(201);
 
@@ -89,7 +93,8 @@ describe('CreateAppointment Use Case', () => {
 
   it('should throw if conflict on the second occurrence of a recurring appointment', async () => {
     vi.mocked(mockServiceRepo.findById).mockResolvedValue({ id: 1, duration_minutes: 30, price: 100 } as any);
-    vi.mocked(mockShiftRepo.isBarberWorking).mockResolvedValue(true);
+    vi.mocked(mockShiftRepo.checkRangeWorking).mockResolvedValue(true);
+    vi.mocked(mockShiftRepo.checkTimeOffConflict).mockResolvedValue(false);
     
     // First call (1st occurrence) -> no conflict
     // Second call (2nd occurrence) -> conflict

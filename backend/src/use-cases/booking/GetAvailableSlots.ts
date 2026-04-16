@@ -21,17 +21,22 @@ export class GetAvailableSlots {
 
     if (shifts.length === 0) return [];
 
-    // Get appointments for this day
+    // Get appointments for this day (including overlaps from yesterday)
     const dayStart = `${date} 00:00:00`;
     const dayEnd = `${date} 23:59:59`;
     const appointments = await this.appointmentRepo.findByBarberAndDateRange(barberId, dayStart, dayEnd);
 
-    // Get time off for this day
-    const timeOff = this.db.prepare(
-      'SELECT start_time, end_time FROM barber_time_off WHERE barber_id = ? AND (date(start_time) = ? OR date(end_time) = ?)'
-    ).all(barberId, date, date) as any[];
+    // Get time off for this day (more robust overlap check)
+    const timeOff = this.db.prepare(`
+      SELECT start_time, end_time FROM barber_time_off 
+      WHERE barber_id = ? 
+      AND datetime(start_time) < datetime(?) 
+      AND datetime(end_time) > datetime(?)
+    `).all(barberId, dayEnd, dayStart) as any[];
 
     const availableSlots: string[] = [];
+    const now = new Date();
+    const nowLocalStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:00`;
 
     for (const shift of shifts) {
       const [startH, startM] = shift.start_time.split(':').map(Number);
@@ -46,10 +51,17 @@ export class GetAvailableSlots {
         const slotEndTs = slotStartTs + durationMinutes * 60000;
         
         const slotStartStr = currentTimeObj.toTimeString().split(' ')[0].substring(0, 5);
+        const slotDateTimeStr = `${date} ${slotStartStr}:00`;
+
+        // Don't show slots in the past (using wall-clock comparison)
+        if (slotDateTimeStr < nowLocalStr) {
+          currentTimeObj = new Date(currentTimeObj.getTime() + 15 * 60000);
+          continue;
+        }
 
         // Check against appointments
         const hasConflict = appointments.some(appt => {
-          // Parse appointment start time (handle both Space and T separators)
+          // Parse appointment start time (stored as local time)
           const apptStartTs = new Date(appt.start_time.replace(' ', 'T')).getTime();
           const apptEndTs = apptStartTs + appt.total_duration_minutes * 60000;
           

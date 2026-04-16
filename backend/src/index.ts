@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import db from './db.js';
 import { sendReceipt, alertLowStock, sendAppointmentNotification } from './communication.js';
 import { SQLiteBarberRepository } from './repositories/sqlite-barber-repository.js';
@@ -46,6 +48,9 @@ import { VerifyOTP } from './use-cases/VerifyOTP.js';
 import { protect, authorize } from './middleware/auth-middleware.js';
 
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -1153,6 +1158,15 @@ setInterval(() => {
     db.prepare('UPDATE appointments SET reminder_sent = 1 WHERE id = ?').run(apt.id);
   }
 }, 60 * 60 * 1000); // Hourly
+
+const frontendPath = path.join(__dirname, '../../frontend/dist');
+app.use(express.static(frontendPath));
+
+app.use((req, res) => {
+  if (!req.path.startsWith('/api')) {
+    res.sendFile(path.join(frontendPath, 'index.html'));
+  }
+});
 
 if (process.env.NODE_ENV !== 'test') {
   app.listen(PORT, () => {

@@ -9,4 +9,6 @@ export interface BarberShift {
 export interface IBarberShiftRepository {
   findByBarberAndDay(barberId: number, dayOfWeek: number): Promise<BarberShift[]>;
   isBarberWorking(barberId: number, dayOfWeek: number, time: string): Promise<boolean>;
+  checkRangeWorking(barberId: number, dayOfWeek: number, startTime: string, endTime: string): Promise<boolean>;
+  checkTimeOffConflict(barberId: number, start: string, end: string): Promise<boolean>;
 }

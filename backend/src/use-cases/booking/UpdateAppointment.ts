@@ -67,29 +67,46 @@ export class UpdateAppointment {
 
     // If rescheduling or changing barber, check availability
     if (new_start_time || new_barber_id || (new_services && finalDuration !== appointment.total_duration_minutes)) {
-      const startTimeStr = finalStartTime.replace('T', ' ').substring(0, 19);
       const currentStart = new Date(finalStartTime.replace(' ', 'T'));
+      const offset = currentStart.getTimezoneOffset();
+      const localDate = new Date(currentStart.getTime() - (offset * 60 * 1000));
+      const startTimeStr = localDate.toISOString().replace('T', ' ').substring(0, 19);
+
       const endTimeDate = new Date(currentStart.getTime() + finalDuration * 60000);
-      const endTimeStr = endTimeDate.toISOString().replace('T', ' ').substring(0, 19);
+      const endOffset = endTimeDate.getTimezoneOffset();
+      const localEndDate = new Date(endTimeDate.getTime() - (endOffset * 60 * 1000));
+      const endTimeStr = localEndDate.toISOString().replace('T', ' ').substring(0, 19);
 
       const dayOfWeek = currentStart.getDay();
       const timeStr = currentStart.toTimeString().split(' ')[0].substring(0, 5);
+      const endTimeStrShort = endTimeDate.toTimeString().split(' ')[0].substring(0, 5);
 
       // Shift Validation
-      const isWorking = await this.barberShiftRepo.isBarberWorking(finalBarberId, dayOfWeek, timeStr);
+      const isWorking = await this.barberShiftRepo.checkRangeWorking(finalBarberId, dayOfWeek, timeStr, endTimeStrShort);
       if (!isWorking) {
-        throw new Error(`Barber not working on this day at ${timeStr}`);
+        throw new Error(`Barber not working on this day for the full duration from ${timeStr} to ${endTimeStrShort}`);
+      }
+
+      // Time Off Validation
+      const hasTimeOff = await this.barberShiftRepo.checkTimeOffConflict(finalBarberId, startTimeStr, endTimeStr);
+      if (hasTimeOff) {
+        throw new Error('Conflict with barber time off');
       }
 
       // Conflict Detection - check against all EXCEPT the current appointment
-      const appointments = await this.appointmentRepo.findByBarberAndDateRange(finalBarberId, startTimeStr.split(' ')[0] + ' 00:00:00', startTimeStr.split(' ')[0] + ' 23:59:59');
+      const appointments = await this.appointmentRepo.findByBarberAndDateRange(finalBarberId, startTimeStr, endTimeStr);
       
       const conflict = appointments.find(a => {
         if (a.id === appointment_id || a.status === 'cancelled') return false;
         
         const aStart = a.start_time;
-        const aEnd = new Date(new Date(a.start_time.replace(' ', 'T')).getTime() + a.total_duration_minutes * 60000)
-          .toISOString().replace('T', ' ').substring(0, 19);
+        const aStartTs = new Date(a.start_time.replace(' ', 'T')).getTime();
+        const aEndTs = aStartTs + a.total_duration_minutes * 60000;
+        
+        const aEndDate = new Date(aEndTs);
+        const aEndOffset = aEndDate.getTimezoneOffset();
+        const aLocalEndDate = new Date(aEndTs - (aEndOffset * 60 * 1000));
+        const aEnd = aLocalEndDate.toISOString().replace('T', ' ').substring(0, 19);
         
         return (startTimeStr < aEnd && endTimeStr > aStart);
       });

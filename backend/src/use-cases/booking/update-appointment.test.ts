@@ -14,7 +14,7 @@ describe('UpdateAppointment Use Case', () => {
   } as unknown as IAppointmentRepository;
   
   const mockServiceRepo = { findById: vi.fn() } as unknown as IServiceRepository;
-  const mockShiftRepo = { isBarberWorking: vi.fn() } as unknown as IBarberShiftRepository;
+  const mockShiftRepo = { isBarberWorking: vi.fn(), checkRangeWorking: vi.fn(), checkTimeOffConflict: vi.fn() } as unknown as IBarberShiftRepository;
 
   const useCase = new UpdateAppointment(mockAptRepo, mockServiceRepo, mockShiftRepo);
 
@@ -33,7 +33,8 @@ describe('UpdateAppointment Use Case', () => {
       status: 'scheduled'
     } as any);
 
-    vi.mocked(mockShiftRepo.isBarberWorking).mockResolvedValue(true);
+    vi.mocked(mockShiftRepo.checkRangeWorking).mockResolvedValue(true);
+    vi.mocked(mockShiftRepo.checkTimeOffConflict).mockResolvedValue(false);
     vi.mocked(mockAptRepo.findByBarberAndDateRange).mockResolvedValue([]);
 
     await useCase.execute({
@@ -63,7 +64,8 @@ describe('UpdateAppointment Use Case', () => {
       status: 'scheduled'
     } as any);
 
-    vi.mocked(mockShiftRepo.isBarberWorking).mockResolvedValue(true);
+    vi.mocked(mockShiftRepo.checkRangeWorking).mockResolvedValue(true);
+    vi.mocked(mockShiftRepo.checkTimeOffConflict).mockResolvedValue(false);
     // Mock a conflicting appointment
     vi.mocked(mockAptRepo.findByBarberAndDateRange).mockResolvedValue([
       {
@@ -102,7 +104,8 @@ describe('UpdateAppointment Use Case', () => {
       price: 50
     } as any);
 
-    vi.mocked(mockShiftRepo.isBarberWorking).mockResolvedValue(true);
+    vi.mocked(mockShiftRepo.checkRangeWorking).mockResolvedValue(true);
+    vi.mocked(mockShiftRepo.checkTimeOffConflict).mockResolvedValue(false);
     vi.mocked(mockAptRepo.findByBarberAndDateRange).mockResolvedValue([]);
 
     await useCase.execute({

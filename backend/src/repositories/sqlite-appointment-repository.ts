@@ -60,9 +60,13 @@ export class SQLiteAppointmentRepository implements IAppointmentRepository {
   }
 
   async findByBarberAndDateRange(barberId: number, start: string, end: string): Promise<Appointment[]> {
-    return this.db.prepare(
-      "SELECT * FROM appointments WHERE barber_id = ? AND start_time >= ? AND start_time <= ? AND status != 'cancelled'"
-    ).all(barberId, start, end) as Appointment[];
+    return this.db.prepare(`
+      SELECT * FROM appointments 
+      WHERE barber_id = ? 
+      AND status != 'cancelled'
+      AND datetime(start_time) < datetime(?)
+      AND datetime(start_time, '+' || total_duration_minutes || ' minutes') > datetime(?)
+    `).all(barberId, end, start) as Appointment[];
   }
 
   async checkConflict(barberId: number, startTime: string, endTime: string): Promise<boolean> {
