@@ -9,7 +9,7 @@ if [ -z "$PHASE" ] || [ -z "$TASK" ]; then
   exit 1
 fi
 
-CONFIG_FILE="${PHASE}.toml"
+CONFIG_FILE=".gemini/configs/${PHASE}.toml"
 
 if [ ! -f "$CONFIG_FILE" ]; then
   echo "Error: Configuration file ${CONFIG_FILE} not found in root."

@@ -19,12 +19,6 @@ build/
 .DS_Store
 Thumbs.db
 
-# Playwright & E2E
-playwright-report/
-test-results/
-playwright/.auth/
-debug_screenshot.png
-
 # Coverage
 coverage/
 backend/coverage/

@@ -38,9 +38,24 @@ export class VerifyOTP {
 
     // Check if customer profile is incomplete
     let requires_profile_completion = false;
-    const customer = await this.customerRepo.findByEmailOrPhone(email, null);
-    if (customer && (!customer.name || !customer.birthday)) {
-      requires_profile_completion = true;
+    const customer = await this.customerRepo.findById(customerId);
+    
+    if (customer) {
+      // Sync name if missing but we have it on user
+      if (!customer.name && user.fullname) {
+        await this.customerRepo.update({ id: customer.id, name: user.fullname });
+        customer.name = user.fullname;
+      }
+
+      // If it's a barber or owner/manager, and we have a name, we don't strict-require birthday for booking
+      const isStaff = ['BARBER', 'OWNER', 'MANAGER'].includes(user.role);
+      
+      if (!customer.name) {
+        requires_profile_completion = true;
+      } else if (!isStaff && !customer.birthday) {
+        // Regular customers must provide birthday (for marketing/CRM)
+        requires_profile_completion = true;
+      }
     }
 
     // Clear OTP and reset requests count

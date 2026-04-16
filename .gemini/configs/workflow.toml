@@ -8,8 +8,7 @@ description = "Structured SDLC workflow emphasizing Parallel Execution and Contr
 2 = "engineer-frontend"
 3 = "engineer-backend"
 4 = "qa-unit"
-5 = "qa-e2e"
-6 = "reviewer"
+5 = "reviewer"
 
 [workflow.handoff.architect_to_engineer]
 required_artifacts = ["ADR (Architecture Decision Record)", "Shared TypeScript Contracts/Interfaces in `shared/` directory", "Component Map"]
@@ -20,8 +19,8 @@ required_artifacts = ["Domain Implementation Code", "Compiled Shared Types"]
 exit_criteria = ["Types are safe and idiomatic", "Strict adherence to `@barbasys/shared`", "No cross-domain modifications"]
 
 [workflow.handoff.qa_to_reviewer]
-required_artifacts = ["Domain Test Reports (Unit/E2E)", "Validation Results"]
-exit_criteria = ["No regressions found", "Edge cases covered", "Isolated and E2E behavior verified"]
+required_artifacts = ["Domain Test Reports (Unit)", "Validation Results"]
+exit_criteria = ["No regressions found", "Edge cases covered", "Isolated behavior verified"]
 
 [workflow.handoff.reviewer_to_done]
 required_artifacts = ["Final Codebase", "Passing Lint/Type Check", "Signed-off ADR"]

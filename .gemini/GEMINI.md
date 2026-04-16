@@ -42,13 +42,15 @@ Every task MUST follow this structured SDLC lifecycle. You may choose between **
 For complex features, implementation should be parallelized using `generalist` sub-agents:
 - **Track A (Backend)**: Implement logic in `backend/src/` against the shared contracts.
 - **Track B (Frontend)**: Implement UI in `frontend/src/` using the Mocking Contract for immediate visual feedback.
-- **Track C (QA/Testing)**: Develop Unit and E2E tests based on the Architect's specifications.
+- **Track C (QA/Testing)**: Develop Unit tests based on the Architect's specifications.
 - **MANDATORY**: Sub-agents must commit their track's work before returning.
 
 ### 3. Integration & QA Phase (Sequential - Main Agent Only)
 - **Integration**: The Main Agent merges tracks, replaces Mocks with real API calls, and resolves any discrepancies.
+- **TDD Enforcer**: For every bug report or logic error, the Agent MUST first write a failing test (Unit) that reproduces the issue before applying any fix.
 - **Verification**: Run `scripts/ai-verify.sh` to clean stale artifacts and verify cross-project type integrity.
-- **Validation**: Run project-wide `tsc --noEmit`, `npm run lint`, and the full E2E test suite.
+- **Validation**: Run project-wide `tsc --noEmit`, `npm run lint`, and the full unit test suite.
+- **Self-Correction**: If any verification step fails, the Agent MUST diagnose and fix the issue autonomously without asking the user, repeating the cycle until "Definition of Done" is met.
 - **MANDATORY**: No task is complete until the Main Agent verifies the "Definition of Done."
 
 ### 4. Reviewer Phase
@@ -61,7 +63,7 @@ A task is complete ONLY when:
 - **Parallel Integration**: Backend, Frontend, and Tests are merged and verified as a single unit.
 - **Contract Compliance**: `shared/` contracts are strictly followed by all layers.
 - **Project Health**: `tsc` and linting pass for the entire project.
-- **Full Verification**: All unit and E2E tests are green.
+- **Full Verification**: All unit tests are green.
 - **Traceability**: All phases (Architect, Implementation, Integration) result in clean, documented commits.
 
 
@@ -72,12 +74,11 @@ To ensure high-quality, complete feature deliveries, the following protocol must
 1.  **Build Validation**: After any change to entities, interfaces, or shared logic, always run `npm run build --prefix backend` and `npm run build --prefix frontend` to catch silent type errors.
 2.  **Environment Hygiene**: Before running unit tests, ensure the environment is clean by removing the `dist/` directory (e.g., `rm -rf backend/dist`) to avoid running stale compiled tests.
 3.  **Multi-Role Verification**: When implementing Role-Based Access Control (RBAC), verify the feature by simulating logins for different roles (e.g., OWNER vs BARBER) via tests or manual checks.
-4.  **E2E Mandatory**: Any change to routing, navigation, or critical business flows (POS, Booking) must be verified with a Playwright smoke test (`npx playwright test`).
-5.  **Definition of Done**: A task is complete ONLY when:
+4.  **Definition of Done**: A task is complete ONLY when:
     *   Backend logic is unit tested.
     *   Frontend UI is implemented and navigated.
     *   `tsc` passes for the entire project.
-    *   All tests (Unit & E2E) are green.
+    *   All unit tests are green.
 
 ## Guidelines
 

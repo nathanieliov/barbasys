@@ -10,13 +10,8 @@ export class SendOTP {
 
   async execute(email: string) {
     let user = await this.userRepo.findByEmail(email);
-    
-    if (user && user.role !== 'CUSTOMER') {
-      throw new Error('This email belongs to a Barber or Admin account. Please use the staff login page.');
-    }
 
-    if (!user) {
-      // Find or create customer record
+    if (!user) {      // Find or create customer record
       let customer = await this.customerRepo.findByEmailOrPhone(email, null);
       let customerId: number;
       

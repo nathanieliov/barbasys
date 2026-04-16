@@ -17,6 +17,3 @@ build/
 # Project Specific
 backend/barbasys.db*
 backend/backend_dev.log
-playwright-report/
-test-results/
-debug_screenshot.png

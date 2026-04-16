@@ -154,8 +154,10 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
       login(res.data.token, res.data.user);
       if (res.data.requires_profile_completion) {
         setRequiresProfile(true);
+      } else {
+        setRequiresProfile(false);
+        setStep(5);
       }
-      // auto-advance will be handled by useEffect
     } catch (err: any) {
       setError(err.response?.data?.error || 'Invalid code.');
     } finally {

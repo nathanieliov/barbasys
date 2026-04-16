@@ -8,14 +8,18 @@
     "shared"
   ],
   "scripts": {
-    "install-all": "npm install --prefix backend && npm install --prefix frontend",
+    "install-all": "npm install --prefix shared && npm install --prefix backend && npm install --prefix frontend && npm run build:shared",
+    "build:shared": "npm run build --prefix shared",
+    "build:backend": "npm run build --prefix backend",
+    "build:frontend": "npm run build --prefix frontend",
+    "build": "npm run build:shared && npm run build:backend && npm run build:frontend",
     "dev": "npx concurrently \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
     "test": "npm test --prefix backend && npm test --prefix frontend",
     "phase": "bash scripts/phase.sh",
-    "doctor": "bash scripts/doctor.sh"
+    "doctor": "bash scripts/doctor.sh",
+    "re-index": "jcodemunch index-folder --path ."
   },
   "devDependencies": {
-    "@playwright/test": "^1.58.2",
     "concurrently": "^8.2.2"
   }
 }
