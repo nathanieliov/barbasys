@@ -23,7 +23,7 @@ export interface Barber {
   id: number;
   name: string;
   fullname: string;
-  slug: string | null;
+  slug?: string | null;
   payment_model: PaymentModel;
   service_commission_rate: number;
   product_commission_rate: number;

@@ -42,6 +42,15 @@ export interface Sale {
   shop_id: number | null;
 }
 
+export interface SaleItem {
+  id: number;
+  sale_id: number;
+  item_id: number;
+  item_name: string;
+  type: 'service' | 'product';
+  price: number;
+}
+
 export interface User {
   id: number;
   username: string;
@@ -74,6 +83,36 @@ export interface AppointmentItem {
   service_id: number;
   quantity: number;
   price_at_booking: number;
+}
+
+export interface Product {
+  id: number;
+  name: string;
+  price: number;
+  stock: number;
+  min_stock_threshold: number;
+  supplier_id: number | null;
+  shop_id: number | null;
+  is_active: number;
+}
+
+export interface Supplier {
+  id: number;
+  name: string;
+  contact_name: string | null;
+  email: string | null;
+  phone: string | null;
+  lead_time_days: number;
+  is_active: number;
+}
+
+export interface Service {
+  id: number;
+  name: string;
+  price: number;
+  duration_minutes: number;
+  shop_id: number | null;
+  is_active: number;
 }
 
 // DTOs
