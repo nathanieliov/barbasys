@@ -7,7 +7,7 @@ import { formatCurrency } from '../utils/format';
 import { useNavigate } from 'react-router-dom';
 
 export default function CustomerPortal() {
-  const { user, login, logout } = useAuth();
+  const { user, login, logout, updateUser } = useAuth();
   const { settings } = useSettings();
   const navigate = useNavigate();
   
@@ -23,10 +23,20 @@ export default function CustomerPortal() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (user && user.role === 'CUSTOMER') {
-      fetchPortalData();
-    }
-  }, [user]);
+    const initPortal = async () => {
+      if (user && !user.customer_id) {
+        try {
+          const res = await apiClient.get('/auth/me');
+          updateUser(res.data);
+        } catch (err) {
+          console.error('Failed to sync user for portal', err);
+        }
+      } else if (user && user.customer_id) {
+        fetchPortalData();
+      }
+    };
+    initPortal();
+  }, [user?.id, user?.customer_id]);
 
   const fetchPortalData = async () => {
     setLoading(true);
@@ -38,7 +48,7 @@ export default function CustomerPortal() {
       setAppointments(apptsRes.data);
       setSales(salesRes.data);
     } catch (err) {
-      console.error('Failed to fetch portal data');
+      console.error('Failed to fetch portal data', err);
     } finally {
       setLoading(false);
     }

@@ -14,7 +14,7 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
   const { shopId: routeShopId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, login } = useAuth();
+  const { user, login, updateUser } = useAuth();
   const { settings } = useSettings();
   
   const rescheduleId = location.state?.rescheduleId;
@@ -81,12 +81,23 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
     }
   }, [shopId, initialBarberId, rescheduleId]);
 
-  // Handle auto-advancing after login
   useEffect(() => {
-    if (user?.customer_id && step === 4 && !requiresProfile) {
-      setStep(5);
+    if (user && step === 3 && selectedTime) {
+      setSubmitting(true);
+      apiClient.get('/auth/me').then(res => {
+        updateUser(res.data); // Update global auth state with fresh customer_id
+        if (res.data.requires_profile_completion) {
+          setRequiresProfile(true);
+          setStep(4);
+        } else {
+          setStep(5);
+        }
+      }).catch(err => {
+        console.error('Failed to refresh user info', err);
+        setStep(5);
+      }).finally(() => setSubmitting(false));
     }
-  }, [user, step, requiresProfile]);
+  }, [user?.id, step, selectedTime]);
 
   useEffect(() => {
     if (selectedBarber && selectedDate && cart.length > 0) {
@@ -345,7 +356,10 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
                 {availableSlots.map(t => (
-                  <button key={t} className="secondary" onClick={() => { setSelectedTime(t); setStep(user ? 5 : 4); }} style={{ padding: '0.75rem 0', fontWeight: '700' }}>{t}</button>
+                  <button key={t} className="secondary" onClick={() => { 
+                    setSelectedTime(t); 
+                    if (!user) setStep(4); 
+                  }} style={{ padding: '0.75rem 0', fontWeight: '700' }}>{t}</button>
                 ))}
               </div>
             )}

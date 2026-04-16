@@ -218,16 +218,52 @@ app.get('/api/auth/me', protect, async (req, res) => {
   try {
     const user = await userRepo.findById(req.user!.id);
     if (!user) return res.status(404).json({ error: 'User not found' });
+
+    // Ensure user has a linked customer record
+    let customerId = user.customer_id;
+    if (!customerId) {
+      const existingCustomer = await customerRepo.findByEmailOrPhone(user.email, null);
+      if (existingCustomer) {
+        customerId = existingCustomer.id;
+      } else {
+        customerId = await customerRepo.create({
+          email: user.email,
+          name: user.fullname || user.username,
+          last_visit: new Date().toISOString()
+        });
+      }
+      await userRepo.update({ id: user.id, customer_id: customerId });
+    }
+
+    // Check if customer profile is incomplete
+    let requires_profile_completion = false;
+    const customer = await customerRepo.findById(customerId);
     
+    if (customer) {
+      // Sync name if missing but we have it on user
+      if (!customer.name && user.fullname) {
+        await customerRepo.update({ id: customer.id, name: user.fullname });
+        customer.name = user.fullname;
+      }
+
+      const isStaff = ['BARBER', 'OWNER', 'MANAGER'].includes(user.role);
+      if (!customer.name) {
+        requires_profile_completion = true;
+      } else if (!isStaff && !customer.birthday) {
+        requires_profile_completion = true;
+      }
+    }
+
     res.json({
       id: user.id,
       username: user.username,
       email: user.email,
       role: user.role,
       barber_id: user.barber_id,
-      customer_id: user.customer_id,
+      customer_id: customerId,
       shop_id: user.shop_id,
-      fullname: user.fullname
+      fullname: user.fullname,
+      requires_profile_completion
     });
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch current user' });
