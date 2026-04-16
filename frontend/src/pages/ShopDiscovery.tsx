@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react';
 import apiClient from '../api/apiClient';
 import { Search, MapPin, Phone, Scissors, ChevronRight, Star } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 export default function ShopDiscovery() {
+  const { t } = useTranslation();
   const [shops, setShops] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
@@ -23,15 +25,15 @@ export default function ShopDiscovery() {
   return (
     <div className="discovery-container" style={{ maxWidth: '800px', margin: '0 auto', padding: '1rem' }}>
       <div style={{ textAlign: 'center', marginBottom: '2.5rem', marginTop: '1.5rem' }}>
-        <h1 style={{ fontSize: '2.25rem', fontWeight: '900', marginBottom: '0.5rem' }}>Find your Style</h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>Discover the best barbershops in your area.</p>
+        <h1 style={{ fontSize: '2.25rem', fontWeight: '900', marginBottom: '0.5rem' }}>{t('discovery.title')}</h1>
+        <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>{t('discovery.subtitle')}</p>
       </div>
 
       <div style={{ position: 'relative', marginBottom: '2rem' }}>
         <Search size={20} style={{ position: 'absolute', left: '1rem', top: '1rem', color: 'var(--text-muted)' }} />
         <input 
           type="text" 
-          placeholder="Search by name or location..." 
+          placeholder={t('discovery.search_placeholder')} 
           value={searchTerm}
           onChange={e => setSearchTerm(e.target.value)}
           style={{ paddingLeft: '3rem', fontSize: '1.1rem', borderRadius: '1.25rem', height: '3.5rem', border: '2px solid var(--border)', background: 'white' }}
@@ -57,7 +59,7 @@ export default function ShopDiscovery() {
                       <MapPin size={14} /> {shop.address}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                      <Phone size={14} /> {shop.phone || 'No phone provided'}
+                      <Phone size={14} /> {shop.phone || t('discovery.no_phone')}
                     </div>
                   </div>
                 </div>
@@ -74,14 +76,14 @@ export default function ShopDiscovery() {
                   <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginLeft: '0.25rem', fontWeight: '600' }}>5.0</span>
                 </div>
                 <button style={{ padding: '0.5rem 1.25rem', fontSize: '0.85rem', borderRadius: '0.75rem' }}>
-                  Book Now
+                  {t('discovery.book_now')}
                 </button>
               </div>
             </div>
           ))}
           {filteredShops.length === 0 && (
             <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-muted)' }}>
-              <p>No barbershops found matching your search.</p>
+              <p>{t('discovery.no_results')}</p>
             </div>
           )}
         </div>

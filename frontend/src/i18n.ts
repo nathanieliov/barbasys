@@ -17,11 +17,16 @@ i18n
         translation: enUS,
       },
     },
+    // We prioritize es-DO as default
     fallbackLng: 'es-DO',
-    lng: 'es-DO', // Default to Spanish (Dominican Republic)
+    lng: 'es-DO', 
     interpolation: {
       escapeValue: false,
     },
+    detection: {
+      order: ['localStorage', 'navigator'],
+      caches: ['localStorage'],
+    }
   });
 
 export default i18n;

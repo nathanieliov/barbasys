@@ -5,12 +5,14 @@ import { User, ChevronLeft, CheckCircle, AlertCircle, Mail, Key, Cake, Loader2, 
 import { useAuth } from '../hooks/useAuth';
 import { useSettings } from '../hooks/useSettings';
 import { formatCurrency } from '../utils/format';
+import { useTranslation, Trans } from 'react-i18next';
 
 interface BookingFlowProps {
   preSelectedBarber?: any;
 }
 
 export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
+  const { t } = useTranslation();
   const { shopId: routeShopId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -150,7 +152,7 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
       await apiClient.post('/auth/otp/send', { email });
       setOtpStep('OTP');
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to send code.');
+      setError(err.response?.data?.error || t('schedule.failed_booking'));
     } finally {
       setSubmitting(false);
     }
@@ -170,7 +172,7 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
         setStep(5);
       }
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Invalid code.');
+      setError(err.response?.data?.error || t('login.invalid_credentials'));
     } finally {
       setSubmitting(false);
     }
@@ -181,9 +183,9 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
     setSubmitting(true);
     try {
       await apiClient.post('/auth/otp/send', { email });
-      alert('Verification code resent!');
+      alert(t('booking.resend_code'));
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to resend code.');
+      setError(err.response?.data?.error || t('schedule.failed_booking'));
     } finally {
       setSubmitting(false);
     }
@@ -197,7 +199,7 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
       // Logic inside backend will update the customer record
       setStep(5);
     } catch (err) {
-      setError('Failed to save profile info.');
+      setError(t('customers.failed_update'));
     } finally {
       setSubmitting(false);
     }
@@ -230,7 +232,7 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
       }
       setSuccess(true);
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to book appointment.');
+      setError(err.response?.data?.error || t('schedule.failed_booking'));
     } finally {
       setSubmitting(false);
     }
@@ -244,12 +246,16 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
         <div style={{ background: 'var(--success)', color: 'white', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 2rem', boxShadow: '0 10px 15px -3px rgba(16, 185, 129, 0.3)' }}>
           <CheckCircle size={48} />
         </div>
-        <h1 style={{ fontSize: '1.75rem', fontWeight: '900', marginBottom: '1rem' }}>{rescheduleId ? 'Updated!' : 'Success!'}</h1>
+        <h1 style={{ fontSize: '1.75rem', fontWeight: '900', marginBottom: '1rem' }}>{rescheduleId ? t('booking.updated') : t('booking.success')}</h1>
         <p style={{ color: 'var(--text-muted)', marginBottom: '2.5rem' }}>
-          Your appointment at <strong>{shop?.name}</strong> is {rescheduleId ? 'updated' : 'confirmed'}.
+          <Trans 
+            i18nKey={rescheduleId ? 'booking.updated_msg' : 'booking.confirmed_msg'}
+            values={{ shopName: shop?.name }}
+            components={{ strong: <strong /> }}
+          />
         </p>
         <button className="primary" style={{ width: '100%', padding: '1.25rem' }} onClick={() => navigate('/my-bookings')}>
-          Go to My Dashboard
+          {t('booking.go_to_dashboard')}
         </button>
       </div>
     );
@@ -263,7 +269,9 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
         </button>
         <div>
           <h1 style={{ fontSize: '1.25rem', marginBottom: 0 }}>{shop?.name}</h1>
-          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{selectedBarber ? `Booking with ${selectedBarber.fullname || selectedBarber.name}` : 'New Appointment'}</p>
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+            {selectedBarber ? t('booking.booking_with', { name: selectedBarber.fullname || selectedBarber.name }) : t('booking.new_appointment')}
+          </p>
         </div>
       </header>
 
@@ -275,7 +283,7 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
 
       {step === 1 && (
         <section>
-          <h2 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '1.25rem' }}>Choose a Professional</h2>
+          <h2 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '1.25rem' }}>{t('booking.choose_professional')}</h2>
           <div style={{ display: 'grid', gap: '1rem' }}>
             {barbers.map(b => (
               <div key={b.id} className="card" style={{ padding: '1rem', cursor: 'pointer', border: '1px solid var(--border)' }} onClick={() => { setSelectedBarber(b); setStep(2); }}>
@@ -285,7 +293,7 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: '700' }}>{b.fullname || b.name}</div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Professional Barber</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{t('booking.professional_barber')}</div>
                   </div>
                   <ChevronLeft size={18} style={{ transform: 'rotate(180deg)', opacity: 0.3 }} />
                 </div>
@@ -297,7 +305,7 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
 
       {step === 2 && (
         <section>
-          <h2 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '1.25rem' }}>Select Services</h2>
+          <h2 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '1.25rem' }}>{t('booking.select_services')}</h2>
           <div style={{ display: 'grid', gap: '1rem', marginBottom: '2rem' }}>
             {services.map(s => (
               <div key={s.id} className="card" style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -314,7 +322,7 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
 
           {cart.length > 0 && (
             <div className="card" style={{ padding: '1.25rem', background: '#f9fafb', border: '1px solid var(--primary)', position: 'sticky', bottom: '1rem' }}>
-              <h3 style={{ fontSize: '0.9rem', textTransform: 'uppercase', marginBottom: '1rem', color: 'var(--primary)' }}>Your Selection</h3>
+              <h3 style={{ fontSize: '0.9rem', textTransform: 'uppercase', marginBottom: '1rem', color: 'var(--primary)' }}>{t('booking.your_selection')}</h3>
               <div style={{ display: 'grid', gap: '0.75rem', marginBottom: '1.25rem' }}>
                 {cart.map(item => (
                   <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -328,10 +336,10 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
                 ))}
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: '800', borderTop: '1px solid var(--border)', paddingTop: '0.75rem' }}>
-                <span>Total: {totalDuration} mins</span>
+                <span>{t('booking.total_duration', { duration: totalDuration })}</span>
                 <span>{formatCurrency(totalAmount, settings.currency_symbol)}</span>
               </div>
-              <button className="primary" style={{ width: '100%', marginTop: '1.25rem' }} onClick={() => setStep(3)}>Continue to Schedule</button>
+              <button className="primary" style={{ width: '100%', marginTop: '1.25rem' }} onClick={() => setStep(3)}>{t('booking.continue_to_schedule')}</button>
             </div>
           )}
         </section>
@@ -339,27 +347,27 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
 
       {step === 3 && (
         <section>
-          <h2 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '1.25rem' }}>Pick Date & Time</h2>
+          <h2 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '1.25rem' }}>{t('booking.pick_date_time')}</h2>
           <input type="date" value={selectedDate} min={new Date().toISOString().split('T')[0]} onChange={e => setSelectedDate(e.target.value)} style={{ fontSize: '1.1rem', fontWeight: '700' }} />
           
           <div style={{ marginTop: '1.5rem' }}>
             {loadingSlots ? (
               <div style={{ textAlign: 'center', padding: '2rem' }}>
                 <Loader2 size={32} className="spinner" style={{ margin: '0 auto' }} />
-                <p style={{ marginTop: '0.5rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>Finding free slots...</p>
+                <p style={{ marginTop: '0.5rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>{t('booking.finding_slots')}</p>
               </div>
             ) : availableSlots.length === 0 ? (
               <div className="card" style={{ textAlign: 'center', padding: '2rem', border: '1px dashed var(--border)' }}>
                 <AlertCircle size={32} style={{ margin: '0 auto 1rem', opacity: 0.2 }} />
-                <p style={{ color: 'var(--text-muted)' }}>No slots available for this date. Try another day.</p>
+                <p style={{ color: 'var(--text-muted)' }}>{t('booking.no_slots')}</p>
               </div>
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
-                {availableSlots.map(t => (
-                  <button key={t} className="secondary" onClick={() => { 
-                    setSelectedTime(t); 
+                {availableSlots.map(t_val => (
+                  <button key={t_val} className="secondary" onClick={() => { 
+                    setSelectedTime(t_val); 
                     if (!user) setStep(4); 
-                  }} style={{ padding: '0.75rem 0', fontWeight: '700' }}>{t}</button>
+                  }} style={{ padding: '0.75rem 0', fontWeight: '700' }}>{t_val}</button>
                 ))}
               </div>
             )}
@@ -372,23 +380,25 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
           {!requiresProfile ? (
             otpStep === 'ID' ? (
               <form onSubmit={handleSendOTP}>
-                <h2 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '0.5rem' }}>Confirm Identity</h2>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1.5rem' }}>We'll send a code to your email to verify your booking.</p>
+                <h2 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '0.5rem' }}>{t('booking.confirm_identity')}</h2>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1.5rem' }}>{t('booking.otp_hint')}</p>
                 <div className="form-group">
-                  <label>Email Address</label>
+                  <label>{t('booking.email_address')}</label>
                   <div className="input-with-icon">
                     <Mail size={18} className="input-icon" />
-                    <input type="email" placeholder="your@email.com" value={email} onChange={e => setEmail(e.target.value)} required />
+                    <input type="email" placeholder={t('booking.email_placeholder')} value={email} onChange={e => setEmail(e.target.value)} required />
                   </div>
                 </div>
                 <button type="submit" className="primary" style={{ width: '100%', padding: '1rem' }} disabled={submitting}>
-                  {submitting ? <Loader2 size={18} className="spinner" /> : 'Send Code'}
+                  {submitting ? <Loader2 size={18} className="spinner" /> : t('booking.send_code')}
                 </button>
               </form>
             ) : (
               <form onSubmit={handleVerifyOTP}>
-                <h2 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '0.5rem' }}>Enter Code</h2>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1.5rem' }}>Check your email <strong>{email}</strong></p>
+                <h2 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '0.5rem' }}>{t('booking.enter_code')}</h2>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
+                  <Trans i18nKey="booking.check_email" values={{ email }} components={{ strong: <strong /> }} />
+                </p>
                 <div className="form-group">
                   <div className="input-with-icon">
                     <Key size={18} className="input-icon" />
@@ -396,38 +406,38 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
                   </div>
                 </div>
                 <button type="submit" className="primary" style={{ width: '100%', padding: '1rem' }} disabled={submitting}>
-                  Verify & Continue
+                  {t('booking.verify_continue')}
                 </button>
                 <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
                   <button type="button" onClick={handleResendOTP} disabled={submitting} style={{ flex: 1, background: 'none', border: '1px solid var(--border)', borderRadius: '0.75rem', padding: '0.5rem', fontSize: '0.85rem', color: 'var(--text-main)', cursor: 'pointer' }}>
-                    Resend Code
+                    {t('booking.resend_code')}
                   </button>
                   <button type="button" onClick={() => setOtpStep('ID')} style={{ flex: 1, background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '0.85rem', cursor: 'pointer' }}>
-                    Change email
+                    {t('booking.change_email')}
                   </button>
                 </div>
               </form>
             )
           ) : (
             <form onSubmit={handleCompleteProfile}>
-              <h2 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '0.5rem' }}>Almost there!</h2>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1.5rem' }}>Tell us your name and birthday.</p>
+              <h2 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '0.5rem' }}>{t('booking.almost_there')}</h2>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1.5rem' }}>{t('booking.profile_hint')}</p>
               <div className="form-group">
-                <label>Full Name</label>
+                <label>{t('booking.full_name')}</label>
                 <div className="input-with-icon">
                   <User size={18} className="input-icon" />
-                  <input type="text" placeholder="John Doe" value={fullname} onChange={e => setFullname(e.target.value)} required />
+                  <input type="text" placeholder={t('booking.fullname_placeholder')} value={fullname} onChange={e => setFullname(e.target.value)} required />
                 </div>
               </div>
               <div className="form-group">
-                <label>Birthday</label>
+                <label>{t('booking.birthday')}</label>
                 <div className="input-with-icon">
                   <Cake size={18} className="input-icon" />
                   <input type="date" value={birthday} onChange={e => setBirthday(e.target.value)} required />
                 </div>
               </div>
               <button type="submit" className="primary" style={{ width: '100%', padding: '1rem' }} disabled={submitting}>
-                Complete Profile
+                {t('booking.complete_profile')}
               </button>
             </form>
           )}
@@ -436,30 +446,30 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
 
       {step === 5 && (
         <section>
-          <h2 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '1.25rem' }}>Review & Confirm</h2>
+          <h2 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '1.25rem' }}>{t('booking.review_confirm')}</h2>
           <div className="card" style={{ padding: '1.5rem', background: 'rgba(79, 70, 229, 0.03)', border: '1px solid var(--primary)', marginBottom: '1.5rem' }}>
             <div style={{ display: 'grid', gap: '1.25rem' }}>
               <div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '800', marginBottom: '0.5rem' }}>Services</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '800', marginBottom: '0.5rem' }}>{t('booking.services')}</div>
                 <div style={{ fontWeight: '700' }}>{cart.map(i => `${i.name} (x${i.quantity})`).join(', ')}</div>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '800', marginBottom: '0.5rem' }}>Barber</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '800', marginBottom: '0.5rem' }}>{t('booking.barber')}</div>
                   <div style={{ fontWeight: '700' }}>{selectedBarber?.fullname || selectedBarber?.name}</div>
                 </div>
                 <div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '800', marginBottom: '0.5rem' }}>Time</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '800', marginBottom: '0.5rem' }}>{t('booking.time')}</div>
                   <div style={{ fontWeight: '700' }}>{selectedTime}</div>
                 </div>
               </div>
             </div>
           </div>
           <div className="form-group" style={{ marginBottom: '1.5rem' }}>
-            <label style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: '800' }}>Additional Notes</label>
-            <textarea placeholder="Optional notes for your barber..." value={notes} onChange={e => setNotes(e.target.value)} style={{ minHeight: '80px', marginTop: '0.5rem' }} />
+            <label style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: '800' }}>{t('booking.additional_notes')}</label>
+            <textarea placeholder={t('booking.notes_placeholder')} value={notes} onChange={e => setNotes(e.target.value)} style={{ minHeight: '80px', marginTop: '0.5rem' }} />
           </div>
-          <button className="primary" style={{ width: '100%', padding: '1.25rem', fontSize: '1.1rem' }} onClick={handleBook} disabled={submitting}>Confirm Booking</button>
+          <button className="primary" style={{ width: '100%', padding: '1.25rem', fontSize: '1.1rem' }} onClick={handleBook} disabled={submitting}>{t('booking.confirm_booking')}</button>
         </section>
       )}
     </div>

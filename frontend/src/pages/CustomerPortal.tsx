@@ -5,8 +5,10 @@ import { useAuth } from '../hooks/useAuth';
 import { useSettings } from '../hooks/useSettings';
 import { formatCurrency } from '../utils/format';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 export default function CustomerPortal() {
+  const { t } = useTranslation();
   const { user, login, logout, updateUser } = useAuth();
   const { settings } = useSettings();
   const navigate = useNavigate();
@@ -62,7 +64,7 @@ export default function CustomerPortal() {
       await apiClient.post('/auth/otp/send', { email });
       setOtpStep('OTP');
     } catch (err: any) {
-      setError('Failed to send verification code.');
+      setError(t('common.error'));
     } finally {
       setIsSubmitting(false);
     }
@@ -76,7 +78,7 @@ export default function CustomerPortal() {
       const res = await apiClient.post('/auth/otp/verify', { email, code: otp });
       login(res.data.token, res.data.user);
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Invalid code.');
+      setError(err.response?.data?.error || t('login.invalid_credentials'));
     } finally {
       setIsSubmitting(false);
     }
@@ -87,22 +89,22 @@ export default function CustomerPortal() {
     setIsSubmitting(true);
     try {
       await apiClient.post('/auth/otp/send', { email });
-      alert('Verification code resent!');
+      alert(t('booking.resend_code'));
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to resend code.');
+      setError(err.response?.data?.error || t('common.error'));
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleCancel = async (id: number) => {
-    if (!window.confirm('Are you sure you want to cancel this appointment?')) return;
+    if (!window.confirm(t('portal.cancel_ask'))) return;
     
     try {
       await apiClient.post(`/appointments/${id}/cancel`, {});
       fetchPortalData();
     } catch (err: any) {
-      alert(err.response?.data?.error || 'Failed to cancel appointment');
+      alert(err.response?.data?.error || t('portal.failed_update'));
     }
   };
 
@@ -114,8 +116,8 @@ export default function CustomerPortal() {
             <div style={{ display: 'inline-flex', padding: '1rem', background: 'rgba(79, 70, 229, 0.05)', borderRadius: '1.25rem', marginBottom: '1rem' }}>
               <Key size={40} color="var(--primary)" />
             </div>
-            <h1>My Bookings</h1>
-            <p>Access your appointment history.</p>
+            <h1>{t('landing.manage_bookings')}</h1>
+            <p>{t('landing.manage_bookings_hint')}</p>
           </div>
 
           {error && <div className="login-error">{error}</div>}
@@ -123,40 +125,40 @@ export default function CustomerPortal() {
           {otpStep === 'ID' ? (
             <form onSubmit={handleSendOTP}>
               <div className="form-group">
-                <label>Email Address</label>
+                <label>{t('booking.email_address')}</label>
                 <div className="input-with-icon">
                   <Mail size={18} className="input-icon" />
-                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" required />
+                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder={t('booking.email_placeholder')} required />
                 </div>
               </div>
               <button type="submit" className="login-button" disabled={isSubmitting}>
-                {isSubmitting ? <Loader2 size={18} className="spinner" /> : 'Send Verification Code'}
+                {isSubmitting ? <Loader2 size={18} className="spinner" /> : t('booking.send_code')}
               </button>
             </form>
           ) : (
             <form onSubmit={handleVerifyOTP}>
               <div className="form-group">
-                <label>Enter 6-digit Code</label>
+                <label>{t('portal.enter_otp')}</label>
                 <div className="input-with-icon">
                   <Key size={18} className="input-icon" />
                   <input type="text" value={otp} onChange={e => setOtp(e.target.value)} required maxLength={6} style={{ textAlign: 'center', letterSpacing: '0.5rem', fontSize: '1.5rem' }} />
                 </div>
               </div>
               <button type="submit" className="login-button" disabled={isSubmitting}>
-                {isSubmitting ? <Loader2 size={18} className="spinner" /> : 'Verify & Sign In'}
+                {isSubmitting ? <Loader2 size={18} className="spinner" /> : t('portal.verify_signin')}
               </button>
               <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
                 <button type="button" onClick={handleResendOTP} disabled={isSubmitting} style={{ flex: 1, background: 'none', border: '1px solid var(--border)', borderRadius: '0.75rem', padding: '0.5rem', color: 'var(--text-main)', cursor: 'pointer', fontSize: '0.85rem' }}>
-                  Resend Code
+                  {t('booking.resend_code')}
                 </button>
                 <button type="button" onClick={() => setOtpStep('ID')} style={{ flex: 1, background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.85rem' }}>
-                  Back to email
+                  {t('portal.back_to_email')}
                 </button>
               </div>
             </form>
           )}
           <button onClick={() => navigate('/')} style={{ background: 'none', border: 'none', color: 'var(--primary)', width: '100%', marginTop: '2rem', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 'bold' }}>
-            ← Back to Home
+            {t('portal.back_to_home')}
           </button>
         </div>
       </div>
@@ -167,8 +169,8 @@ export default function CustomerPortal() {
     <div className="customer-portal" style={{ maxWidth: '600px', margin: '0 auto', padding: '1rem' }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem', marginTop: '1rem' }}>
         <div>
-          <h1 style={{ fontSize: '1.5rem', marginBottom: 0 }}>Hi, {user.fullname || user.username}</h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Manage your grooming schedule.</p>
+          <h1 style={{ fontSize: '1.5rem', marginBottom: 0 }}>{t('portal.welcome', { name: user.fullname || user.username })}</h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{t('portal.subtitle')}</p>
         </div>
         <button className="secondary" onClick={() => { logout(); navigate('/'); }} style={{ padding: '0.5rem', borderRadius: '0.75rem' }}>
           <LogOut size={20} />
@@ -176,21 +178,21 @@ export default function CustomerPortal() {
       </header>
 
       <button className="primary" onClick={() => navigate('/discovery')} style={{ width: '100%', padding: '1.25rem', borderRadius: '1rem', fontSize: '1.1rem', fontWeight: '800', gap: '0.75rem', marginBottom: '2.5rem' }}>
-        <Scissors size={20} /> Book New Appointment
+        <Scissors size={20} /> {t('portal.book_new')}
       </button>
 
       <div style={{ display: 'grid', gap: '2.5rem' }}>
         <section>
-          <h2 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '1.25rem' }}>My Appointments</h2>
+          <h2 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '1.25rem' }}>{t('portal.my_appointments')}</h2>
           {loading ? <div className="spinner" style={{ margin: '2rem auto' }}></div> : appointments.length === 0 ? (
             <div className="card" style={{ textAlign: 'center', padding: '3rem', border: '1px dashed var(--border)', background: '#f9fafb' }}>
               <Calendar size={32} style={{ margin: '0 auto 1rem', opacity: 0.2 }} />
-              <p style={{ color: 'var(--text-muted)' }}>No bookings found.</p>
+              <p style={{ color: 'var(--text-muted)' }}>{t('portal.no_bookings')}</p>
             </div>
           ) : (
             <div style={{ display: 'grid', gap: '1rem' }}>
               {appointments.map(appt => (
-                <div key={appt.id} className="card" style={{ padding: '1.25rem', borderLeft: `4px solid ${appt.status === 'completed' ? 'var(--success)' : 'var(--primary)'}` }}>
+                <div key={appt.id} className="card" style={{ padding: '1.25rem', borderLeft: `4px solid ${appt.status === 'completed' ? 'var(--success)' : (appt.status === 'cancelled' ? 'var(--danger)' : 'var(--primary)')}` }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
@@ -202,7 +204,7 @@ export default function CustomerPortal() {
                       <h3 style={{ fontSize: '1.1rem', margin: '0 0 0.25rem 0' }}>{appt.services_summary || 'Haircut'}</h3>
                       <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: 0 }}>at {appt.shop_name} • {appt.barber_name}</p>
                     </div>
-                    <span className={`status-badge status-${appt.status}`} style={{ fontSize: '0.65rem' }}>{appt.status}</span>
+                    <span className={`status-badge status-${appt.status}`} style={{ fontSize: '0.65rem' }}>{t(`common.${appt.status}`)}</span>
                   </div>
                   
                   {appt.status === 'scheduled' && (
@@ -211,22 +213,22 @@ export default function CustomerPortal() {
                         className="secondary" 
                         style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', borderColor: 'var(--border)' }}
                         onClick={() => {
-                          const newNotes = window.prompt('Update notes:', appt.notes || '');
+                          const newNotes = window.prompt(t('portal.update_notes'), appt.notes || '');
                           if (newNotes !== null) {
                             apiClient.put(`/appointments/${appt.id}`, { notes: newNotes })
                               .then(() => fetchPortalData())
-                              .catch(err => alert(err.response?.data?.error || 'Failed to update appointment'));
+                              .catch(err => alert(err.response?.data?.error || t('portal.failed_update')));
                           }
                         }}
                       >
-                        Notes
+                        {t('portal.notes')}
                       </button>
                       <button 
                         className="secondary" 
                         style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', borderColor: 'var(--border)' }}
                         onClick={() => {
                           // Pass appointment info to BookingFlow for rescheduling
-                          navigate(`/booking/${appt.shop_id}`, { 
+                          navigate(`/book/${appt.shop_id}`, { 
                             state: { 
                               rescheduleId: appt.id, 
                               barberId: appt.barber_id,
@@ -235,14 +237,14 @@ export default function CustomerPortal() {
                           });
                         }}
                       >
-                        Reschedule
+                        {t('portal.reschedule')}
                       </button>
                       <button 
                         className="secondary" 
                         style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', color: 'var(--danger)', borderColor: 'rgba(239, 68, 68, 0.2)' }}
                         onClick={() => handleCancel(appt.id)}
                       >
-                        Cancel Appointment
+                        {t('portal.cancel_appointment')}
                       </button>
                     </div>
                   )}
@@ -253,11 +255,11 @@ export default function CustomerPortal() {
         </section>
 
         <section>
-          <h2 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '1.25rem' }}>Past Invoices</h2>
+          <h2 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '1.25rem' }}>Visits History</h2>
           {sales.length === 0 ? (
             <div className="card" style={{ textAlign: 'center', padding: '3rem', border: '1px dashed var(--border)', background: '#f9fafb' }}>
               <FileText size={32} style={{ margin: '0 auto 1rem', opacity: 0.2 }} />
-              <p style={{ color: 'var(--text-muted)' }}>No invoices yet.</p>
+              <p style={{ color: 'var(--text-muted)' }}>No visit history found.</p>
             </div>
           ) : (
             <div style={{ display: 'grid', gap: '0.75rem' }}>
@@ -268,7 +270,7 @@ export default function CustomerPortal() {
                       <FileText size={20} color="var(--text-muted)" />
                     </div>
                     <div>
-                      <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>{new Date(sale.timestamp).toLocaleDateString()}</div>
+                      <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>{new Date(sale.timestamp || sale.created_at).toLocaleDateString()}</div>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{sale.barber_name}</div>
                     </div>
                   </div>
