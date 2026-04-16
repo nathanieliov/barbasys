@@ -1,6 +1,7 @@
 import { UserRepository } from '../repositories/user-repository.interface.js';
 import { ICustomerRepository } from '../repositories/customer-repository.interface.js';
 import jwt, { SignOptions } from 'jsonwebtoken';
+import i18n from '../i18n.js';
 
 export class VerifyOTP {
   constructor(
@@ -13,12 +14,12 @@ export class VerifyOTP {
     const user = await this.userRepo.findByEmail(email);
     
     if (!user || !user.otp_code || user.otp_code !== code) {
-      throw new Error('Invalid OTP');
+      throw new Error(i18n.t('errors.invalid_otp'));
     }
 
     const now = new Date();
     if (user.otp_expires && new Date(user.otp_expires) < now) {
-      throw new Error('OTP expired');
+      throw new Error(i18n.t('errors.otp_expired'));
     }
 
     // Ensure user has a linked customer record (allow Barbers to act as Customers)

@@ -89,7 +89,7 @@ export default function CustomerPortal() {
     setIsSubmitting(true);
     try {
       await apiClient.post('/auth/otp/send', { email });
-      alert(t('booking.resend_code'));
+      alert(t('booking.code_resent'));
     } catch (err: any) {
       setError(err.response?.data?.error || t('common.error'));
     } finally {

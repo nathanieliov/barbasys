@@ -19,7 +19,11 @@
     "see_you_soon": "We look forward to seeing you!",
     "team": "BarbaSys Team",
     "sms_notification": "{{title}}: {{service}} @ {{time}}. See you soon!",
-    "low_stock_alert": "LOW STOCK ALERT: {{name}} is at {{stock}} (Threshold: {{threshold}})"
+    "low_stock_alert": "LOW STOCK ALERT: {{name}} is at {{stock}} (Threshold: {{threshold}})",
+    "otp_subject": "Your BarbaSys Verification Code",
+    "otp_body": "Your verification code is: {{code}}",
+    "otp_instruction": "Enter this code to verify your identity:",
+    "otp_expiry_notice": "This code will expire in 10 minutes."
   },
   "errors": {
     "barber_not_found": "Barber not found",
@@ -28,6 +32,9 @@
     "customer_not_found": "Customer not found",
     "failed_update_status": "Failed to update status",
     "unauthorized": "Unauthorized",
-    "failed_booking": "Failed to book appointment"
+    "failed_booking": "Failed to book appointment",
+    "too_many_otp_requests": "Too many OTP requests. Please try again in 15 minutes.",
+    "invalid_otp": "Invalid verification code",
+    "otp_expired": "Verification code has expired"
   }
 }

@@ -171,3 +171,41 @@ export const alertLowStock = async (product: { name: string; stock: number; thre
   console.log('[MOCK ALERT]', message);
   // Implementation for email/SMS would go here
 };
+
+export const sendOTP = async (email: string, otp: string) => {
+  const t = i18n.t.bind(i18n);
+  const subject = t('notifications.otp_subject');
+  const body = t('notifications.otp_body', { code: otp });
+
+  // 1. Send Email
+  if (transporter) {
+    try {
+      await transporter.sendMail({
+        from: '"BarbaSys" <auth@barbasys.com>',
+        to: email,
+        subject: subject,
+        text: body,
+        html: `
+          <div style="font-family: sans-serif; max-width: 400px; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+            <h2 style="color: #6366f1; text-align: center;">${subject}</h2>
+            <p style="font-size: 1.1rem; text-align: center;">${t('notifications.otp_instruction')}</p>
+            <div style="background: #f3f4f6; padding: 20px; text-align: center; font-size: 2.5rem; font-weight: bold; letter-spacing: 5px; color: #1f2937; border-radius: 8px; margin: 20px 0;">
+              ${otp}
+            </div>
+            <p style="color: #94a3b8; font-size: 0.8rem; text-align: center;">${t('notifications.otp_expiry_notice')}</p>
+          </div>
+        `
+      });
+      console.log(`OTP Email sent to ${email}`);
+    } catch (err) {
+      console.error('Failed to send OTP email:', err);
+      throw new Error('Failed to send OTP email');
+    }
+  } else {
+    console.log('--------------------------------------------------');
+    console.log(`🔑 [OTP SIMULATION]`);
+    console.log(`📧 Email: ${email}`);
+    console.log(`🔢 Code:  ${otp}`);
+    console.log('--------------------------------------------------');
+  }
+};

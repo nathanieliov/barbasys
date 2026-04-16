@@ -334,6 +334,7 @@
     "check_email": "Check your email <strong>{{email}}</strong>",
     "verify_continue": "Verify & Continue",
     "resend_code": "Resend Code",
+    "code_resent": "Verification code resent successfully!",
     "change_email": "Change email",
     "almost_there": "Almost there!",
     "profile_hint": "Tell us your name and birthday.",

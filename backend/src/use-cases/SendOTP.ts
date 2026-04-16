@@ -1,6 +1,8 @@
 import { UserRepository } from '../repositories/user-repository.interface.js';
 import { ICustomerRepository } from '../repositories/customer-repository.interface.js';
 import bcrypt from 'bcryptjs';
+import { sendOTP } from '../communication.js';
+import i18n from '../i18n.js';
 
 export class SendOTP {
   constructor(
@@ -54,7 +56,7 @@ export class SendOTP {
     }
 
     if (otpRequestsCount >= 3) {
-      throw new Error('Too many OTP requests. Please try again in 15 minutes.');
+      throw new Error(i18n.t('errors.too_many_otp_requests'));
     }
 
     // Generate 6-digit OTP for any user (Customer, Barber, or Admin)
@@ -70,11 +72,7 @@ export class SendOTP {
       last_otp_request_at: now.toISOString()
     });
 
-    console.log('--------------------------------------------------');
-    console.log(`🔑 [OTP SIMULATION]`);
-    console.log(`📧 Email: ${email}`);
-    console.log(`🔢 Code:  ${otp}`);
-    console.log('--------------------------------------------------');
+    await sendOTP(email, otp);
     
     return { success: true, message: 'OTP sent successfully' };
   }

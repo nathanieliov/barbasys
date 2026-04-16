@@ -334,6 +334,7 @@
     "check_email": "Revise su correo <strong>{{email}}</strong>",
     "verify_continue": "Verificar y Continuar",
     "resend_code": "Reenviar Código",
+    "code_resent": "¡Código de verificación reenviado exitosamente!",
     "change_email": "Cambiar correo",
     "almost_there": "¡Ya casi terminamos!",
     "profile_hint": "Díganos su nombre y fecha de nacimiento.",

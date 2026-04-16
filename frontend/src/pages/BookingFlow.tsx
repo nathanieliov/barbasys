@@ -183,7 +183,7 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
     setSubmitting(true);
     try {
       await apiClient.post('/auth/otp/send', { email });
-      alert(t('booking.resend_code'));
+      alert(t('booking.code_resent'));
     } catch (err: any) {
       setError(err.response?.data?.error || t('schedule.failed_booking'));
     } finally {
