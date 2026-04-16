@@ -146,9 +146,14 @@ const Sidebar = ({ isOpen, toggleSidebar }: { isOpen: boolean, toggleSidebar: ()
 const Layout = ({ children }: { children: React.ReactNode }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { user } = useAuth();
+  const location = useLocation();
   
-  const isCustomer = user?.role === 'CUSTOMER';
-  const isStaff = user && !isCustomer;
+  // Paths that should ALWAYS use the customer layout
+  const customerPaths = ['/discovery', '/book/', '/my-bookings', '/b/'];
+  const isCustomerRoute = customerPaths.some(path => location.pathname.startsWith(path));
+  
+  const isCustomer = user?.role === 'CUSTOMER' || isCustomerRoute;
+  const isStaff = user && user.role !== 'CUSTOMER' && !isCustomerRoute;
 
   return (
     <div className={`app-container ${isCustomer ? 'customer-layout' : ''}`}>
