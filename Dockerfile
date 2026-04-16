@@ -23,28 +23,33 @@ FROM node:20-slim
 
 WORKDIR /app
 
-# Install only production dependencies for better performance
-# Install better-sqlite3 dependencies (may be needed if not pre-built)
+# Install native dependencies for better-sqlite3 (runtime may need these if re-compiling occurs, 
+# but usually just the shared libs are enough. However, node:slim is very minimal)
 RUN apt-get update && apt-get install -y \
     python3 \
     make \
     g++ \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy root package.json
+# Copy root package.json and workspace package.jsons to maintain structure
 COPY package*.json ./
+COPY shared/package*.json ./shared/
+COPY backend/package*.json ./backend/
 
 # Copy built shared package
 COPY --from=builder /app/shared/dist ./shared/dist
-COPY --from=builder /app/shared/package.json ./shared/package.json
 
 # Copy built backend
 COPY --from=builder /app/backend/dist ./backend/dist
-COPY --from=builder /app/backend/package.json ./backend/package.json
-COPY --from=builder /app/backend/node_modules ./backend/node_modules
+
+# Copy all node_modules (hoisted at root)
+COPY --from=builder /app/node_modules ./node_modules
 
 # Copy built frontend
 COPY --from=builder /app/frontend/dist ./frontend/dist
+
+# Create data directory for SQLite persistence
+RUN mkdir -p /app/data
 
 # Expose the API port
 EXPOSE 3000
@@ -52,9 +57,6 @@ EXPOSE 3000
 # Set production environment
 ENV NODE_ENV=production
 
-# The barbasys.db will be created in /app/backend/barbasys.db 
-# unless overridden by DATABASE_URL. 
-# It's recommended to mount a volume to /app/backend
-
+# Start from backend directory
 WORKDIR /app/backend
 CMD ["npm", "start"]

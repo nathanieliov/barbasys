@@ -4,7 +4,7 @@ import { Clock, Calendar, User, TrendingUp, Filter } from 'lucide-react';
 import { useSettings } from '../hooks/useSettings';
 import { formatCurrency } from '../utils/format';
 
-const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const DAYS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
 export default function Analytics() {
   const { settings } = useSettings();
@@ -29,7 +29,7 @@ export default function Analytics() {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <h1>Business Analytics</h1>
+        <h1>Analíticas de Negocio</h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <Filter size={20} color="#94a3b8" />
           <input 
@@ -38,7 +38,7 @@ export default function Analytics() {
             onChange={e => setDateRange({...dateRange, startDate: e.target.value})}
             style={{ marginBottom: 0, width: 'auto' }}
           />
-          <span style={{ color: '#94a3b8' }}>to</span>
+          <span style={{ color: '#94a3b8' }}>hasta</span>
           <input 
             type="date" 
             value={dateRange.endDate} 
@@ -53,7 +53,7 @@ export default function Analytics() {
         <div className="card" style={{ gridColumn: 'span 2' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem' }}>
             <Clock size={20} color="var(--primary)" />
-            <h2 style={{ margin: 0 }}>Revenue by Hour (Heatmap)</h2>
+            <h2 style={{ margin: 0 }}>Ingresos por Hora (Mapa de Calor)</h2>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', height: '200px', gap: '4px' }}>
             {Array.from({ length: 24 }).map((_, hour) => {
@@ -79,7 +79,7 @@ export default function Analytics() {
         <div className="card">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem' }}>
             <Calendar size={20} color="var(--primary)" />
-            <h2 style={{ margin: 0 }}>Busy Days</h2>
+            <h2 style={{ margin: 0 }}>Días de Mayor Actividad</h2>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', height: '200px', gap: '1rem' }}>
             {DAYS.map((day, idx) => {
@@ -105,18 +105,18 @@ export default function Analytics() {
         <div className="card">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
             <TrendingUp size={20} color="#10b981" />
-            <h2 style={{ margin: 0 }}>Key Stats</h2>
+            <h2 style={{ margin: 0 }}>Estadísticas Clave</h2>
           </div>
           <div style={{ display: 'grid', gap: '1rem' }}>
             <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '0.5rem' }}>
-              <p style={{ color: '#94a3b8', fontSize: '0.8rem', margin: 0 }}>Avg. Ticket Size</p>
+              <p style={{ color: '#94a3b8', fontSize: '0.8rem', margin: 0 }}>Tamaño Promedio de Ticket</p>
               <h3 style={{ margin: '0.25rem 0 0 0' }}>
                 {formatCurrency(data?.barberPerformance?.reduce((acc: number, curr: any) => acc + (curr.total_revenue || 0), 0) / 
                    data?.barberPerformance?.reduce((acc: number, curr: any) => acc + (curr.total_sales || 0), 1), settings.currency_symbol)}
               </h3>
             </div>
             <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '0.5rem' }}>
-              <p style={{ color: '#94a3b8', fontSize: '0.8rem', margin: 0 }}>Completion Rate</p>
+              <p style={{ color: '#94a3b8', fontSize: '0.8rem', margin: 0 }}>Tasa de Finalización</p>
               <h3 style={{ margin: '0.25rem 0 0 0' }}>
                 {Math.round((data?.barberPerformance?.reduce((acc: number, curr: any) => acc + (curr.completed_appointments || 0), 0) / 
                   (data?.barberPerformance?.reduce((acc: number, curr: any) => acc + (curr.total_sales || 0), 0) || 1)) * 100)}%
@@ -129,16 +129,16 @@ export default function Analytics() {
       <div className="card" style={{ marginTop: '2rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem' }}>
           <User size={20} color="var(--primary)" />
-          <h2 style={{ margin: 0 }}>Barber Performance Matrix</h2>
+          <h2 style={{ margin: 0 }}>Matriz de Rendimiento de Barberos</h2>
         </div>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--border)' }}>
-              <th style={{ padding: '1rem' }}>Barber</th>
-              <th style={{ padding: '1rem' }}>Total Sales</th>
-              <th style={{ padding: '1rem' }}>Appointments</th>
-              <th style={{ padding: '1rem' }}>Avg Ticket</th>
-              <th style={{ padding: '1rem' }}>Total Revenue</th>
+              <th style={{ padding: '1rem' }}>Barbero</th>
+              <th style={{ padding: '1rem' }}>Ventas Totales</th>
+              <th style={{ padding: '1rem' }}>Citas</th>
+              <th style={{ padding: '1rem' }}>Ticket Promedio</th>
+              <th style={{ padding: '1rem' }}>Ingresos Totales</th>
             </tr>
           </thead>
           <tbody>

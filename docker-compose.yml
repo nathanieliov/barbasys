@@ -1,13 +1,29 @@
-version: '3.8'
-
 services:
   barbasys:
     build: .
     ports:
       - "3000:3000"
     volumes:
-      - ./data:/app/backend
+      - ./data:/app/data
     environment:
       - NODE_ENV=production
       - PORT=3000
+      - JWT_SECRET=${JWT_SECRET}
     restart: always
+
+  ngrok:
+    image: ngrok/ngrok:latest
+    restart: always
+    ports:
+      - "4040:4040"
+    environment:
+      NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}
+    command:
+      - "http"
+      - "barbasys:3000"
+    depends_on:
+      - barbasys
+
+volumes:
+  caddy_data:
+  caddy_config:

@@ -1,0 +1,7 @@
+{
+    email {$EMAIL}
+}
+
+{$DOMAIN} {
+    reverse_proxy barbasys:3000
+}

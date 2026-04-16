@@ -2,9 +2,12 @@ import { useEffect, useState } from 'react';
 import apiClient from '../api/apiClient';
 import { Search, Mail, Phone, Calendar, X, ShoppingBag, Scissors, Tag, Save, History, MessageSquare, Clock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useSettings } from '../hooks/useSettings';
+import { formatCurrency } from '../utils/format';
 
 export default function Customers() {
   const { t } = useTranslation();
+  const { settings } = useSettings();
   const [customers, setCustomers] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
@@ -203,7 +206,7 @@ export default function Customers() {
                   <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '0.75rem', border: '1px solid var(--border)' }}>
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase', marginBottom: '0.25rem' }}>{t('customers.lifetime_spend')}</div>
                     <div style={{ fontSize: '1.5rem', fontWeight: '900', color: 'var(--success)' }}>
-                      ${history.reduce((acc, v) => acc + v.total_amount, 0).toFixed(2)}
+                      {formatCurrency(history.reduce((acc, v) => acc + v.total_amount, 0), settings.currency_symbol)}
                     </div>
                   </div>
                 </div>
@@ -224,7 +227,7 @@ export default function Customers() {
                     <div key={visit.sale_id} style={{ background: 'white', padding: '1rem', borderRadius: '0.75rem', border: '1px solid var(--border)', borderLeft: '4px solid var(--primary)' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', alignItems: 'center' }}>
                         <div style={{ fontWeight: '800', fontSize: '0.95rem' }}>{formatVisitDate(visit.timestamp)}</div>
-                        <div style={{ color: 'var(--success)', fontWeight: '800' }}>${visit.total_amount.toFixed(2)}</div>
+                        <div style={{ color: 'var(--success)', fontWeight: '800' }}>{formatCurrency(visit.total_amount, settings.currency_symbol)}</div>
                       </div>
                       
                       <div style={{ display: 'grid', gap: '0.5rem' }}>

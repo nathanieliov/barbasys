@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../api/apiClient';
 import { PlusCircle, X, Truck, Mail, Phone, User, Edit2, Trash2, Clock } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export default function Suppliers() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [suppliers, setSuppliers] = useState<any[]>([]);
   const [showModal, setShowModal] = useState(false);
@@ -81,11 +83,11 @@ export default function Suppliers() {
     <div className="suppliers-container">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h1>Supplier Management</h1>
-          <p style={{ color: 'var(--text-muted)' }}>Manage your product vendors and procurement contacts.</p>
+          <h1>{t('suppliers.title')}</h1>
+          <p style={{ color: 'var(--text-muted)' }}>{t('suppliers.manage_vendors')}</p>
         </div>
         <button onClick={() => setShowModal(true)} style={{ gap: '0.5rem' }}>
-          <PlusCircle size={20} /> <span className="hide-mobile">Add Supplier</span>
+          <PlusCircle size={20} /> <span className="hide-mobile">{t('suppliers.add_supplier')}</span>
         </button>
       </div>
 
@@ -100,7 +102,7 @@ export default function Suppliers() {
                 <div>
                   <div style={{ fontWeight: '800', fontSize: '1.1rem' }}>{s.name}</div>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    <User size={12} /> {s.contact_name || 'No primary contact'}
+                    <User size={12} /> {s.contact_name || t('suppliers.no_contact')}
                   </div>
                 </div>
               </div>
@@ -129,7 +131,7 @@ export default function Suppliers() {
               )}
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.9rem' }}>
                 <Clock size={16} color="var(--warning)" />
-                <span style={{ color: 'var(--text-muted)' }}>Avg. Lead Time: <strong>{s.lead_time_days} days</strong></span>
+                <span style={{ color: 'var(--text-muted)' }} dangerouslySetInnerHTML={{ __html: t('suppliers.avg_lead_time', { days: s.lead_time_days }) }} />
               </div>
             </div>
 
@@ -139,7 +141,7 @@ export default function Suppliers() {
                 style={{ width: '100%', fontSize: '0.85rem' }}
                 onClick={() => navigate(`/inventory?supplierId=${s.id}`)}
               >
-                View Catalog
+                {t('suppliers.view_catalog')}
               </button>
             </div>
           </div>
@@ -147,8 +149,8 @@ export default function Suppliers() {
         {suppliers.length === 0 && (
           <div className="card" style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '4rem 2rem', color: 'var(--text-muted)' }}>
             <Truck size={48} style={{ margin: '0 auto 1rem', opacity: 0.1 }} />
-            <p>No suppliers registered yet.</p>
-            <button className="secondary" style={{ marginTop: '1rem' }} onClick={() => setShowModal(true)}>Add your first supplier</button>
+            <p>{t('suppliers.no_suppliers')}</p>
+            <button className="secondary" style={{ marginTop: '1rem' }} onClick={() => setShowModal(true)}>{t('suppliers.add_first')}</button>
           </div>
         )}
       </div>
@@ -160,7 +162,7 @@ export default function Suppliers() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Truck size={20} color="var(--primary)" />
-                <h2 style={{ marginBottom: 0 }}>{editingSupplier ? 'Edit Supplier' : 'Add New Supplier'}</h2>
+                <h2 style={{ marginBottom: 0 }}>{editingSupplier ? t('suppliers.edit_supplier') : t('suppliers.add_new_supplier')}</h2>
               </div>
               <button className="secondary" style={{ padding: '0.5rem' }} onClick={resetForm}>
                 <X size={20} />
@@ -169,7 +171,7 @@ export default function Suppliers() {
 
             <form onSubmit={handleSubmit}>
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>Company Name</label>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>{t('suppliers.company_name')}</label>
                 <input 
                   type="text" 
                   placeholder="e.g. Grooming Essentials Co." 
@@ -180,7 +182,7 @@ export default function Suppliers() {
               </div>
 
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>Contact Name</label>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>{t('suppliers.contact_name')}</label>
                 <input 
                   type="text" 
                   placeholder="e.g. Jane Smith" 
@@ -191,7 +193,7 @@ export default function Suppliers() {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
                 <div>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>Email</label>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>{t('common.email')}</label>
                   <input 
                     type="email" 
                     placeholder="orders@supplier.com" 
@@ -201,7 +203,7 @@ export default function Suppliers() {
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>Phone</label>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>{t('common.phone')}</label>
                   <input 
                     type="tel" 
                     placeholder="+1 (555) 000-0000" 
@@ -213,7 +215,7 @@ export default function Suppliers() {
               </div>
 
               <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>Lead Time (Days)</label>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>{t('suppliers.lead_time')}</label>
                 <input 
                   type="number" 
                   min="1"
@@ -223,7 +225,7 @@ export default function Suppliers() {
               </div>
 
               <button type="submit" style={{ width: '100%', padding: '1.1rem', fontSize: '1.1rem' }}>
-                {editingSupplier ? 'Update Supplier' : 'Confirm Registration'}
+                {editingSupplier ? t('suppliers.update_supplier') : t('suppliers.confirm_registration')}
               </button>
             </form>
           </div>

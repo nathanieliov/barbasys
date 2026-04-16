@@ -4,9 +4,12 @@ import { Calendar as CalendarIcon, Clock, Scissors, User, X, PlusCircle, CheckCi
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useTranslation } from 'react-i18next';
+import { useSettings } from '../hooks/useSettings';
+import { formatCurrency } from '../utils/format';
 
 export default function Schedule() {
   const { t } = useTranslation();
+  const { settings } = useSettings();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [appointments, setAppointments] = useState<any[]>([]);
@@ -263,7 +266,7 @@ export default function Schedule() {
                     <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>{t('pos.services')}</label>
                     <select value={selectedService} onChange={e => setSelectedService(e.target.value)} required>
                       <option value="">{t('schedule.select_service')}</option>
-                      {services.map(s => <option key={s.id} value={s.id}>{s.name} ({s.duration_minutes}m) - ${s.price}</option>)}
+                      {services.map(s => <option key={s.id} value={s.id}>{s.name} ({s.duration_minutes}m) - {formatCurrency(s.price, settings.currency_symbol)}</option>)}
                     </select>
                   </div>
 

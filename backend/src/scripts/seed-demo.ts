@@ -2,7 +2,7 @@ import db from '../db.js';
 import bcrypt from 'bcryptjs';
 
 async function seed() {
-  console.log('🚀 Starting BarbaRd Demo Setup...');
+  console.log('🚀 Starting La Barba Demo Setup...');
 
   // 1. Wipe current data
   db.transaction(() => {
@@ -25,8 +25,8 @@ async function seed() {
 
   // 2. Create Shop
   const shopResult = db.prepare('INSERT INTO shops (name, address, phone) VALUES (?, ?, ?)').run(
-    'BarbaRd', 
-    'Santo Domingo Este, Dominican Republic', 
+    'La Barba', 
+    'Ramon Esperanza Hierro Santos 98, Santo Domingo Este 11512', 
     '809-555-0123'
   );
   const shopId = Number(shopResult.lastInsertRowid);
@@ -42,7 +42,7 @@ async function seed() {
   // 4. Create Barbers
   // Ramon: Commission
   const ramonId = db.prepare('INSERT INTO barbers (name, fullname, payment_model, service_commission_rate, product_commission_rate, shop_id) VALUES (?, ?, ?, ?, ?, ?)')
-    .run('Ramon', 'Ramón Rodríguez', 'COMMISSION', 0.6, 0.1, shopId).lastInsertRowid;
+    .run('La Barba', 'Ramon alias La Barba', 'COMMISSION', 0.6, 0.1, shopId).lastInsertRowid;
 
   // Leo: Fixed Fee (Rent) RD$10,000 Monthly
   const leoId = db.prepare('INSERT INTO barbers (name, fullname, payment_model, fixed_amount, fixed_period, shop_id) VALUES (?, ?, ?, ?, ?, ?)')
@@ -59,11 +59,11 @@ async function seed() {
 
   // 5. Create Services & Products
   const services = [
-    { name: 'Corte Moderno', price: 800 },
-    { name: 'Perfilado de Barba', price: 800 },
-    { name: 'Cerquillo', price: 400 },
-    { name: 'Limpieza Facial', price: 1200 },
-    { name: 'Corte + Barba', price: 1400 }
+    { name: 'Corte Clasico', price: 800 },
+    { name: 'Corte Moderno', price: 1000 },
+    { name: 'Cerquillo', price: 500 },
+    { name: 'Barba', price: 500 },
+    { name: 'Lavado de pelo', price: 250 }
   ];
   const serviceIds = services.map(s => db.prepare('INSERT INTO services (name, price, shop_id) VALUES (?, ?, ?)').run(s.name, s.price, shopId).lastInsertRowid);
 
@@ -103,7 +103,7 @@ async function seed() {
     // Average 6 sales per day
     const salesCount = 4 + Math.floor(Math.random() * 5);
     for (let j = 0; j < salesCount; j++) {
-      const barber = Math.random() > 0.5 ? { id: ramonId, name: 'Ramón Rodríguez' } : { id: leoId, name: 'Leonardo Tejeda' };
+      const barber = Math.random() > 0.5 ? { id: ramonId, name: 'Ramon alias La Barba' } : { id: leoId, name: 'Leonardo Tejeda' };
       const serviceIdx = Math.floor(Math.random() * services.length);
       const service = services[serviceIdx];
       
@@ -160,10 +160,10 @@ async function seed() {
     insertAppt.run(leoId, null, serviceIds[1], apptDate2.toISOString(), 'scheduled', shopId);
   }
 
-  console.log('✨ BarbaRd Demo Environment is READY!');
+  console.log('✨ La Barba Demo Environment is READY!');
   console.log('--------------------------------------');
   console.log('Login: admin / barba123');
-  console.log('Shop: BarbaRd (Santo Domingo Este)');
+  console.log('Shop: La Barba (Santo Domingo Este)');
   console.log('Tax: 18% ITBIS included');
   console.log('Data: 30 days of historical sales and pro-rated fixed salary for Leo.');
 }

@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../api/apiClient';
 import { PlusCircle, X, Trash2, Calendar, Tag, DollarSign, Receipt, Info } from 'lucide-react';
+import { useSettings } from '../hooks/useSettings';
+import { formatCurrency } from '../utils/format';
 
-const CATEGORIES = ['Rent', 'Utilities', 'Supplies', 'Marketing', 'Maintenance', 'Insurance', 'Other'];
+const CATEGORIES = ['Renta', 'Servicios Públicos', 'Suministros', 'Marketing', 'Mantenimiento', 'Seguro', 'Otro'];
 
 export default function Expenses() {
+  const { settings } = useSettings();
   const [expenses, setExpenses] = useState<any[]>([]);
   const [showModal, setShowModal] = useState(false);
   
@@ -79,7 +82,7 @@ export default function Expenses() {
         </div>
         <div>
           <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Current Month Expenses</div>
-          <div style={{ fontSize: '2rem', fontWeight: '900', color: 'var(--text-main)' }}>${totalMonthlyExpenses.toFixed(2)}</div>
+          <div style={{ fontSize: '2rem', fontWeight: '900', color: 'var(--text-main)' }}>{formatCurrency(totalMonthlyExpenses, settings.currency_symbol)}</div>
         </div>
       </div>
 
@@ -93,7 +96,7 @@ export default function Expenses() {
                 </div>
                 <div>
                   <div style={{ fontWeight: '800', fontSize: '1.1rem' }}>{e.category}</div>
-                  <div style={{ fontSize: '1.2rem', color: 'var(--danger)', fontWeight: '900' }}>-${e.amount.toFixed(2)}</div>
+                  <div style={{ fontSize: '1.2rem', color: 'var(--danger)', fontWeight: '900' }}>-{formatCurrency(e.amount, settings.currency_symbol)}</div>
                 </div>
               </div>
               <button className="secondary" style={{ padding: '0.4rem', color: 'var(--danger)', border: 'none' }} onClick={() => deleteExpense(e.id)}>
@@ -148,7 +151,7 @@ export default function Expenses() {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
                 <div>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>Amount ($)</label>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>Amount ({settings.currency_symbol})</label>
                   <div style={{ position: 'relative' }}>
                     <DollarSign size={16} style={{ position: 'absolute', left: '0.75rem', top: '0.75rem', color: 'var(--text-muted)' }} />
                     <input 
