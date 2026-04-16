@@ -1,0 +1,33 @@
+{
+  "notifications": {
+    "receipt_title": "Recibo de BarbaSys #{{id}}",
+    "barber": "Barbero",
+    "items": "Artículos",
+    "discount": "Descuento",
+    "tip": "Propina",
+    "total": "Total",
+    "thank_you": "¡Gracias por elegir BarbaSys!",
+    "sms_receipt": "BarbaSys: ¡Su recibo por ${{total}} está listo! ¡Gracias!",
+    "appointment_confirmed": "¡Cita Confirmada!",
+    "appointment_reminder": "Recordatorio de Cita Próxima",
+    "appointment_cancelled": "Cita Cancelada",
+    "hi": "Hola {{name}}",
+    "notification_body": "Esto es una {{type}} para su cita:",
+    "service": "Servicio",
+    "time": "Hora",
+    "cancellation_sorry": "Pedimos disculpas por cualquier inconveniente.",
+    "see_you_soon": "¡Esperamos verle pronto!",
+    "team": "El equipo de BarbaSys",
+    "sms_notification": "{{title}}: {{service}} @ {{time}}. ¡Nos vemos pronto!",
+    "low_stock_alert": "ALERTA DE STOCK BAJO: {{name}} está en {{stock}} (Umbral: {{threshold}})"
+  },
+  "errors": {
+    "barber_not_found": "Barbero no encontrado",
+    "failed_fetch_users": "Error al obtener usuarios",
+    "shop_not_assigned": "Local no asignado",
+    "customer_not_found": "Cliente no encontrado",
+    "failed_update_status": "Error al actualizar el estado",
+    "unauthorized": "No autorizado",
+    "failed_booking": "Error al reservar la cita"
+  }
+}

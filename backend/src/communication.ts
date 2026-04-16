@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 import twilio from 'twilio';
+import i18n from './i18n.js';
 
 // Use environment variables for credentials
 const EMAIL_USER = process.env.EMAIL_USER;
@@ -25,22 +26,23 @@ export const sendReceipt = async (sale: {
   items: any[];
   barber_name: string;
 }) => {
+  const t = i18n.t.bind(i18n);
   const receiptBody = `
-    BarbaSys Receipt #${sale.id}
+    ${t('notifications.receipt_title', { id: sale.id })}
     ---------------------------
-    Barber: ${sale.barber_name}
-    Items:
+    ${t('notifications.barber')}: ${sale.barber_name}
+    ${t('notifications.items')}:
     ${sale.items.map(i => `- ${i.name} ($${i.price})`).join('\n    ')}
-    ${sale.discount_amount > 0 ? `Discount: -$${sale.discount_amount.toFixed(2)}\n    ` : ''}Tip: $${sale.tip_amount.toFixed(2)}
-    Total: $${sale.total_amount.toFixed(2)}
+    ${sale.discount_amount > 0 ? `${t('notifications.discount')}: -$${sale.discount_amount.toFixed(2)}\n    ` : ''}${t('notifications.tip')}: $${sale.tip_amount.toFixed(2)}
+    ${t('notifications.total')}: $${sale.total_amount.toFixed(2)}
     ---------------------------
-    Thank you for choosing BarbaSys!
+    ${t('notifications.thank_you')}
   `.trim();
 
   const receiptHtml = `
     <div style="font-family: sans-serif; max-width: 500px; padding: 20px; border: 1px solid #eee;">
-      <h2 style="color: #6366f1;">BarbaSys Receipt #${sale.id}</h2>
-      <p><strong>Barber:</strong> ${sale.barber_name}</p>
+      <h2 style="color: #6366f1;">${t('notifications.receipt_title', { id: sale.id })}</h2>
+      <p><strong>${t('notifications.barber')}:</strong> ${sale.barber_name}</p>
       <hr/>
       <ul style="list-style: none; padding: 0;">
         ${sale.items.map(i => `
@@ -51,22 +53,22 @@ export const sendReceipt = async (sale: {
         `).join('')}
         ${sale.discount_amount > 0 ? `
           <li style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f9f9f9; color: #10b981;">
-            <span>Discount</span>
+            <span>${t('notifications.discount')}</span>
             <span>-$${sale.discount_amount.toFixed(2)}</span>
           </li>
         ` : ''}
         ${sale.tip_amount > 0 ? `
           <li style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f9f9f9;">
-            <span>Tip</span>
+            <span>${t('notifications.tip')}</span>
             <span>$${sale.tip_amount.toFixed(2)}</span>
           </li>
         ` : ''}
       </ul>
       <div style="display: flex; justify-content: space-between; font-weight: bold; margin-top: 20px; font-size: 1.2rem;">
-        <span>Total</span>
+        <span>${t('notifications.total')}</span>
         <span>$${sale.total_amount.toFixed(2)}</span>
       </div>
-      <p style="margin-top: 30px; color: #94a3b8; font-size: 0.9rem;">Thank you for choosing BarbaSys!</p>
+      <p style="margin-top: 30px; color: #94a3b8; font-size: 0.9rem;">${t('notifications.thank_you')}</p>
     </div>
   `;
 
@@ -76,7 +78,7 @@ export const sendReceipt = async (sale: {
       await transporter.sendMail({
         from: '"BarbaSys" <receipts@barbasys.com>',
         to: sale.customer_email,
-        subject: `Your BarbaSys Receipt #${sale.id}`,
+        subject: t('notifications.receipt_title', { id: sale.id }),
         text: receiptBody,
         html: receiptHtml
       });
@@ -92,7 +94,7 @@ export const sendReceipt = async (sale: {
   if (sale.customer_phone && twilioClient && TWILIO_PHONE) {
     try {
       await twilioClient.messages.create({
-        body: `BarbaSys: Your receipt for $${sale.total_amount.toFixed(2)} is ready! Thank you!`,
+        body: t('notifications.sms_receipt', { total: sale.total_amount.toFixed(2) }),
         from: TWILIO_PHONE,
         to: sale.customer_phone
       });
@@ -101,7 +103,7 @@ export const sendReceipt = async (sale: {
       console.error('Failed to send SMS:', err);
     }
   } else if (sale.customer_phone) {
-    console.log('[MOCK] Sending SMS to:', sale.customer_phone, 'Message: BarbaSys: Your receipt for $', sale.total_amount.toFixed(2));
+    console.log('[MOCK] Sending SMS to:', sale.customer_phone, 'Message:', t('notifications.sms_receipt', { total: sale.total_amount.toFixed(2) }));
   }
 };
 
@@ -114,18 +116,19 @@ export const sendAppointmentNotification = async (appointment: {
   barber_name: string;
   type: 'confirmation' | 'reminder' | 'cancellation';
 }) => {
+  const t = i18n.t.bind(i18n);
   const dateStr = new Date(appointment.start_time).toLocaleString();
-  const title = appointment.type === 'confirmation' ? 'Appointment Confirmed!' : (appointment.type === 'reminder' ? 'Upcoming Appointment Reminder' : 'Appointment Cancelled');
+  const title = t(`notifications.appointment_${appointment.type}`);
   const body = `
-    Hi ${appointment.customer_name || 'Valued Client'},
+    ${t('notifications.hi', { name: appointment.customer_name || t('schedule.guest_client') })},
     
-    This is a ${appointment.type} for your appointment:
-    - Service: ${appointment.service_name}
-    - Barber: ${appointment.barber_name}
-    - Time: ${dateStr}
+    ${t('notifications.notification_body', { type: title.toLowerCase() })}
+    - ${t('notifications.service')}: ${appointment.service_name}
+    - ${t('notifications.barber')}: ${appointment.barber_name}
+    - ${t('notifications.time')}: ${dateStr}
     
-    ${appointment.type === 'cancellation' ? 'We apologize for any inconvenience.' : 'We look forward to seeing you!'}
-    - BarbaSys Team
+    ${appointment.type === 'cancellation' ? t('notifications.cancellation_sorry') : t('notifications.see_you_soon')}
+    - ${t('notifications.team')}
   `.trim();
 
   // 1. Send Email
@@ -149,7 +152,7 @@ export const sendAppointmentNotification = async (appointment: {
   if (appointment.customer_phone && twilioClient && TWILIO_PHONE) {
     try {
       await twilioClient.messages.create({
-        body: `${title}: ${appointment.service_name} @ ${dateStr}. See you soon!`,
+        body: t('notifications.sms_notification', { title, service: appointment.service_name, time: dateStr }),
         from: TWILIO_PHONE,
         to: appointment.customer_phone
       });
@@ -158,12 +161,13 @@ export const sendAppointmentNotification = async (appointment: {
       console.error('Failed to send SMS:', err);
     }
   } else if (appointment.customer_phone) {
-    console.log(`[MOCK SMS] ${title} to:`, appointment.customer_phone, `Message: ${title}: ${appointment.service_name} @ ${dateStr}`);
+    console.log(`[MOCK SMS] ${title} to:`, appointment.customer_phone, `Message: ${t('notifications.sms_notification', { title, service: appointment.service_name, time: dateStr })}`);
   }
 };
 
 export const alertLowStock = async (product: { name: string; stock: number; threshold: number }) => {
-  const message = `LOW STOCK ALERT: ${product.name} is at ${product.stock} (Threshold: ${product.threshold})`;
+  const t = i18n.t.bind(i18n);
+  const message = t('notifications.low_stock_alert', { name: product.name, stock: product.stock, threshold: product.threshold });
   console.log('[MOCK ALERT]', message);
   // Implementation for email/SMS would go here
 };

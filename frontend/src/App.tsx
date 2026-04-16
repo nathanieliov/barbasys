@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import apiClient from './api/apiClient';
 import { BrowserRouter as Router, Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { LayoutDashboard, Scissors, Package, BarChart3, Users as UsersIcon, ShoppingCart, Calendar as CalendarIcon, LogOut, Settings as SettingsIcon, Clock, Truck, BarChart, Receipt, Menu, User, Shield } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import POS from './pages/POS';
@@ -32,6 +33,7 @@ import { SettingsProvider } from './hooks/useSettings';
 
 const Sidebar = ({ isOpen, toggleSidebar }: { isOpen: boolean, toggleSidebar: () => void }) => {
   const { user, logout } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const [shopName, setShopName] = useState('BarbaSys');
@@ -53,7 +55,7 @@ const Sidebar = ({ isOpen, toggleSidebar }: { isOpen: boolean, toggleSidebar: ()
       localStorage.setItem('user', JSON.stringify(res.data.user));
       window.location.reload();
     } catch (err) {
-      alert('Failed to switch shop');
+      alert(t('common.failed_switch_shop'));
     }
   };
 
@@ -67,23 +69,23 @@ const Sidebar = ({ isOpen, toggleSidebar }: { isOpen: boolean, toggleSidebar: ()
   const isAdmin = user.role === 'OWNER' || user.role === 'MANAGER';
 
   const navItems = [
-    { to: "/", icon: <LayoutDashboard size={20} />, label: "Dashboard" },
-    { to: "/my-schedule", icon: <CalendarIcon size={20} />, label: "My Schedule", roles: ['BARBER'] },
-    { to: "/pos", icon: <ShoppingCart size={20} />, label: "POS (Sales)" },
-    { to: "/sales", icon: <Receipt size={20} />, label: "Sales Log" },
-    { to: "/schedule", icon: <CalendarIcon size={20} />, label: "Shop Calendar", admin: true },
-    { to: "/shifts", icon: <Clock size={20} />, label: "Shifts", admin: true },
-    { to: "/inventory", icon: <Package size={20} />, label: "Inventory" },
-    { to: "/services", icon: <Scissors size={20} />, label: "Services", admin: true },
-    { to: "/suppliers", icon: <Truck size={20} />, label: "Suppliers", admin: true },
-    { to: "/analytics", icon: <BarChart size={20} />, label: "Analytics", admin: true },
-    { to: "/expenses", icon: <Receipt size={20} />, label: "Expenses", admin: true },
-    { to: "/reports", icon: <BarChart3 size={20} />, label: "Reports", admin: true },
-    { to: "/barbers", icon: <UsersIcon size={20} />, label: "Barbers", admin: true },
-    { to: "/users", icon: <Shield size={20} />, label: "User Accounts", admin: true },
-    { to: "/customers", icon: <UsersIcon size={20} />, label: "Customers" },
-    { to: "/profile", icon: <User size={20} />, label: "My Profile" },
-    { to: "/settings", icon: <SettingsIcon size={20} />, label: "Settings", admin: true },
+    { to: "/", icon: <LayoutDashboard size={20} />, label: t('nav.dashboard') },
+    { to: "/my-schedule", icon: <CalendarIcon size={20} />, label: t('nav.my_schedule'), roles: ['BARBER'] },
+    { to: "/pos", icon: <ShoppingCart size={20} />, label: t('nav.pos') },
+    { to: "/sales", icon: <Receipt size={20} />, label: t('nav.sales_log') },
+    { to: "/schedule", icon: <CalendarIcon size={20} />, label: t('nav.shop_calendar'), admin: true },
+    { to: "/shifts", icon: <Clock size={20} />, label: t('nav.shifts'), admin: true },
+    { to: "/inventory", icon: <Package size={20} />, label: t('nav.inventory') },
+    { to: "/services", icon: <Scissors size={20} />, label: t('nav.services'), admin: true },
+    { to: "/suppliers", icon: <Truck size={20} />, label: t('nav.suppliers'), admin: true },
+    { to: "/analytics", icon: <BarChart size={20} />, label: t('nav.analytics'), admin: true },
+    { to: "/expenses", icon: <Receipt size={20} />, label: t('nav.expenses'), admin: true },
+    { to: "/reports", icon: <BarChart3 size={20} />, label: t('nav.reports'), admin: true },
+    { to: "/barbers", icon: <UsersIcon size={20} />, label: t('nav.barbers'), admin: true },
+    { to: "/users", icon: <Shield size={20} />, label: t('nav.user_accounts'), admin: true },
+    { to: "/customers", icon: <UsersIcon size={20} />, label: t('nav.customers') },
+    { to: "/profile", icon: <User size={20} />, label: t('nav.my_profile') },
+    { to: "/settings", icon: <SettingsIcon size={20} />, label: t('nav.settings'), admin: true },
   ];
 
   return (
@@ -95,13 +97,13 @@ const Sidebar = ({ isOpen, toggleSidebar }: { isOpen: boolean, toggleSidebar: ()
             <Scissors size={28} />
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               <span>{shopName}</span>
-              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 'normal' }}>Professional Management</span>
+              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 'normal' }}>{t('common.professional_management')}</span>
             </div>
           </div>
           
           {isAdmin && shops.length > 1 && (
             <div style={{ marginTop: '1.25rem' }}>
-              <label style={{ fontSize: '0.65rem', textTransform: 'uppercase', fontWeight: '800', color: 'var(--text-muted)', display: 'block', marginBottom: '0.5rem', marginLeft: '0.25rem' }}>Active Location</label>
+              <label style={{ fontSize: '0.65rem', textTransform: 'uppercase', fontWeight: '800', color: 'var(--text-muted)', display: 'block', marginBottom: '0.5rem', marginLeft: '0.25rem' }}>{t('common.active_location')}</label>
               <select 
                 value={user?.shop_id || ''} 
                 onChange={e => handleShopSwitch(e.target.value)}
@@ -135,7 +137,7 @@ const Sidebar = ({ isOpen, toggleSidebar }: { isOpen: boolean, toggleSidebar: ()
             <p className="user-role">{user.role}</p>
           </div>
           <button onClick={handleLogout} className="logout-button" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', width: '100%', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
-            <LogOut size={18} style={{ marginRight: '0.5rem' }} /> Logout
+            <LogOut size={18} style={{ marginRight: '0.5rem' }} /> {t('common.logout')}
           </button>
         </div>
       </nav>

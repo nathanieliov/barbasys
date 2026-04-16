@@ -6,8 +6,10 @@ import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useSettings } from '../hooks/useSettings';
 import { formatCurrency } from '../utils/format';
+import { useTranslation } from 'react-i18next';
 
 export default function POS() {
+  const { t } = useTranslation();
   const { settings } = useSettings();
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
@@ -123,9 +125,9 @@ export default function POS() {
         <div style={{ background: 'var(--success)', color: 'white', width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
           <CheckCircle size={32} />
         </div>
-        <h2 style={{ marginBottom: '1rem' }}>Payment Successful!</h2>
-        <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>The transaction has been recorded and the inventory updated.</p>
-        <button onClick={resetPOS}>New Transaction</button>
+        <h2 style={{ marginBottom: '1rem' }}>{t('pos.payment_successful')}</h2>
+        <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>{t('pos.transaction_recorded')}</p>
+        <button onClick={resetPOS}>{t('pos.new_transaction')}</button>
       </div>
     );
   }
@@ -134,16 +136,16 @@ export default function POS() {
     <div className="pos-container">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h1 style={{ marginBottom: '0.25rem' }}>Point of Sale</h1>
+          <h1 style={{ marginBottom: '0.25rem' }}>{t('pos.title')}</h1>
           {user && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary)', fontWeight: '700', fontSize: '0.9rem' }}>
-              <User size={16} /> Professional: {user.fullname || user.username}
+              <User size={16} /> {t('common.professional')}: {user.fullname || user.username}
             </div>
           )}
         </div>
         {appointmentId && (
           <div className="status-badge status-scheduled" style={{ padding: '0.5rem 1rem' }}>
-            Check-in: Appt #{appointmentId}
+            {t('pos.check_in')}: Appt #{appointmentId}
           </div>
         )}
       </div>
@@ -152,7 +154,7 @@ export default function POS() {
         <div className="items-section">
           <div className="card" style={{ marginBottom: '1.5rem' }}>
             <h2 style={{ fontSize: '1.1rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Scissors size={20} color="var(--primary)" /> Services
+              <Scissors size={20} color="var(--primary)" /> {t('pos.services')}
             </h2>
             <div className="item-list-grid">
               {services.map(s => (
@@ -169,7 +171,7 @@ export default function POS() {
 
           <div className="card">
             <h2 style={{ fontSize: '1.1rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <ShoppingCart size={20} color="var(--primary)" /> Products
+              <ShoppingCart size={20} color="var(--primary)" /> {t('pos.products')}
             </h2>
             <div className="item-list-grid">
               {products.map(p => (
@@ -177,7 +179,7 @@ export default function POS() {
                   <span style={{ fontWeight: '700', fontSize: '0.9rem', marginBottom: '0.25rem' }}>{p.name}</span>
                   <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center', marginTop: 'auto' }}>
                     <span style={{ color: 'var(--primary)', fontWeight: '700' }}>{formatCurrency(p.price, settings.currency_symbol)}</span>
-                    <span style={{ fontSize: '0.7rem', color: p.stock < 5 ? 'var(--danger)' : 'var(--text-muted)', fontWeight: '700' }}>Stock: {p.stock}</span>
+                    <span style={{ fontSize: '0.7rem', color: p.stock < 5 ? 'var(--danger)' : 'var(--text-muted)', fontWeight: '700' }}>{t('common.stock')}: {p.stock}</span>
                   </div>
                   <div style={{ marginTop: '0.5rem', alignSelf: 'flex-end', background: 'white', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 4px rgba(79, 70, 229, 0.3)' }}>
                     <Plus size={18} />
@@ -191,11 +193,11 @@ export default function POS() {
         <div className="cart-section">
           <div className="card" style={{ position: 'sticky', top: '2rem', display: 'flex', flexDirection: 'column', minHeight: 'calc(100vh - 8rem)' }}>
             <h2 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <ShoppingCart size={24} color="var(--primary)" /> Current Cart
+              <ShoppingCart size={24} color="var(--primary)" /> {t('pos.current_cart')}
             </h2>
 
             <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Serving Professional</label>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase' }}>{t('pos.serving_professional')}</label>
               <div style={{ position: 'relative' }}>
                 <User size={18} style={{ position: 'absolute', left: '0.75rem', top: '0.75rem', color: 'var(--text-muted)' }} />
                 <select 
@@ -203,7 +205,7 @@ export default function POS() {
                   onChange={e => setSelectedBarber(e.target.value)}
                   style={{ paddingLeft: '2.5rem', fontWeight: '700' }}
                 >
-                  <option value="">Select a professional...</option>
+                  <option value="">{t('pos.select_professional')}</option>
                   {barbers.map(b => <option key={b.id} value={b.id}>{b.fullname || b.name}</option>)}
                 </select>
               </div>
@@ -213,7 +215,7 @@ export default function POS() {
               {cart.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-muted)' }}>
                   <ShoppingCart size={48} style={{ opacity: 0.1, marginBottom: '1rem' }} />
-                  <p>Cart is empty</p>
+                  <p>{t('pos.empty_cart')}</p>
                 </div>
               ) : (
                 <div style={{ display: 'grid', gap: '0.75rem' }}>
@@ -237,21 +239,21 @@ export default function POS() {
             
             <div style={{ marginTop: 'auto', background: '#f9fafb', padding: '1.25rem', borderRadius: '1rem', border: '1px solid var(--border)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', color: 'var(--text-muted)', fontWeight: '600', fontSize: '0.9rem' }}>
-                <span>Subtotal</span>
+                <span>{t('pos.subtotal')}</span>
                 <span>{formatCurrency(subtotal, settings.currency_symbol)}</span>
               </div>
               {discountAmount > 0 && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', color: 'var(--danger)', fontWeight: '600', fontSize: '0.9rem' }}>
-                  <span>Discount</span>
+                  <span>{t('pos.discount')}</span>
                   <span>-{formatCurrency(discountAmount, settings.currency_symbol)}</span>
                 </div>
               )}
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', color: 'var(--text-muted)', fontWeight: '600', fontSize: '0.9rem' }}>
-                <span>Tax ({taxRate}%)</span>
+                <span>{t('pos.tax')} ({taxRate}%)</span>
                 <span>{formatCurrency(taxAmount, settings.currency_symbol)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.5rem', fontWeight: '900', color: 'var(--text-main)', borderTop: '1px dashed var(--border)', paddingTop: '0.75rem', marginTop: '0.25rem' }}>
-                <span>Total</span>
+                <span>{t('pos.total')}</span>
                 <span>{formatCurrency(total, settings.currency_symbol)}</span>
               </div>
             </div>
@@ -261,7 +263,7 @@ export default function POS() {
               onClick={() => setShowCheckout(true)}
               style={{ width: '100%', marginTop: '1.25rem', padding: '1rem', fontSize: '1.1rem' }}
             >
-              Review & Checkout
+              {t('pos.review_checkout')}
             </button>
           </div>
         </div>
@@ -271,34 +273,34 @@ export default function POS() {
         <div className="modal-overlay">
           <div className="modal-content" style={{ maxWidth: '400px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h2 style={{ margin: 0 }}>Checkout</h2>
+              <h2 style={{ margin: 0 }}>{t('pos.checkout')}</h2>
               <button className="secondary" onClick={() => setShowCheckout(false)} style={{ padding: '0.5rem' }}><X size={20} /></button>
             </div>
 
             <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: '700' }}>CUSTOMER CONTACT (OPTIONAL)</label>
-              <input type="email" placeholder="Email" value={customerEmail} onChange={e => setCustomerEmail(e.target.value)} style={{ marginBottom: '0.5rem' }} />
-              <input type="tel" placeholder="Phone" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} />
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: '700' }}>{t('pos.customer_contact_optional')}</label>
+              <input type="email" placeholder={t('common.email')} value={customerEmail} onChange={e => setCustomerEmail(e.target.value)} style={{ marginBottom: '0.5rem' }} />
+              <input type="tel" placeholder={t('common.phone')} value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} />
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
               <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: '700' }}>TIPS ($)</label>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: '700' }}>{t('pos.tips_amount')}</label>
                 <input type="number" value={tipAmount} onChange={e => setTipAmount(parseFloat(e.target.value) || 0)} style={{ fontWeight: '700' }} />
               </div>
               <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: '700' }}>DISCOUNT ($)</label>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: '700' }}>{t('pos.discount_amount')}</label>
                 <input type="number" value={discountAmount} onChange={e => setDiscountAmount(parseFloat(e.target.value) || 0)} style={{ fontWeight: '700' }} />
               </div>
             </div>
 
             <div style={{ background: 'var(--primary)', color: 'white', padding: '1.5rem', borderRadius: '1rem', textAlign: 'center', marginTop: '1rem', marginBottom: '1.5rem' }}>
-              <div style={{ opacity: 0.8, fontSize: '0.9rem' }}>Amount Due</div>
+              <div style={{ opacity: 0.8, fontSize: '0.9rem' }}>{t('pos.amount_due')}</div>
               <div style={{ fontSize: '2.5rem', fontWeight: '900' }}>{formatCurrency(total, settings.currency_symbol)}</div>
             </div>
 
             <button onClick={submitSale} style={{ width: '100%', padding: '1.25rem', fontSize: '1.1rem' }}>
-              Complete Payment
+              {t('pos.complete_payment')}
             </button>
           </div>
         </div>

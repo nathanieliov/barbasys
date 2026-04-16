@@ -3,8 +3,10 @@ import apiClient from '../api/apiClient';
 import { UserPlus, User, X, Percent, Phone, Mail, Trash2, Edit2 } from 'lucide-react';
 import { useSettings } from '../hooks/useSettings';
 import { formatCurrency } from '../utils/format';
+import { useTranslation } from 'react-i18next';
 
 export default function Barbers() {
+  const { t } = useTranslation();
   const { settings } = useSettings();
   const [barbers, setBarbers] = useState<any[]>([]);
   const [showModal, setShowModal] = useState(false);
@@ -72,17 +74,17 @@ export default function Barbers() {
       resetForm();
       fetchBarbers();
     } catch (err) {
-      alert('Failed to save barber');
+      alert(t('barbers.failed_save'));
     }
   };
 
   const deleteBarber = async (id: number) => {
-    if (!window.confirm('Are you sure you want to remove this barber from the team?')) return;
+    if (!window.confirm(t('barbers.delete_confirm'))) return;
     try {
       await apiClient.delete(`/barbers/${id}`);
       fetchBarbers();
     } catch (err: any) {
-      alert(err.response?.data?.error || 'Failed to delete barber');
+      alert(err.response?.data?.error || t('barbers.failed_delete'));
     }
   };
 
@@ -90,11 +92,11 @@ export default function Barbers() {
     <div className="barbers-container">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h1>Team Management</h1>
-          <p style={{ color: 'var(--text-muted)' }}>Manage your professional barbers and their commission rates.</p>
+          <h1>{t('barbers.title')}</h1>
+          <p style={{ color: 'var(--text-muted)' }}>{t('barbers.manage_team')}</p>
         </div>
         <button onClick={() => { setEditingBarber(null); setShowModal(true); }} style={{ gap: '0.5rem' }}>
-          <UserPlus size={20} /> <span className="hide-mobile">Add Professional</span>
+          <UserPlus size={20} /> <span className="hide-mobile">{t('barbers.add_professional')}</span>
         </button>
       </div>
 
@@ -125,28 +127,28 @@ export default function Barbers() {
                 <div style={{ gridColumn: '1 / -1', background: 'rgba(79, 70, 229, 0.05)', padding: '0.75rem', borderRadius: '0.75rem', border: '1px solid rgba(79, 70, 229, 0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
                     <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '800', marginBottom: '0.25rem' }}>
-                      {b.payment_model === 'FIXED' ? 'Salary' : 'Rental Fee'}
+                      {b.payment_model === 'FIXED' ? t('barbers.salary') : t('barbers.rental_fee')}
                     </div>
                     <div style={{ fontSize: '1.25rem', fontWeight: '900', color: 'var(--primary)' }}>
                       {formatCurrency(b.fixed_amount, settings.currency_symbol)}
                     </div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '800', marginBottom: '0.25rem' }}>Period</div>
-                    <div style={{ fontSize: '0.9rem', fontWeight: '700', color: 'var(--text-main)' }}>{b.fixed_period?.toLowerCase()}</div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '800', marginBottom: '0.25rem' }}>{t('barbers.period')}</div>
+                    <div style={{ fontSize: '0.9rem', fontWeight: '700', color: 'var(--text-main)' }}>{t(`common.${b.fixed_period?.toLowerCase() || 'monthly'}`)}</div>
                   </div>
                 </div>
               ) : (
                 <>
                   <div style={{ background: '#f9fafb', padding: '0.75rem', borderRadius: '0.75rem', border: '1px solid var(--border)' }}>
                     <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '800', marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                      <Percent size={12} /> Service Rate
+                      <Percent size={12} /> {t('barbers.service_rate')}
                     </div>
                     <div style={{ fontSize: '1.25rem', fontWeight: '900', color: 'var(--primary)' }}>{(b.service_commission_rate * 100).toFixed(0)}%</div>
                   </div>
                   <div style={{ background: '#f9fafb', padding: '0.75rem', borderRadius: '0.75rem', border: '1px solid var(--border)' }}>
                     <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '800', marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                      <Percent size={12} /> Product Rate
+                      <Percent size={12} /> {t('barbers.product_rate')}
                     </div>
                     <div style={{ fontSize: '1.25rem', fontWeight: '900', color: 'var(--success)' }}>{(b.product_commission_rate * 100).toFixed(0)}%</div>
                   </div>
@@ -156,10 +158,10 @@ export default function Barbers() {
 
             <div style={{ marginTop: 'auto', display: 'flex', gap: '0.5rem' }}>
               <button className="secondary" style={{ flex: 1, padding: '0.5rem', fontSize: '0.8rem', gap: '0.4rem' }}>
-                <Phone size={14} /> Contact
+                <Phone size={14} /> {t('barbers.contact')}
               </button>
               <button className="secondary" style={{ flex: 1, padding: '0.5rem', fontSize: '0.8rem', gap: '0.4rem' }}>
-                <Mail size={14} /> Performance
+                <Mail size={14} /> {t('barbers.performance')}
               </button>
             </div>
           </div>
@@ -167,8 +169,8 @@ export default function Barbers() {
         {barbers.length === 0 && (
           <div className="card" style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '4rem 2rem', color: 'var(--text-muted)' }}>
             <User size={48} style={{ margin: '0 auto 1rem', opacity: 0.1 }} />
-            <p>No professionals in your team yet.</p>
-            <button className="secondary" style={{ marginTop: '1rem' }} onClick={() => setShowModal(true)}>Register your first barber</button>
+            <p>{t('barbers.no_professionals')}</p>
+            <button className="secondary" style={{ marginTop: '1rem' }} onClick={() => setShowModal(true)}>{t('barbers.register_first')}</button>
           </div>
         )}
       </div>
@@ -180,7 +182,7 @@ export default function Barbers() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <UserPlus size={20} color="var(--primary)" />
-                <h2 style={{ marginBottom: 0 }}>{editingBarber ? 'Edit Professional' : 'Register Professional'}</h2>
+                <h2 style={{ marginBottom: 0 }}>{editingBarber ? t('barbers.edit_professional') : t('barbers.register_professional')}</h2>
               </div>
               <button className="secondary" style={{ padding: '0.5rem' }} onClick={resetForm}>
                 <X size={20} />
@@ -189,12 +191,12 @@ export default function Barbers() {
 
             <form onSubmit={handleSubmit}>
               <div style={{ marginBottom: '1.25rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>Full Name</label>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>{t('barbers.full_name')}</label>
                 <div style={{ position: 'relative' }}>
                   <User size={16} style={{ position: 'absolute', left: '0.75rem', top: '0.75rem', color: 'var(--text-muted)' }} />
                   <input 
                     type="text" 
-                    placeholder="e.g. John Doe" 
+                    placeholder={t('barbers.fullname_placeholder')}
                     value={fullname} 
                     onChange={e => setFullname(e.target.value)} 
                     style={{ paddingLeft: '2.5rem' }}
@@ -204,7 +206,7 @@ export default function Barbers() {
               </div>
 
               <div style={{ marginBottom: '1.25rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>Payment Model</label>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>{t('barbers.payment_model')}</label>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem' }}>
                   <button 
                     type="button"
@@ -212,7 +214,7 @@ export default function Barbers() {
                     onClick={() => setPaymentModel('COMMISSION')}
                     style={{ padding: '0.75rem 0.25rem', fontSize: '0.75rem' }}
                   >
-                    Commission
+                    {t('barbers.commission')}
                   </button>
                   <button 
                     type="button"
@@ -220,7 +222,7 @@ export default function Barbers() {
                     onClick={() => setPaymentModel('FIXED')}
                     style={{ padding: '0.75rem 0.25rem', fontSize: '0.75rem' }}
                   >
-                    Fixed Salary
+                    {t('barbers.fixed_salary')}
                   </button>
                   <button 
                     type="button"
@@ -228,7 +230,7 @@ export default function Barbers() {
                     onClick={() => setPaymentModel('FIXED_FEE')}
                     style={{ padding: '0.75rem 0.25rem', fontSize: '0.75rem' }}
                   >
-                    Fixed Fee (Rent)
+                    {t('barbers.fixed_fee_rent')}
                   </button>
                 </div>
               </div>
@@ -237,7 +239,7 @@ export default function Barbers() {
                 <>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
                     <div>
-                      <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>Service Rate (0–1)</label>
+                      <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>{t('barbers.service_rate_label')}</label>
                       <input 
                         type="number" 
                         step="0.01" 
@@ -247,10 +249,10 @@ export default function Barbers() {
                         onChange={e => setServiceRate(e.target.value)} 
                         style={{ fontWeight: '700', marginBottom: '0.25rem' }}
                       />
-                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Typical: 0.5 to 0.7</div>
+                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{t('barbers.typical')}: 0.5 to 0.7</div>
                     </div>
                     <div>
-                      <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>Product Rate (0–1)</label>
+                      <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>{t('barbers.product_rate_label')}</label>
                       <input 
                         type="number" 
                         step="0.01" 
@@ -260,17 +262,17 @@ export default function Barbers() {
                         onChange={e => setProductRate(e.target.value)} 
                         style={{ fontWeight: '700', marginBottom: '0.25rem' }}
                       />
-                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Typical: 0.1 to 0.2</div>
+                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{t('barbers.typical')}: 0.1 to 0.2</div>
                     </div>
                   </div>
 
                   <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '0.75rem', border: '1px solid var(--border)', marginBottom: '1.5rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                      <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Service Commission</span>
+                      <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{t('barbers.service_rate')}</span>
                       <span style={{ fontWeight: '800', color: 'var(--primary)' }}>{(parseFloat(serviceRate) * 100 || 0).toFixed(0)}%</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Product Commission</span>
+                      <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{t('barbers.product_rate')}</span>
                       <span style={{ fontWeight: '800', color: 'var(--success)' }}>{(parseFloat(productRate) * 100 || 0).toFixed(0)}%</span>
                     </div>
                   </div>
@@ -279,7 +281,7 @@ export default function Barbers() {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
                   <div>
                     <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>
-                      {paymentModel === 'FIXED' ? 'Salary Amount ($)' : 'Fee Amount ($)'}
+                      {paymentModel === 'FIXED' ? t('barbers.salary_amount') : t('barbers.fee_amount')}
                     </label>
                     <input 
                       type="number" 
@@ -290,22 +292,22 @@ export default function Barbers() {
                     />
                   </div>
                   <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>Payment Period</label>
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>{t('barbers.payment_period')}</label>
                     <select 
                       value={fixedPeriod} 
                       onChange={e => setFixedPeriod(e.target.value as any)}
                       style={{ fontWeight: '700' }}
                     >
-                      <option value="WEEKLY">Weekly</option>
-                      <option value="BIWEEKLY">Bi-weekly</option>
-                      <option value="MONTHLY">Monthly</option>
+                      <option value="WEEKLY">{t('common.weekly')}</option>
+                      <option value="BIWEEKLY">{t('common.biweekly')}</option>
+                      <option value="MONTHLY">{t('common.monthly')}</option>
                     </select>
                   </div>
                 </div>
               )}
 
               <button type="submit" style={{ width: '100%', padding: '1.1rem', fontSize: '1.1rem' }}>
-                {editingBarber ? 'Update Professional' : 'Confirm Registration'}
+                {editingBarber ? t('barbers.update_professional') : t('barbers.confirm_registration')}
               </button>
             </form>
           </div>

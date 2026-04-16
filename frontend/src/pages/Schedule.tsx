@@ -3,8 +3,10 @@ import apiClient from '../api/apiClient';
 import { Calendar as CalendarIcon, Clock, Scissors, User, X, PlusCircle, CheckCircle, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { useTranslation } from 'react-i18next';
 
 export default function Schedule() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [appointments, setAppointments] = useState<any[]>([]);
@@ -79,7 +81,7 @@ export default function Schedule() {
   const updateStatus = async (id: number, status: string) => {
     try {
       if (status === 'cancelled') {
-        const reason = window.prompt('Optional: Reason for cancellation?');
+        const reason = window.prompt(t('schedule.cancel_reason_prompt'));
         if (reason === null) return; // User clicked cancel
         await apiClient.post(`/appointments/${id}/cancel`, { reason });
       } else {
@@ -87,14 +89,14 @@ export default function Schedule() {
       }
 
       if (status === 'completed') {
-        if (window.confirm('Appointment marked as completed! Would you like to process the payment now?')) {
+        if (window.confirm(t('schedule.mark_completed_confirm'))) {
           navigate(`/pos?appointmentId=${id}`);
           return;
         }
       }
       fetchData();
     } catch (err: any) {
-      alert(err.response?.data?.error || 'Failed to update status');
+      alert(err.response?.data?.error || t('schedule.failed_update_status'));
     }
   };
 
@@ -107,9 +109,9 @@ export default function Schedule() {
   return (
     <div className="schedule-container">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-        <h1>Schedule</h1>
+        <h1>{t('schedule.title')}</h1>
         <button onClick={() => setShowBook(true)} style={{ gap: '0.5rem' }}>
-          <PlusCircle size={20} /> <span className="hide-mobile">Book New</span>
+          <PlusCircle size={20} /> <span className="hide-mobile">{t('schedule.book_new')}</span>
         </button>
       </div>
 
@@ -130,7 +132,7 @@ export default function Schedule() {
             />
           </div>
 
-          <button className="secondary hide-mobile" onClick={() => setDate(new Date().toISOString().split('T')[0])}>Today</button>
+          <button className="secondary hide-mobile" onClick={() => setDate(new Date().toISOString().split('T')[0])}>{t('common.today')}</button>
         </div>
       </div>
 
@@ -138,8 +140,8 @@ export default function Schedule() {
         {appointments.length === 0 ? (
           <div className="card" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '4rem 2rem' }}>
             <CalendarIcon size={48} style={{ margin: '0 auto 1rem', opacity: 0.1 }} />
-            <p>No appointments scheduled for this date.</p>
-            <button className="secondary" style={{ marginTop: '1rem' }} onClick={() => setShowBook(true)}>Book someone now</button>
+            <p>{t('schedule.no_appointments')}</p>
+            <button className="secondary" style={{ marginTop: '1rem' }} onClick={() => setShowBook(true)}>{t('schedule.book_now')}</button>
           </div>
         ) : (
           appointments.map(a => (
@@ -150,7 +152,7 @@ export default function Schedule() {
                   {new Date(a.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </div>
                 <span className={`status-badge ${a.status === 'completed' ? 'status-completed' : 'status-scheduled'}`}>
-                  {a.status}
+                  {t(`common.${a.status}`)}
                 </span>
               </div>
               
@@ -160,8 +162,8 @@ export default function Schedule() {
                     <User size={20} />
                   </div>
                   <div>
-                    <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>{a.customer_name || 'Guest Client'}</div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Customer</div>
+                    <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>{a.customer_name || t('schedule.guest_client')}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{t('schedule.customer')}</div>
                   </div>
                 </div>
 
@@ -171,7 +173,7 @@ export default function Schedule() {
                   </div>
                   <div>
                     <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>{a.service_name}</div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>with {a.barber_name}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{t('schedule.with')} {a.barber_name}</div>
                   </div>
                 </div>
               </div>
@@ -179,10 +181,10 @@ export default function Schedule() {
               {a.status === 'scheduled' && (
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                   <button style={{ flex: 2, gap: '0.5rem', padding: '0.875rem' }} onClick={() => handleCheckIn(a)}>
-                    <CheckCircle size={18} /> Start Check-in
+                    <CheckCircle size={18} /> {t('schedule.start_checkin')}
                   </button>
                   <button className="secondary" style={{ flex: 1, color: 'var(--success)', border: '1px solid var(--success)', padding: '0.875rem' }} onClick={() => updateStatus(a.id, 'completed')}>
-                    Done
+                    {t('common.done')}
                   </button>
                   <button className="secondary" style={{ padding: '0.875rem', color: 'var(--danger)', border: '1px solid var(--danger)' }} onClick={() => updateStatus(a.id, 'cancelled')}>
                     <X size={18} />
@@ -202,16 +204,16 @@ export default function Schedule() {
                 <div style={{ background: 'var(--success)', color: 'white', width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
                   <CalendarIcon size={32} />
                 </div>
-                <h2>Booking Confirmed!</h2>
-                <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>Your appointment has been successfully scheduled.</p>
+                <h2>{t('schedule.booking_confirmed')}</h2>
+                <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>{t('schedule.booking_success_msg')}</p>
                 <button onClick={resetBookingForm} style={{ width: '100%', padding: '1rem' }}>
-                  Done
+                  {t('common.done')}
                 </button>
               </div>
             ) : (
               <>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                  <h2>Book Appointment</h2>
+                  <h2>{t('schedule.book_appointment')}</h2>
                   <button className="secondary" style={{ padding: '0.5rem' }} onClick={resetBookingForm}>
                     <X size={20} />
                   </button>
@@ -226,13 +228,13 @@ export default function Schedule() {
                 <form onSubmit={handleBook}>
                   {user?.role !== 'BARBER' ? (
                     <div style={{ marginBottom: '1rem' }}>
-                      <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Select Professional</label>
+                      <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>{t('schedule.select_barber')}</label>
                       <select 
                         value={selectedBarber} 
                         onChange={e => setSelectedBarber(e.target.value)} 
                         required
                       >
-                        <option value="">Select Barber</option>
+                        <option value="">{t('schedule.select_barber')}</option>
                         {barbers.map(b => <option key={b.id} value={b.id}>{b.fullname || b.name}</option>)}
                         </select>
 
@@ -243,41 +245,41 @@ export default function Schedule() {
                         <User size={18} />
                       </div>
                       <div>
-                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '800' }}>Professional</div>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '800' }}>{t('common.professional')}</div>
                         <div style={{ fontWeight: '700', color: 'var(--primary)' }}>{user.fullname || user.username}</div>
                       </div>
                     </div>
                   )}
                   
                   <div style={{ marginBottom: '1rem' }}>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Customer (Optional)</label>
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>{t('schedule.customer')} ({t('pos.customer_contact_optional')})</label>
                     <select value={selectedCustomer} onChange={e => setSelectedCustomer(e.target.value)}>
-                      <option value="">Guest / New Customer</option>
+                      <option value="">{t('schedule.guest_new_customer')}</option>
                       {customers.map(c => <option key={c.id} value={c.id}>{c.name || c.email || c.phone}</option>)}
                     </select>
                   </div>
 
                   <div style={{ marginBottom: '1rem' }}>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Service</label>
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>{t('pos.services')}</label>
                     <select value={selectedService} onChange={e => setSelectedService(e.target.value)} required>
-                      <option value="">Select Service</option>
+                      <option value="">{t('schedule.select_service')}</option>
                       {services.map(s => <option key={s.id} value={s.id}>{s.name} ({s.duration_minutes}m) - ${s.price}</option>)}
                     </select>
                   </div>
 
                   <div style={{ marginBottom: '1.5rem' }}>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Time</label>
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>{t('schedule.time')}</label>
                     <input type="time" value={selectedTime} onChange={e => setSelectedTime(e.target.value)} required style={{ fontSize: '1.1rem', fontWeight: '600' }} />
                   </div>
 
                   <div style={{ marginBottom: '1.5rem', padding: '1rem', background: '#f3f4f6', borderRadius: '0.75rem' }}>
-                    <label style={{ display: 'block', marginBottom: '0.75rem', color: 'var(--text-main)', fontSize: '0.875rem', fontWeight: '600' }}>Recurring Appointment</label>
+                    <label style={{ display: 'block', marginBottom: '0.75rem', color: 'var(--text-main)', fontSize: '0.875rem', fontWeight: '600' }}>{t('schedule.recurring_appointment')}</label>
                     <div style={{ display: 'flex', gap: '0.75rem' }}>
                       <select value={recurringRule} onChange={e => setRecurringRule(e.target.value)} style={{ flex: 1.5, marginBottom: 0 }}>
-                        <option value="">Does not repeat</option>
-                        <option value="weekly">Weekly</option>
-                        <option value="biweekly">Bi-weekly</option>
-                        <option value="monthly">Monthly</option>
+                        <option value="">{t('schedule.does_not_repeat')}</option>
+                        <option value="weekly">{t('schedule.weekly')}</option>
+                        <option value="biweekly">{t('schedule.biweekly')}</option>
+                        <option value="monthly">{t('schedule.monthly')}</option>
                       </select>
                       {recurringRule && (
                         <input 
@@ -302,12 +304,12 @@ export default function Schedule() {
                       style={{ width: 'auto', marginBottom: 0 }}
                     />
                     <label htmlFor="sendConfirmation" style={{ fontSize: '0.9rem', color: 'var(--text-main)', fontWeight: '600', cursor: 'pointer' }}>
-                      Send booking confirmation (Email/SMS)
+                      {t('schedule.send_confirmation')}
                     </label>
                   </div>
 
                   <button type="submit" style={{ width: '100%', padding: '1rem', fontSize: '1.1rem' }}>
-                    Confirm Booking
+                    {t('schedule.confirm_booking')}
                   </button>
                 </form>
               </>

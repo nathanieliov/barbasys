@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import apiClient from '../api/apiClient';
 import { Scissors, Lock, User as UserIcon, Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const Login: React.FC = () => {
+  const { t } = useTranslation();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   
@@ -28,7 +30,7 @@ const Login: React.FC = () => {
       login(res.data.token, res.data.user);
       navigate('/');
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Invalid credentials. Please try again.');
+      setError(err.response?.data?.error || t('login.invalid_credentials'));
     } finally {
       setIsSubmitting(false);
     }
@@ -41,21 +43,21 @@ const Login: React.FC = () => {
           <div style={{ display: 'inline-flex', padding: '1rem', background: 'rgba(79, 70, 229, 0.05)', borderRadius: '1.25rem', marginBottom: '1rem' }}>
             <Scissors size={40} color="var(--primary)" />
           </div>
-          <h1>BarbaSys Pro</h1>
-          <p>Professional Management</p>
+          <h1>{t('login.title')}</h1>
+          <p>{t('login.professional_management')}</p>
         </div>
 
         {error && <div className="login-error">{error}</div>}
 
         <form onSubmit={handleAdminLogin}>
           <div className="form-group">
-            <label htmlFor="username">Username</label>
+            <label htmlFor="username">{t('login.username')}</label>
             <div className="input-with-icon">
               <UserIcon size={18} className="input-icon" />
               <input
                 id="username"
                 type="text"
-                placeholder="Enter your username"
+                placeholder={t('login.username_placeholder')}
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
@@ -65,7 +67,7 @@ const Login: React.FC = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="password">Password</label>
+            <label htmlFor="password">{t('login.password')}</label>
             <div className="input-with-icon">
               <Lock size={18} className="input-icon" />
               <input
@@ -81,7 +83,7 @@ const Login: React.FC = () => {
           </div>
 
           <button type="submit" className="login-button" disabled={isSubmitting}>
-            {isSubmitting ? <Loader2 size={18} className="spinner" /> : 'Sign In'}
+            {isSubmitting ? <Loader2 size={18} className="spinner" /> : t('login.sign_in')}
           </button>
         </form>
         
@@ -90,12 +92,12 @@ const Login: React.FC = () => {
             onClick={() => navigate('/discovery')}
             style={{ background: 'none', border: 'none', color: 'var(--text-muted)', textDecoration: 'underline', cursor: 'pointer' }}
           >
-            I am a Customer
+            {t('login.i_am_a_customer')}
           </button>
         </div>
 
         <div style={{ marginTop: '2rem', textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-          &copy; 2026 BarbaSys v2.0 • Secure Access
+          &copy; 2026 BarbaSys v2.0 • {t('login.secure_access')}
         </div>
       </div>
       

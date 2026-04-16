@@ -1,0 +1,33 @@
+{
+  "notifications": {
+    "receipt_title": "BarbaSys Receipt #{{id}}",
+    "barber": "Barber",
+    "items": "Items",
+    "discount": "Discount",
+    "tip": "Tip",
+    "total": "Total",
+    "thank_you": "Thank you for choosing BarbaSys!",
+    "sms_receipt": "BarbaSys: Your receipt for ${{total}} is ready! Thank you!",
+    "appointment_confirmed": "Appointment Confirmed!",
+    "appointment_reminder": "Upcoming Appointment Reminder",
+    "appointment_cancelled": "Appointment Cancelled",
+    "hi": "Hi {{name}}",
+    "notification_body": "This is a {{type}} for your appointment:",
+    "service": "Service",
+    "time": "Time",
+    "cancellation_sorry": "We apologize for any inconvenience.",
+    "see_you_soon": "We look forward to seeing you!",
+    "team": "BarbaSys Team",
+    "sms_notification": "{{title}}: {{service}} @ {{time}}. See you soon!",
+    "low_stock_alert": "LOW STOCK ALERT: {{name}} is at {{stock}} (Threshold: {{threshold}})"
+  },
+  "errors": {
+    "barber_not_found": "Barber not found",
+    "failed_fetch_users": "Failed to fetch users",
+    "shop_not_assigned": "Shop not assigned",
+    "customer_not_found": "Customer not found",
+    "failed_update_status": "Failed to update status",
+    "unauthorized": "Unauthorized",
+    "failed_booking": "Failed to book appointment"
+  }
+}

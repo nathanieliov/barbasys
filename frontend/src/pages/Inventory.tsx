@@ -4,8 +4,10 @@ import apiClient from '../api/apiClient';
 import { AlertCircle, PlusCircle, X, TrendingDown, Search, Package, Filter, Edit2, Trash2, Tag, DollarSign, Truck } from 'lucide-react';
 import { useSettings } from '../hooks/useSettings';
 import { formatCurrency } from '../utils/format';
+import { useTranslation } from 'react-i18next';
 
 export default function Inventory() {
+  const { t } = useTranslation();
   const { settings } = useSettings();
   const [searchParams] = useSearchParams();
   const initialSupplierId = searchParams.get('supplierId');
@@ -22,7 +24,7 @@ export default function Inventory() {
   // Restock Form
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [restockAmount, setRestockAmount] = useState(0);
-  const [restockReason, setRestockReason] = useState('Manual Restock');
+  const [restockReason, setRestockReason] = useState(t('inventory.manual_restock'));
 
   // Product Add/Edit Form
   const [editingProduct, setEditingProduct] = useState<any>(null);
@@ -53,10 +55,10 @@ export default function Inventory() {
       });
       setShowRestock(false);
       setRestockAmount(0);
-      setRestockReason('Manual Restock');
+      setRestockReason(t('inventory.manual_restock'));
       fetchData();
     } catch (err) {
-      alert('Failed to restock');
+      alert(t('inventory.failed_restock'));
     }
   };
 
@@ -101,12 +103,12 @@ export default function Inventory() {
   };
 
   const deleteProduct = async (id: number) => {
-    if (!window.confirm('Are you sure you want to remove this product?')) return;
+    if (!window.confirm(t('inventory.delete_confirm'))) return;
     try {
       await apiClient.delete(`/products/${id}`);
       fetchData();
     } catch (err) {
-      alert('Failed to delete product');
+      alert(t('inventory.failed_delete'));
     }
   };
 
@@ -126,15 +128,15 @@ export default function Inventory() {
     <div className="inventory-container">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h1>Inventory</h1>
-          <p style={{ color: 'var(--text-muted)' }}>Manage your products and stock levels.</p>
+          <h1>{t('inventory.title')}</h1>
+          <p style={{ color: 'var(--text-muted)' }}>{t('inventory.manage_products')}</p>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem' }}>
           <button className="secondary" onClick={() => { setEditingProduct(null); resetProductForm(); setShowProductModal(true); }} style={{ gap: '0.5rem' }}>
-            <PlusCircle size={20} /> <span className="hide-mobile">Add Product</span>
+            <PlusCircle size={20} /> <span className="hide-mobile">{t('inventory.add_product')}</span>
           </button>
           <button onClick={() => { setShowRestock(true); setSelectedProduct(products[0]); }} style={{ gap: '0.5rem' }}>
-            <TrendingDown size={20} /> <span className="hide-mobile">Quick Restock</span>
+            <TrendingDown size={20} /> <span className="hide-mobile">{t('inventory.quick_restock')}</span>
           </button>
         </div>
       </div>
@@ -144,7 +146,7 @@ export default function Inventory() {
         <div className="card" style={{ border: '1px solid var(--warning)', background: 'rgba(245, 158, 11, 0.05)', marginBottom: '2rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem', color: 'var(--warning)' }}>
             <TrendingDown size={24} />
-            <h2 style={{ margin: 0, color: 'var(--warning)', fontSize: '1.1rem' }}>Smart Reorder Suggestions</h2>
+            <h2 style={{ margin: 0, color: 'var(--warning)', fontSize: '1.1rem' }}>{t('inventory.smart_reorder_suggestions')}</h2>
           </div>
           <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
             {reorderSuggestions.map(i => (
@@ -153,14 +155,14 @@ export default function Inventory() {
                   <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>{i.name}</div>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
                     {i.days_remaining <= 7 ? (
-                      <span style={{ color: 'var(--danger)', fontWeight: '600' }}>Out of stock in ~{i.days_remaining} days</span>
+                      <span style={{ color: 'var(--danger)', fontWeight: '600' }}>{t('inventory.out_of_stock_in', { days: i.days_remaining })}</span>
                     ) : (
-                      <span>Current stock: {i.stock}</span>
+                      <span>{t('inventory.current_stock_label', { count: i.stock })}</span>
                     )}
                   </div>
                 </div>
                 <button className="secondary" style={{ padding: '0.4rem 0.75rem', fontSize: '0.75rem' }} onClick={() => { setSelectedProduct(products.find(p => p.id === i.id)); setShowRestock(true); }}>
-                  Restock
+                  {t('inventory.restock')}
                 </button>
               </div>
             ))}
@@ -175,14 +177,14 @@ export default function Inventory() {
             <Search size={18} style={{ position: 'absolute', left: '0.85rem', top: '0.75rem', color: 'var(--text-muted)' }} />
             <input 
               type="text" 
-              placeholder="Search products or suppliers..." 
+              placeholder={t('inventory.search_placeholder')}
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
               style={{ paddingLeft: '2.5rem', marginBottom: 0 }}
             />
           </div>
           <button className="secondary" style={{ gap: '0.5rem' }}>
-            <Filter size={18} /> Filters
+            <Filter size={18} /> {t('inventory.filters')}
           </button>
         </div>
       </div>
@@ -200,7 +202,7 @@ export default function Inventory() {
                   </div>
                   <div>
                     <div style={{ fontWeight: '700', fontSize: '1rem' }}>{p.name}</div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{p.supplier_name || 'Generic Supplier'}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{p.supplier_name || t('inventory.generic_supplier')}</div>
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '0.25rem' }}>
@@ -215,22 +217,22 @@ export default function Inventory() {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.25rem' }}>
                 <div style={{ background: '#f9fafb', padding: '0.75rem', borderRadius: '0.5rem', textAlign: 'center' }}>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '700', marginBottom: '0.25rem' }}>Current Stock</div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '700', marginBottom: '0.25rem' }}>{t('inventory.current_stock')}</div>
                   <div style={{ fontSize: '1.25rem', fontWeight: '800', color: isLowStock ? 'var(--danger)' : 'var(--text-main)' }}>{p.stock}</div>
                 </div>
                 <div style={{ background: '#f9fafb', padding: '0.75rem', borderRadius: '0.5rem', textAlign: 'center' }}>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '700', marginBottom: '0.25rem' }}>Price</div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '700', marginBottom: '0.25rem' }}>{t('inventory.price')}</div>
                   <div style={{ fontSize: '1.25rem', fontWeight: '800' }}>{formatCurrency(p.price, settings.currency_symbol)}</div>
                 </div>
               </div>
 
               <button className="secondary" style={{ width: '100%', padding: '0.5rem' }} onClick={() => { setSelectedProduct(p); setShowRestock(true); }}>
-                Quick Restock
+                {t('inventory.quick_restock')}
               </button>
 
               {isLowStock && (
                 <div style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--danger)', fontSize: '0.75rem', fontWeight: '600', justifyContent: 'center' }}>
-                  <AlertCircle size={14} /> Critical stock level reached
+                  <AlertCircle size={14} /> {t('inventory.critical_stock_level')}
                 </div>
               )}
             </div>
@@ -245,7 +247,7 @@ export default function Inventory() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Package size={20} color="var(--primary)" />
-                <h2 style={{ marginBottom: 0 }}>Restock Product</h2>
+                <h2 style={{ marginBottom: 0 }}>{t('inventory.restock_product')}</h2>
               </div>
               <button className="secondary" style={{ padding: '0.5rem' }} onClick={() => setShowRestock(false)}>
                 <X size={20} />
@@ -254,19 +256,19 @@ export default function Inventory() {
 
             <form onSubmit={handleRestock}>
               <div style={{ marginBottom: '1.25rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Product</label>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>{t('inventory.product')}</label>
                 <select 
                   value={selectedProduct?.id} 
                   onChange={e => setSelectedProduct(products.find(p => p.id === parseInt(e.target.value)))}
                   style={{ fontWeight: '600' }}
                 >
-                  {products.map(p => <option key={p.id} value={p.id}>{p.name} (In Stock: {p.stock})</option>)}
+                  {products.map(p => <option key={p.id} value={p.id}>{p.name} ({t('inventory.current_stock')}: {p.stock})</option>)}
                 </select>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.25rem' }}>
                 <div>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Amount to Add</label>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>{t('inventory.amount_to_add')}</label>
                   <input 
                     type="number" 
                     min="1" 
@@ -276,7 +278,7 @@ export default function Inventory() {
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Current Stock</label>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>{t('inventory.current_stock')}</label>
                   <div style={{ padding: '0.625rem 0.875rem', background: '#f3f4f6', borderRadius: '0.5rem', fontWeight: '700', fontSize: '1.1rem', border: '1px solid var(--border)' }}>
                     {selectedProduct?.stock || 0}
                   </div>
@@ -284,17 +286,17 @@ export default function Inventory() {
               </div>
 
               <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Reason / Reference</label>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>{t('inventory.reason_reference')}</label>
                 <input 
                   type="text" 
                   value={restockReason} 
                   onChange={e => setRestockReason(e.target.value)} 
-                  placeholder="e.g. Weekly Restock, Manual Correction"
+                  placeholder={t('inventory.reason_placeholder')}
                 />
               </div>
 
               <button type="submit" style={{ width: '100%', padding: '1.1rem', fontSize: '1.1rem' }}>
-                Confirm Restock
+                {t('inventory.confirm_restock')}
               </button>
             </form>
           </div>
@@ -308,7 +310,7 @@ export default function Inventory() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Tag size={20} color="var(--primary)" />
-                <h2 style={{ marginBottom: 0 }}>{editingProduct ? 'Edit Product' : 'Add New Product'}</h2>
+                <h2 style={{ marginBottom: 0 }}>{editingProduct ? t('inventory.edit_product') : t('inventory.add_new_product')}</h2>
               </div>
               <button className="secondary" style={{ padding: '0.5rem' }} onClick={resetProductForm}>
                 <X size={20} />
@@ -317,10 +319,10 @@ export default function Inventory() {
 
             <form onSubmit={handleProductSubmit}>
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>Product Name</label>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>{t('inventory.product_name')}</label>
                 <input 
                   type="text" 
-                  placeholder="e.g. Professional Pomade" 
+                  placeholder={t('inventory.product_name_placeholder')}
                   value={prodName} 
                   onChange={e => setProdName(e.target.value)} 
                   required
@@ -329,7 +331,7 @@ export default function Inventory() {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
                 <div>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>Retail Price ($)</label>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>{t('inventory.retail_price')}</label>
                   <div style={{ position: 'relative' }}>
                     <DollarSign size={16} style={{ position: 'absolute', left: '0.75rem', top: '0.75rem', color: 'var(--text-muted)' }} />
                     <input 
@@ -343,7 +345,7 @@ export default function Inventory() {
                   </div>
                 </div>
                 <div>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>Min. Threshold</label>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>{t('inventory.min_threshold')}</label>
                   <input 
                     type="number" 
                     value={prodThreshold} 
@@ -355,7 +357,7 @@ export default function Inventory() {
               </div>
 
               <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>Supplier</label>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>{t('inventory.supplier')}</label>
                 <div style={{ position: 'relative' }}>
                   <Truck size={16} style={{ position: 'absolute', left: '0.75rem', top: '0.75rem', color: 'var(--text-muted)' }} />
                   <select 
@@ -363,14 +365,14 @@ export default function Inventory() {
                     onChange={e => setProdSupplierId(e.target.value)}
                     style={{ paddingLeft: '2.25rem', marginBottom: 0 }}
                   >
-                    <option value="">Select Supplier (Optional)</option>
+                    <option value="">{t('inventory.select_supplier')}</option>
                     {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                   </select>
                 </div>
               </div>
 
               <button type="submit" style={{ width: '100%', padding: '1.1rem', fontSize: '1.1rem' }}>
-                {editingProduct ? 'Update Product' : 'Create Product'}
+                {editingProduct ? t('inventory.update_product') : t('inventory.create_product')}
               </button>
             </form>
           </div>

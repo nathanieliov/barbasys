@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../api/apiClient';
 import { Save, Building, Clock, Percent, AlertCircle, CheckCircle, Info, Calendar, Plus, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export default function Settings() {
+  const { t } = useTranslation();
   const [settings, setSettings] = useState<any>({
     shop_name: '',
     shop_address: '',
@@ -44,10 +46,10 @@ export default function Settings() {
         holidays: JSON.stringify(holidays) 
       };
       await apiClient.post('/settings', payload);
-      setMessage({ text: 'Settings saved successfully!', type: 'success' });
+      setMessage({ text: t('settings.save_success'), type: 'success' });
       setTimeout(() => setMessage({ text: '', type: '' }), 3000);
     } catch (err) {
-      setMessage({ text: 'Failed to save settings', type: 'error' });
+      setMessage({ text: t('settings.save_failed'), type: 'error' });
     } finally {
       setSaving(false);
     }
@@ -70,8 +72,8 @@ export default function Settings() {
   return (
     <div style={{ maxWidth: '900px' }}>
       <div style={{ marginBottom: '2rem' }}>
-        <h1>Shop Settings</h1>
-        <p style={{ color: 'var(--text-muted)' }}>Configure your business operations, financial defaults, and automated features.</p>
+        <h1>{t('settings.title')}</h1>
+        <p style={{ color: 'var(--text-muted)' }}>{t('settings.description')}</p>
       </div>
 
       {message.text && (
@@ -99,11 +101,11 @@ export default function Settings() {
           <div className="card" style={{ marginBottom: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
               <Building size={20} color="var(--primary)" />
-              <h2 style={{ margin: 0 }}>General Information</h2>
+              <h2 style={{ margin: 0 }}>{t('settings.general_info')}</h2>
             </div>
             
             <div style={{ marginBottom: '1.25rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>Business Name</label>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>{t('settings.business_name')}</label>
               <input 
                 type="text" 
                 value={settings.shop_name} 
@@ -113,7 +115,7 @@ export default function Settings() {
             </div>
 
             <div style={{ marginBottom: '1.25rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>Address</label>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>{t('settings.address')}</label>
               <input 
                 type="text" 
                 value={settings.shop_address} 
@@ -123,7 +125,7 @@ export default function Settings() {
             </div>
 
             <div>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>Phone Number</label>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>{t('settings.phone_number')}</label>
               <input 
                 type="tel" 
                 value={settings.shop_phone} 
@@ -137,12 +139,12 @@ export default function Settings() {
           <div className="card" style={{ marginBottom: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
               <Clock size={20} color="var(--primary)" />
-              <h2 style={{ margin: 0 }}>Operating Hours</h2>
+              <h2 style={{ margin: 0 }}>{t('settings.operating_hours')}</h2>
             </div>
             
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
               <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>Opening Time</label>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>{t('settings.opening_time')}</label>
                 <input 
                   type="time" 
                   value={settings.open_time} 
@@ -150,7 +152,7 @@ export default function Settings() {
                 />
               </div>
               <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>Closing Time</label>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>{t('settings.closing_time')}</label>
                 <input 
                   type="time" 
                   value={settings.close_time} 
@@ -160,7 +162,7 @@ export default function Settings() {
             </div>
 
             <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1.25rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.75rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>Manage Holidays & Closures</label>
+              <label style={{ display: 'block', marginBottom: '0.75rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>{t('settings.manage_holidays')}</label>
               <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
                 <input 
                   type="date" 
@@ -181,7 +183,7 @@ export default function Settings() {
                     </button>
                   </div>
                 ))}
-                {holidays.length === 0 && <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>No holidays scheduled.</p>}
+                {holidays.length === 0 && <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>{t('settings.no_holidays')}</p>}
               </div>
             </div>
           </div>
@@ -190,12 +192,12 @@ export default function Settings() {
           <div className="card" style={{ marginBottom: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
               <Percent size={20} color="var(--primary)" />
-              <h2 style={{ margin: 0 }}>Financial Defaults</h2>
+              <h2 style={{ margin: 0 }}>{t('settings.financial_defaults')}</h2>
             </div>
             
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
               <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>Default Tax Rate (%)</label>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>{t('settings.default_tax_rate')}</label>
                 <input 
                   type="number" 
                   step="0.01"
@@ -205,7 +207,7 @@ export default function Settings() {
                 />
               </div>
               <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>Currency Symbol</label>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>{t('settings.currency_symbol')}</label>
                 <input 
                   type="text" 
                   value={settings.currency_symbol} 
@@ -220,7 +222,7 @@ export default function Settings() {
           <div className="card" style={{ marginBottom: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
               <Info size={20} color="var(--primary)" />
-              <h2 style={{ margin: 0 }}>System Automation</h2>
+              <h2 style={{ margin: 0 }}>{t('settings.system_automation')}</h2>
             </div>
             
             <div style={{ marginBottom: '1.25rem' }}>
@@ -231,12 +233,12 @@ export default function Settings() {
                   onChange={e => handleChange('enable_reminders', e.target.checked ? 'true' : 'false')}
                   style={{ width: 'auto', marginBottom: 0 }}
                 />
-                <span style={{ fontSize: '0.9rem', fontWeight: '600' }}>Enable Appointment Reminders (24h)</span>
+                <span style={{ fontSize: '0.9rem', fontWeight: '600' }}>{t('settings.enable_reminders')}</span>
               </label>
             </div>
 
             <div>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>Low Stock Alert Threshold</label>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>{t('settings.low_stock_threshold')}</label>
               <input 
                 type="number" 
                 min="1"
@@ -250,7 +252,7 @@ export default function Settings() {
 
         <button type="submit" disabled={saving} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1rem 2.5rem', marginTop: '2.5rem', borderRadius: '1rem', fontSize: '1.1rem', boxShadow: '0 4px 6px -1px rgba(79, 70, 229, 0.2)' }}>
           <Save size={20} />
-          {saving ? 'Saving Changes...' : 'Save All Settings'}
+          {saving ? t('settings.saving') : t('settings.save_all')}
         </button>
       </form>
     </div>

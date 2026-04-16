@@ -3,8 +3,10 @@ import apiClient from '../api/apiClient';
 import { PlusCircle, Edit2, Trash2, Clock, DollarSign, X, Scissors } from 'lucide-react';
 import { useSettings } from '../hooks/useSettings';
 import { formatCurrency } from '../utils/format';
+import { useTranslation } from 'react-i18next';
 
 export default function Services() {
+  const { t } = useTranslation();
   const { settings } = useSettings();
   const [services, setServices] = useState<any[]>([]);
   const [name, setName] = useState('');
@@ -50,7 +52,7 @@ export default function Services() {
       resetForm();
       fetchServices();
     } catch (err) {
-      alert('Failed to save service');
+      alert(t('services.failed_save'));
     }
   };
 
@@ -63,12 +65,12 @@ export default function Services() {
   };
 
   const deleteService = async (id: number) => {
-    if (!window.confirm('Are you sure you want to delete this service?')) return;
+    if (!window.confirm(t('services.delete_confirm'))) return;
     try {
       await apiClient.delete(`/services/${id}`);
       fetchServices();
     } catch (err) {
-      alert('Failed to delete service');
+      alert(t('services.failed_delete'));
     }
   };
 
@@ -76,11 +78,11 @@ export default function Services() {
     <div className="services-container">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h1>Service Catalog</h1>
-          <p style={{ color: 'var(--text-muted)' }}>Configure your available shop services.</p>
+          <h1>{t('services.title')}</h1>
+          <p style={{ color: 'var(--text-muted)' }}>{t('services.configure_services')}</p>
         </div>
         <button onClick={() => setShowModal(true)} style={{ gap: '0.5rem' }}>
-          <PlusCircle size={20} /> <span className="hide-mobile">Add New Service</span>
+          <PlusCircle size={20} /> <span className="hide-mobile">{t('services.add_new_service')}</span>
         </button>
       </div>
 
@@ -103,7 +105,7 @@ export default function Services() {
 
             <div style={{ flex: 1 }}>
               <h2 style={{ fontSize: '1.1rem', marginBottom: '0.25rem' }}>{s.name}</h2>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>Standard professional service</p>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>{t('services.standard_service')}</p>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginTop: 'auto' }}>
@@ -120,8 +122,8 @@ export default function Services() {
         {services.length === 0 && (
           <div className="card" style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '4rem 2rem', color: 'var(--text-muted)' }}>
             <Scissors size={48} style={{ margin: '0 auto 1rem', opacity: 0.1 }} />
-            <p>No services in your catalog yet.</p>
-            <button className="secondary" style={{ marginTop: '1rem' }} onClick={() => setShowModal(true)}>Create your first service</button>
+            <p>{t('services.no_services')}</p>
+            <button className="secondary" style={{ marginTop: '1rem' }} onClick={() => setShowModal(true)}>{t('services.create_first')}</button>
           </div>
         )}
       </div>
@@ -133,7 +135,7 @@ export default function Services() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Scissors size={20} color="var(--primary)" />
-                <h2 style={{ marginBottom: 0 }}>{editingId ? 'Edit Service' : 'Add New Service'}</h2>
+                <h2 style={{ marginBottom: 0 }}>{editingId ? t('services.edit_service') : t('services.add_new_service')}</h2>
               </div>
               <button className="secondary" style={{ padding: '0.5rem' }} onClick={resetForm}>
                 <X size={20} />
@@ -142,10 +144,10 @@ export default function Services() {
 
             <form onSubmit={handleSubmit}>
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Service Name</label>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>{t('services.service_name')}</label>
                 <input 
                   type="text" 
-                  placeholder="e.g. Executive Haircut, Beard Trim" 
+                  placeholder={t('services.service_name_placeholder')}
                   value={name} 
                   onChange={e => setName(e.target.value)} 
                   required
@@ -154,7 +156,7 @@ export default function Services() {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
                 <div>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Price ($)</label>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>{t('services.price')}</label>
                   <div style={{ position: 'relative' }}>
                     <DollarSign size={18} style={{ position: 'absolute', left: '0.75rem', top: '0.75rem', color: 'var(--text-muted)' }} />
                     <input 
@@ -170,7 +172,7 @@ export default function Services() {
                   </div>
                 </div>
                 <div>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Duration (min)</label>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>{t('services.duration')}</label>
                   <div style={{ position: 'relative' }}>
                     <Clock size={18} style={{ position: 'absolute', left: '0.75rem', top: '0.75rem', color: 'var(--text-muted)' }} />
                     <input 
@@ -187,7 +189,7 @@ export default function Services() {
 
               <div style={{ display: 'flex', gap: '1rem' }}>
                 <button type="submit" style={{ flex: 1, padding: '1rem', fontSize: '1.1rem' }}>
-                  {editingId ? 'Update Service' : 'Confirm Service'}
+                  {editingId ? t('services.update_service') : t('services.confirm_service')}
                 </button>
               </div>
             </form>
