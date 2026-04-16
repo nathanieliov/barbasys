@@ -92,6 +92,12 @@ const verifyOTP = new VerifyOTP(userRepo, customerRepo);
 
 app.use(cors());
 app.use(express.json());
+app.use((req, res, next) => {
+  if (['POST', 'PUT', 'PATCH'].includes(req.method) && !req.body) {
+    req.body = {};
+  }
+  next();
+});
 
 // Public Discovery
 app.get('/api/public/shops', (req, res) => {
@@ -575,7 +581,7 @@ app.post('/api/appointments/:id/cancel', protect, async (req, res) => {
       user_id: req.user!.id,
       user_role: req.user!.role,
       customer_id: req.user!.customer_id,
-      reason: req.body.reason
+      reason: req.body?.reason
     });
     res.json({ success: true });
   } catch (err: any) {

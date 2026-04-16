@@ -99,7 +99,7 @@ export default function CustomerPortal() {
     if (!window.confirm('Are you sure you want to cancel this appointment?')) return;
     
     try {
-      await apiClient.post(`/appointments/${id}/cancel`);
+      await apiClient.post(`/appointments/${id}/cancel`, {});
       fetchPortalData();
     } catch (err: any) {
       alert(err.response?.data?.error || 'Failed to cancel appointment');
