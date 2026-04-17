@@ -16,15 +16,15 @@ export class SQLiteServiceRepository implements IServiceRepository {
 
   async create(service: Omit<Service, 'id'>): Promise<number> {
     const result = this.db.prepare(
-      'INSERT INTO services (name, price, duration_minutes) VALUES (?, ?, ?)'
-    ).run(service.name, service.price, service.duration_minutes);
+      'INSERT INTO services (name, description, price, duration_minutes) VALUES (?, ?, ?, ?)'
+    ).run(service.name, service.description, service.price, service.duration_minutes);
     return Number(result.lastInsertRowid);
   }
 
   async update(service: Service): Promise<void> {
     this.db.prepare(
-      'UPDATE services SET name = ?, price = ?, duration_minutes = ? WHERE id = ?'
-    ).run(service.name, service.price, service.duration_minutes, service.id);
+      'UPDATE services SET name = ?, description = ?, price = ?, duration_minutes = ? WHERE id = ?'
+    ).run(service.name, service.description, service.price, service.duration_minutes, service.id);
   }
 
   async delete(id: number): Promise<void> {

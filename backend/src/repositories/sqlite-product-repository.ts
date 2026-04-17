@@ -16,15 +16,15 @@ export class SQLiteProductRepository implements IProductRepository {
 
   async create(product: Omit<Product, 'id' | 'stock'>): Promise<number> {
     const result = this.db.prepare(
-      'INSERT INTO products (name, price, min_stock_threshold, shop_id, stock) VALUES (?, ?, ?, ?, 0)'
-    ).run(product.name, product.price, product.min_stock_threshold, product.shop_id);
+      'INSERT INTO products (name, description, price, min_stock_threshold, shop_id, stock) VALUES (?, ?, ?, ?, ?, 0)'
+    ).run(product.name, product.description, product.price, product.min_stock_threshold, product.shop_id);
     return Number(result.lastInsertRowid);
   }
 
   async update(product: Product): Promise<void> {
     this.db.prepare(
-      'UPDATE products SET name = ?, price = ?, min_stock_threshold = ? WHERE id = ?'
-    ).run(product.name, product.price, product.min_stock_threshold, product.id);
+      'UPDATE products SET name = ?, description = ?, price = ?, min_stock_threshold = ? WHERE id = ?'
+    ).run(product.name, product.description, product.price, product.min_stock_threshold, product.id);
   }
 
   async delete(id: number): Promise<void> {

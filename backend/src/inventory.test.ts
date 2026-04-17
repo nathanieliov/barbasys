@@ -9,7 +9,7 @@ describe('Inventory Professional Audit System', () => {
 
   beforeAll(async () => {
     db.exec('DELETE FROM stock_logs; DELETE FROM sale_items; DELETE FROM sales; DELETE FROM products;');
-    const res = db.prepare('INSERT INTO products (name, price, stock, min_stock_threshold) VALUES (?, ?, ?, ?)').run('Pomade', 18, 5, 2);
+    const res = db.prepare('INSERT INTO products (name, description, price, stock, min_stock_threshold) VALUES (?, ?, ?, ?, ?)').run('Pomade', 'Description', 18, 5, 2);
     productId = Number(res.lastInsertRowid);
 
     // Login to get token
@@ -92,6 +92,7 @@ describe('Inventory Professional Audit System', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({
         name: 'New Product',
+        description: 'New Description',
         price: 30,
         min_stock_threshold: 5
       });

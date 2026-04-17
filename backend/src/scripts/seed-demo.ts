@@ -59,21 +59,21 @@ async function seed() {
 
   // 5. Create Services & Products
   const services = [
-    { name: 'Corte Clasico', price: 800 },
-    { name: 'Corte Moderno', price: 1000 },
-    { name: 'Cerquillo', price: 500 },
-    { name: 'Barba', price: 500 },
-    { name: 'Lavado de pelo', price: 250 }
+    { name: 'Corte Clasico', description: 'Corte tradicional de caballero con tijera o maquina.', price: 800 },
+    { name: 'Corte Moderno', description: 'Cortes en tendencia (Fade, Taper, etc.) con acabado profesional.', price: 1000 },
+    { name: 'Cerquillo', description: 'Definicion de contornos de frente, sienes y nuca.', price: 500 },
+    { name: 'Barba', description: 'Recorte, perfilado y cuidado de la barba con toalla caliente.', price: 500 },
+    { name: 'Lavado de pelo', description: 'Lavado profundo con masaje capilar y productos premium.', price: 250 }
   ];
-  const serviceIds = services.map(s => db.prepare('INSERT INTO services (name, price, shop_id) VALUES (?, ?, ?)').run(s.name, s.price, shopId).lastInsertRowid);
+  const serviceIds = services.map(s => db.prepare('INSERT INTO services (name, description, price, shop_id) VALUES (?, ?, ?, ?)').run(s.name, s.description, s.price, shopId).lastInsertRowid);
 
   const products = [
-    { name: 'Gelatina Ultra Hold', price: 450, stock: 20 },
-    { name: 'Cera Matte', price: 650, stock: 15 },
-    { name: 'Aceite para Barba', price: 900, stock: 10 },
-    { name: 'After Shave DR', price: 350, stock: 30 }
+    { name: 'Gelatina Ultra Hold', description: 'Fijacion extrema para peinados que duran todo el dia.', price: 450, stock: 20 },
+    { name: 'Cera Matte', description: 'Acabado natural sin brillo para un look casual.', price: 650, stock: 15 },
+    { name: 'Aceite para Barba', description: 'Hidratacion y suavidad para una barba saludable.', price: 900, stock: 10 },
+    { name: 'After Shave DR', description: 'Locion refrescante post-afeitado con aroma tradicional.', price: 350, stock: 30 }
   ];
-  const productIds = products.map(p => db.prepare('INSERT INTO products (name, price, stock, shop_id) VALUES (?, ?, ?, ?)').run(p.name, p.price, p.stock, shopId).lastInsertRowid);
+  const productIds = products.map(p => db.prepare('INSERT INTO products (name, description, price, stock, shop_id) VALUES (?, ?, ?, ?, ?)').run(p.name, p.description, p.price, p.stock, shopId).lastInsertRowid);
 
   // 6. Create Demo Users
   const salt = await bcrypt.genSalt(10);

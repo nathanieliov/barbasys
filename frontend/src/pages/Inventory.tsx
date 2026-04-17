@@ -29,6 +29,7 @@ export default function Inventory() {
   // Product Add/Edit Form
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [prodName, setProdName] = useState('');
+  const [prodDescription, setProdDescription] = useState('');
   const [prodPrice, setProdNamePrice] = useState('');
   const [prodThreshold, setProdThreshold] = useState('2');
   const [prodSupplierId, setProdSupplierId] = useState('');
@@ -64,8 +65,11 @@ export default function Inventory() {
 
   const handleProductSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!prodName || !prodDescription || !prodPrice) return;
+
     const data = {
       name: prodName,
+      description: prodDescription,
       price: parseFloat(prodPrice),
       min_stock_threshold: parseInt(prodThreshold),
       supplier_id: prodSupplierId ? parseInt(prodSupplierId) : null
@@ -75,18 +79,19 @@ export default function Inventory() {
       if (editingProduct) {
         await apiClient.put(`/products/${editingProduct.id}`, data);
       } else {
-        await apiClient.post('/products', data); // Ensure backend has this too, usually pos.ts or separate
+        await apiClient.post('/products', data); 
       }
       resetProductForm();
       fetchData();
     } catch (err) {
-      alert('Failed to save product');
+      alert(t('inventory.failed_save'));
     }
   };
 
   const resetProductForm = () => {
     setEditingProduct(null);
     setProdName('');
+    setProdDescription('');
     setProdNamePrice('');
     setProdThreshold('2');
     setProdSupplierId('');
@@ -96,6 +101,7 @@ export default function Inventory() {
   const startEditProduct = (p: any) => {
     setEditingProduct(p);
     setProdName(p.name);
+    setProdDescription(p.description || '');
     setProdNamePrice(p.price.toString());
     setProdThreshold(p.min_stock_threshold.toString());
     setProdSupplierId(p.supplier_id?.toString() || '');
@@ -202,7 +208,8 @@ export default function Inventory() {
                   </div>
                   <div>
                     <div style={{ fontWeight: '700', fontSize: '1rem' }}>{p.name}</div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{p.supplier_name || t('inventory.generic_supplier')}</div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.1rem', lineHeight: '1.3' }}>{p.description}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>{p.supplier_name || t('inventory.generic_supplier')}</div>
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '0.25rem' }}>
@@ -325,6 +332,17 @@ export default function Inventory() {
                   placeholder={t('inventory.product_name_placeholder')}
                   value={prodName} 
                   onChange={e => setProdName(e.target.value)} 
+                  required
+                />
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>{t('inventory.description')}</label>
+                <textarea 
+                  placeholder={t('inventory.description_placeholder')}
+                  value={prodDescription} 
+                  onChange={e => setProdDescription(e.target.value)} 
+                  style={{ width: '100%', minHeight: '80px', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border)', fontSize: '0.95rem' }}
                   required
                 />
               </div>

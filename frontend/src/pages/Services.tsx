@@ -10,6 +10,7 @@ export default function Services() {
   const { settings } = useSettings();
   const [services, setServices] = useState<any[]>([]);
   const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
   const [duration, setDuration] = useState('30');
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -25,6 +26,7 @@ export default function Services() {
 
   const resetForm = () => {
     setName('');
+    setDescription('');
     setPrice('');
     setDuration('30');
     setEditingId(null);
@@ -33,18 +35,20 @@ export default function Services() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !price) return;
+    if (!name || !description || !price) return;
 
     try {
       if (editingId) {
         await apiClient.put(`/services/${editingId}`, {
           name,
+          description,
           price: parseFloat(price),
           duration_minutes: parseInt(duration)
         });
       } else {
         await apiClient.post('/services', {
           name,
+          description,
           price: parseFloat(price),
           duration_minutes: parseInt(duration)
         });
@@ -59,6 +63,7 @@ export default function Services() {
   const startEdit = (service: any) => {
     setEditingId(service.id);
     setName(service.name);
+    setDescription(service.description || '');
     setPrice(service.price.toString());
     setDuration(service.duration_minutes.toString());
     setShowModal(true);
@@ -105,7 +110,7 @@ export default function Services() {
 
             <div style={{ flex: 1 }}>
               <h2 style={{ fontSize: '1.1rem', marginBottom: '0.25rem' }}>{s.name}</h2>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>{t('services.standard_service')}</p>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1rem', lineHeight: '1.4' }}>{s.description}</p>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginTop: 'auto' }}>
@@ -150,6 +155,17 @@ export default function Services() {
                   placeholder={t('services.service_name_placeholder')}
                   value={name} 
                   onChange={e => setName(e.target.value)} 
+                  required
+                />
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>{t('services.description')}</label>
+                <textarea 
+                  placeholder={t('services.description_placeholder')}
+                  value={description} 
+                  onChange={e => setDescription(e.target.value)} 
+                  style={{ width: '100%', minHeight: '80px', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border)', fontSize: '0.95rem' }}
                   required
                 />
               </div>

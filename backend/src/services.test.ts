@@ -22,6 +22,7 @@ describe('Service Catalog CRUD', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({
         name: 'Test Service',
+        description: 'Test Description',
         price: 50,
         duration_minutes: 45
       });
@@ -59,6 +60,7 @@ describe('Service Catalog CRUD', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({
         name: 'Updated Service',
+        description: 'Updated Description',
         price: 60,
         duration_minutes: 60
       });

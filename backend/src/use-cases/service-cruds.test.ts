@@ -23,7 +23,7 @@ describe('Service CRUD Use Cases', () => {
   const deleteService = new DeleteService(mockRepo);
 
   it('should create a service', async () => {
-    const serviceData = { name: 'New Service', price: 50, duration_minutes: 30, shop_id: 1, is_active: 1 };
+    const serviceData = { name: 'New Service', description: 'Desc', price: 50, duration_minutes: 30, shop_id: 1, is_active: 1 };
     vi.mocked(mockRepo.create).mockResolvedValue(1);
 
     const id = await createService.execute(serviceData);
@@ -32,7 +32,7 @@ describe('Service CRUD Use Cases', () => {
   });
 
   it('should list all services', async () => {
-    const mockServices: Service[] = [{ id: 1, name: 'Service 1', price: 50, duration_minutes: 30, shop_id: 1, is_active: 1 }];
+    const mockServices: Service[] = [{ id: 1, name: 'Service 1', description: 'Desc', price: 50, duration_minutes: 30, shop_id: 1, is_active: 1 }];
     vi.mocked(mockRepo.findAll).mockResolvedValue(mockServices);
 
     const services = await listServices.execute();
@@ -41,7 +41,7 @@ describe('Service CRUD Use Cases', () => {
   });
 
   it('should get a service by id', async () => {
-    const mockService: Service = { id: 1, name: 'Service 1', price: 50, duration_minutes: 30, shop_id: 1, is_active: 1 };
+    const mockService: Service = { id: 1, name: 'Service 1', description: 'Desc', price: 50, duration_minutes: 30, shop_id: 1, is_active: 1 };
     vi.mocked(mockRepo.findById).mockResolvedValue(mockService);
 
     const service = await getService.execute(1);
@@ -54,7 +54,7 @@ describe('Service CRUD Use Cases', () => {
   });
 
   it('should update a service', async () => {
-    const service: Service = { id: 1, name: 'Updated', price: 60, duration_minutes: 40, shop_id: 1, is_active: 1 };
+    const service: Service = { id: 1, name: 'Updated', description: 'Updated Desc', price: 60, duration_minutes: 40, shop_id: 1, is_active: 1 };
     vi.mocked(mockRepo.findById).mockResolvedValue(service);
     vi.mocked(mockRepo.update).mockResolvedValue();
 
@@ -66,6 +66,7 @@ describe('Service CRUD Use Cases', () => {
     vi.mocked(mockRepo.findById).mockResolvedValue({ 
       id: 1, 
       name: 'Service 1', 
+      description: 'Desc',
       price: 50, 
       duration_minutes: 30, 
       shop_id: 1, 
@@ -83,35 +84,43 @@ describe('Service CRUD Use Cases', () => {
   });
 
   it('should throw if name missing when creating', async () => {
-    await expect(createService.execute({ name: '', price: 10, duration_minutes: 10, shop_id: 1, is_active: 1 })).rejects.toThrow('Service name is required');
+    await expect(createService.execute({ name: '', description: 'D', price: 10, duration_minutes: 10, shop_id: 1, is_active: 1 })).rejects.toThrow('Service name is required');
+  });
+
+  it('should throw if description missing when creating', async () => {
+    await expect(createService.execute({ name: 'T', description: '', price: 10, duration_minutes: 10, shop_id: 1, is_active: 1 })).rejects.toThrow('Service description is required');
   });
 
   it('should throw if price negative when creating', async () => {
-    await expect(createService.execute({ name: 'T', price: -1, duration_minutes: 10, shop_id: 1, is_active: 1 })).rejects.toThrow('price cannot be negative');
+    await expect(createService.execute({ name: 'T', description: 'D', price: -1, duration_minutes: 10, shop_id: 1, is_active: 1 })).rejects.toThrow('price cannot be negative');
   });
 
   it('should throw if duration negative when creating', async () => {
-    await expect(createService.execute({ name: 'T', price: 10, duration_minutes: -1, shop_id: 1, is_active: 1 })).rejects.toThrow('duration cannot be negative');
+    await expect(createService.execute({ name: 'T', description: 'D', price: 10, duration_minutes: -1, shop_id: 1, is_active: 1 })).rejects.toThrow('duration cannot be negative');
   });
 
   it('should throw if ID missing when updating', async () => {
-    await expect(updateService.execute({ name: 'T', price: 10, duration_minutes: 10, shop_id: 1, is_active: 1 } as any)).rejects.toThrow('Service ID is required');
+    await expect(updateService.execute({ name: 'T', description: 'D', price: 10, duration_minutes: 10, shop_id: 1, is_active: 1 } as any)).rejects.toThrow('Service ID is required');
   });
 
   it('should throw if name missing when updating', async () => {
-    await expect(updateService.execute({ id: 1, name: '', price: 10, duration_minutes: 10, shop_id: 1, is_active: 1 })).rejects.toThrow('Service name is required');
+    await expect(updateService.execute({ id: 1, name: '', description: 'D', price: 10, duration_minutes: 10, shop_id: 1, is_active: 1 })).rejects.toThrow('Service name is required');
+  });
+
+  it('should throw if description missing when updating', async () => {
+    await expect(updateService.execute({ id: 1, name: 'T', description: '', price: 10, duration_minutes: 10, shop_id: 1, is_active: 1 })).rejects.toThrow('Service description is required');
   });
 
   it('should throw if service not found when updating', async () => {
     vi.mocked(mockRepo.findById).mockResolvedValue(null);
-    await expect(updateService.execute({ id: 999, name: 'T', price: 10, duration_minutes: 10, shop_id: 1, is_active: 1 })).rejects.toThrow('Service not found');
+    await expect(updateService.execute({ id: 999, name: 'T', description: 'D', price: 10, duration_minutes: 10, shop_id: 1, is_active: 1 })).rejects.toThrow('Service not found');
   });
 
   it('should throw if price negative when updating', async () => {
-    await expect(updateService.execute({ id: 1, name: 'T', price: -1, duration_minutes: 10, shop_id: 1, is_active: 1 })).rejects.toThrow('price cannot be negative');
+    await expect(updateService.execute({ id: 1, name: 'T', description: 'D', price: -1, duration_minutes: 10, shop_id: 1, is_active: 1 })).rejects.toThrow('price cannot be negative');
   });
 
   it('should throw if duration negative when updating', async () => {
-    await expect(updateService.execute({ id: 1, name: 'T', price: 10, duration_minutes: -1, shop_id: 1, is_active: 1 })).rejects.toThrow('duration cannot be negative');
+    await expect(updateService.execute({ id: 1, name: 'T', description: 'D', price: 10, duration_minutes: -1, shop_id: 1, is_active: 1 })).rejects.toThrow('duration cannot be negative');
   });
 });

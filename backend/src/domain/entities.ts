@@ -36,6 +36,7 @@ export interface Barber {
 export interface Product {
   id: number;
   name: string;
+  description: string;
   price: number;
   stock: number;
   min_stock_threshold: number;
@@ -57,6 +58,7 @@ export interface Supplier {
 export interface Service {
   id: number;
   name: string;
+  description: string;
   price: number;
   duration_minutes: number;
   shop_id: number | null;

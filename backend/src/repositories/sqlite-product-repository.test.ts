@@ -12,6 +12,7 @@ describe('SQLiteProductRepository', () => {
   it('should create and find a product', async () => {
     const id = await repo.create({ 
       name: 'Test Product', 
+      description: 'Test Desc',
       price: 15, 
       min_stock_threshold: 2,
       shop_id: 1,
@@ -23,6 +24,7 @@ describe('SQLiteProductRepository', () => {
     const product = await repo.findById(id);
     expect(product).toBeDefined();
     expect(product?.name).toBe('Test Product');
+    expect(product?.description).toBe('Test Desc');
   });
 
   it('should list all active products', async () => {
@@ -33,6 +35,7 @@ describe('SQLiteProductRepository', () => {
   it('should update a product', async () => {
     const id = await repo.create({ 
       name: 'Old', 
+      description: 'Old Desc',
       price: 10, 
       min_stock_threshold: 1, 
       shop_id: 1,
@@ -42,6 +45,7 @@ describe('SQLiteProductRepository', () => {
     await repo.update({ 
       id, 
       name: 'New', 
+      description: 'New Desc',
       price: 20, 
       min_stock_threshold: 2, 
       shop_id: 1, 
@@ -52,12 +56,14 @@ describe('SQLiteProductRepository', () => {
     
     const product = await repo.findById(id);
     expect(product?.name).toBe('New');
+    expect(product?.description).toBe('New Desc');
     expect(product?.price).toBe(20);
   });
 
   it('should delete (deactivate) a product', async () => {
     const id = await repo.create({ 
       name: 'To Delete', 
+      description: 'Desc',
       price: 10, 
       min_stock_threshold: 1, 
       shop_id: 1,
@@ -73,6 +79,7 @@ describe('SQLiteProductRepository', () => {
   it('should handle stock reduction and restock', async () => {
     const id = await repo.create({ 
       name: 'Stock Test', 
+      description: 'Desc',
       price: 10, 
       min_stock_threshold: 1, 
       shop_id: 1,

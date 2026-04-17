@@ -678,16 +678,16 @@ app.get('/api/inventory', protect, (req, res) => {
 
 app.post('/api/inventory', protect, authorize('OWNER', 'MANAGER'), (req, res) => {
   const shopId = req.user?.shop_id;
-  const { name, price, min_stock_threshold, supplier_id } = req.body;
-  const result = db.prepare('INSERT INTO products (name, price, min_stock_threshold, supplier_id, shop_id) VALUES (?, ?, ?, ?, ?)').run(name, price, min_stock_threshold, supplier_id || null, shopId);
+  const { name, description, price, min_stock_threshold, supplier_id } = req.body;
+  const result = db.prepare('INSERT INTO products (name, description, price, min_stock_threshold, supplier_id, shop_id) VALUES (?, ?, ?, ?, ?, ?)').run(name, description, price, min_stock_threshold, supplier_id || null, shopId);
   res.status(201).json({ id: result.lastInsertRowid });
 });
 
 app.post('/api/products', protect, authorize('OWNER', 'MANAGER'), (req, res) => {
   const shopId = req.user?.shop_id;
-  const { name, price, min_stock_threshold, supplier_id } = req.body;
+  const { name, description, price, min_stock_threshold, supplier_id } = req.body;
   try {
-    const result = db.prepare('INSERT INTO products (name, price, min_stock_threshold, supplier_id, shop_id, stock) VALUES (?, ?, ?, ?, ?, 0)').run(name, price, min_stock_threshold, supplier_id, shopId);
+    const result = db.prepare('INSERT INTO products (name, description, price, min_stock_threshold, supplier_id, shop_id, stock) VALUES (?, ?, ?, ?, ?, ?, 0)').run(name, description, price, min_stock_threshold, supplier_id, shopId);
     res.status(201).json({ id: result.lastInsertRowid });
   } catch (err) {
     res.status(500).json({ error: 'Failed to create product' });
@@ -750,9 +750,9 @@ app.delete('/api/products/:id', protect, authorize('OWNER', 'MANAGER'), (req, re
 });
 
 app.put('/api/products/:id', protect, authorize('OWNER', 'MANAGER'), (req, res) => {
-  const { name, price, min_stock_threshold, supplier_id } = req.body;
+  const { name, description, price, min_stock_threshold, supplier_id } = req.body;
   try {
-    db.prepare('UPDATE products SET name = ?, price = ?, min_stock_threshold = ?, supplier_id = ? WHERE id = ?').run(name, price, min_stock_threshold, supplier_id, req.params.id);
+    db.prepare('UPDATE products SET name = ?, description = ?, price = ?, min_stock_threshold = ?, supplier_id = ? WHERE id = ?').run(name, description, price, min_stock_threshold, supplier_id, req.params.id);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Failed to update product' });
@@ -799,8 +799,8 @@ app.get('/api/services/:id', protect, async (req, res) => {
 app.post('/api/services', protect, authorize('OWNER', 'MANAGER'), async (req, res) => {
   const shopId = req.user?.shop_id;
   try {
-    const { name, price, duration_minutes } = req.body;
-    const result = db.prepare('INSERT INTO services (name, price, duration_minutes, shop_id) VALUES (?, ?, ?, ?)').run(name, price, duration_minutes, shopId);
+    const { name, description, price, duration_minutes } = req.body;
+    const result = db.prepare('INSERT INTO services (name, description, price, duration_minutes, shop_id) VALUES (?, ?, ?, ?, ?)').run(name, description, price, duration_minutes, shopId);
     res.status(201).json({ id: result.lastInsertRowid });
   } catch (err: any) {
     res.status(400).json({ error: err.message });

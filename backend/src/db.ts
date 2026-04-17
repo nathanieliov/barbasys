@@ -53,6 +53,7 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS products (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
     price REAL NOT NULL,
     stock INTEGER DEFAULT 0 CHECK(stock >= 0),
     min_stock_threshold INTEGER DEFAULT 2,
@@ -77,13 +78,30 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS services (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
     price REAL NOT NULL,
     duration_minutes INTEGER DEFAULT 30,
     shop_id INTEGER,
     is_active INTEGER DEFAULT 1,
     FOREIGN KEY (shop_id) REFERENCES shops(id) ON DELETE CASCADE
   );
+`);
 
+// Migrations
+try {
+  const columnsProduct = db.prepare("PRAGMA table_info(products)").all() as any[];
+  if (!columnsProduct.some(c => c.name === 'description')) {
+    db.prepare("ALTER TABLE products ADD COLUMN description TEXT NOT NULL DEFAULT ''").run();
+  }
+  const columnsService = db.prepare("PRAGMA table_info(services)").all() as any[];
+  if (!columnsService.some(c => c.name === 'description')) {
+    db.prepare("ALTER TABLE services ADD COLUMN description TEXT NOT NULL DEFAULT ''").run();
+  }
+} catch (err) {
+  console.error('Migration failed:', err);
+}
+
+db.exec(`
   CREATE TABLE IF NOT EXISTS customers (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT,
@@ -406,12 +424,11 @@ if (barbersCount.count === 0) {
     shiftInsert.run(alex.lastInsertRowid, day, '09:00', '21:00');
   });
 
-  db.prepare('INSERT INTO services (name, price, duration_minutes, shop_id) VALUES (?, ?, ?, ?)').run('Haircut', 25, 30, defaultShopId);
-  db.prepare('INSERT INTO services (name, price, duration_minutes, shop_id) VALUES (?, ?, ?, ?)').run('Beard Trim', 15, 15, defaultShopId);
-  
-  db.prepare('INSERT INTO products (name, price, stock, min_stock_threshold, shop_id) VALUES (?, ?, ?, ?, ?)').run('Pomade', 18, 10, 3, defaultShopId);
-  db.prepare('INSERT INTO products (name, price, stock, min_stock_threshold, shop_id) VALUES (?, ?, ?, ?, ?)').run('Shampoo', 12, 5, 2, defaultShopId);
-}
+  db.prepare('INSERT INTO services (name, description, price, duration_minutes, shop_id) VALUES (?, ?, ?, ?, ?)').run('Haircut', 'Standard haircut', 25, 30, defaultShopId);
+  db.prepare('INSERT INTO services (name, description, price, duration_minutes, shop_id) VALUES (?, ?, ?, ?, ?)').run('Beard Trim', 'Grooming for facial hair', 15, 15, defaultShopId);
+
+  db.prepare('INSERT INTO products (name, description, price, stock, min_stock_threshold, shop_id) VALUES (?, ?, ?, ?, ?, ?)').run('Pomade', 'Strong hold styling wax', 18, 10, 3, defaultShopId);
+  db.prepare('INSERT INTO products (name, description, price, stock, min_stock_threshold, shop_id) VALUES (?, ?, ?, ?, ?, ?)').run('Shampoo', 'Cleansing hair shampoo', 12, 5, 2, defaultShopId);}
 
 // 2. Seed Users
 // Seed OWNER
