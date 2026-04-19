@@ -61,7 +61,7 @@ describe('OTP Use Cases', () => {
       };
       vi.mocked(mockUserRepo.findByEmail).mockResolvedValue(mockUser as any);
 
-      await expect(sendOTP.execute('test@example.com')).rejects.toThrow('Too many OTP requests');
+      await expect(sendOTP.execute('test@example.com')).rejects.toThrow(/Too many OTP requests|Demasiados intentos de OTP/);
     });
 
     it('should reset count after 15 minutes', async () => {

@@ -84,24 +84,6 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
   }, [shopId, initialBarberId, rescheduleId]);
 
   useEffect(() => {
-    if (user && step === 3 && selectedTime) {
-      setSubmitting(true);
-      apiClient.get('/auth/me').then(res => {
-        updateUser(res.data); // Update global auth state with fresh customer_id
-        if (res.data.requires_profile_completion) {
-          setRequiresProfile(true);
-          setStep(4);
-        } else {
-          setStep(5);
-        }
-      }).catch(err => {
-        console.error('Failed to refresh user info', err);
-        setStep(5);
-      }).finally(() => setSubmitting(false));
-    }
-  }, [user?.id, step, selectedTime]);
-
-  useEffect(() => {
     if (selectedBarber && selectedDate && cart.length > 0) {
       const totalDur = cart.reduce((sum, item) => sum + (item.duration * item.quantity), 0);
       setLoadingSlots(true);
@@ -116,6 +98,37 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
       });
     }
   }, [selectedBarber, selectedDate, cart]);
+
+  const handleTimeSelect = (t_val: string) => {
+    setSelectedTime(t_val);
+    if (!user) {
+      setStep(4);
+    } else {
+      setSubmitting(true);
+      apiClient.get('/auth/me').then(res => {
+        updateUser(res.data); // Update global auth state with fresh customer_id
+        if (res.data && res.data.requires_profile_completion) {
+          setRequiresProfile(true);
+          setStep(4);
+        } else {
+          setStep(5);
+        }
+      }).catch(err => {
+        console.error('Failed to refresh user info', err);
+        setStep(5);
+      }).finally(() => setSubmitting(false));
+    }
+  };
+
+  const handleBack = () => {
+    if (step === 5 || (step === 4 && user && !requiresProfile)) {
+      setStep(3);
+    } else if (step > 1) {
+      setStep(step - 1);
+    } else {
+      navigate('/discovery');
+    }
+  };
 
   const addToCart = (service: any) => {
     setCart(prev => {
@@ -264,7 +277,7 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
   return (
     <div className="booking-flow" style={{ maxWidth: '500px', margin: '0 auto', padding: '1rem' }}>
       <header style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
-        <button className="secondary" style={{ padding: '0.5rem', borderRadius: '0.75rem' }} onClick={() => step > 1 ? setStep(step - 1) : navigate('/discovery')}>
+        <button className="secondary" style={{ padding: '0.5rem', borderRadius: '0.75rem' }} onClick={handleBack}>
           <ChevronLeft size={24} />
         </button>
         <div>
@@ -312,6 +325,11 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
                 <div>
                   <div style={{ fontWeight: '700' }}>{s.name}</div>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{s.duration_minutes} mins • {formatCurrency(s.price, settings.currency_symbol)}</div>
+                  {s.description && (
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                      {s.description}
+                    </div>
+                  )}
                 </div>
                 <button className="secondary" style={{ padding: '0.5rem' }} onClick={() => addToCart(s)}>
                   <Plus size={18} />
@@ -364,10 +382,7 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
                 {availableSlots.map(t_val => (
-                  <button key={t_val} className="secondary" onClick={() => { 
-                    setSelectedTime(t_val); 
-                    if (!user) setStep(4); 
-                  }} style={{ padding: '0.75rem 0', fontWeight: '700' }}>{t_val}</button>
+                  <button key={t_val} className="secondary" onClick={() => handleTimeSelect(t_val)} style={{ padding: '0.75rem 0', fontWeight: '700' }}>{t_val}</button>
                 ))}
               </div>
             )}
