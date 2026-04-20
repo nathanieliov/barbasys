@@ -46,4 +46,12 @@ describe('resolveCustomer', () => {
 
     expect(result1.id).toBe(result2.id);
   });
+
+  it('sets wa_opt_in on first inbound message', async () => {
+    const newPhone = '+15556666666';
+    const result = await resolveCustomer(repo, newPhone);
+
+    const refreshed = await repo.findById(result.id);
+    expect(refreshed?.wa_opt_in).toBe(1);
+  });
 });
