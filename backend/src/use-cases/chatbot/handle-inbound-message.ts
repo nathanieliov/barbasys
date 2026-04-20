@@ -1,4 +1,5 @@
 import db from '../../db.js';
+import i18n from '../../i18n.js';
 import type { ICustomerRepository } from '../../repositories/customer-repository.interface.js';
 import type { IConversationRepository } from '../../repositories/conversation-repository.interface.js';
 import type { IWaMessageRepository } from '../../repositories/wa-message-repository.interface.js';
@@ -106,10 +107,13 @@ export async function handleInboundMessage(input: HandleInboundInput): Promise<H
         await input.convRepo.updateState(conversation.id, flowResult.nextState, flowResult.nextContext);
         conversation.state = flowResult.nextState;
       } else if (classified.intent === 'unknown') {
+        const t = i18n.t.bind(i18n);
+        const lang = conversation.language as 'es' | 'en';
+        i18n.changeLanguage(lang === 'es' ? 'es-DO' : 'en-US');
         reply =
-          conversation.language === 'es'
-            ? `No entendí eso. Aquí te muestro lo que puedo hacer:\n\n1. 📅 Ver mi próxima cita\n2. 💇 Agendar una cita\n3. ✏️ Cambiar mi cita\n4. ❌ Cancelar mi cita\n5. ❓ Hacer una pregunta\n\n¿Cuál te interesa?`
-            : `I didn't understand that. Here's what I can help you with:\n\n1. 📅 View my next appointment\n2. 💇 Book an appointment\n3. ✏️ Reschedule my appointment\n4. ❌ Cancel my appointment\n5. ❓ Ask a question\n\nWhich one interests you?`;
+          lang === 'es'
+            ? `${t('chatbot.menu_header')}\n\n1. ${t('chatbot.menu_view_next')}\n2. ${t('chatbot.menu_book')}\n3. ${t('chatbot.menu_reschedule')}\n4. ${t('chatbot.menu_cancel')}\n5. ${t('chatbot.menu_faq')}\n\n${t('chatbot.menu_prompt')}`
+            : `${t('chatbot.menu_header')}\n\n1. ${t('chatbot.menu_view_next')}\n2. ${t('chatbot.menu_book')}\n3. ${t('chatbot.menu_reschedule')}\n4. ${t('chatbot.menu_cancel')}\n5. ${t('chatbot.menu_faq')}\n\n${t('chatbot.menu_prompt')}`;
       }
     } catch (err) {
       console.error('Error routing intent:', err);
