@@ -5,6 +5,7 @@ import { SqliteConversationRepository } from '../repositories/sqlite-conversatio
 import { SqliteWaMessageRepository } from '../repositories/sqlite-wa-message-repository.js';
 import { TwilioWhatsAppClient } from '../adapters/whatsapp/twilio-whatsapp-client.js';
 import { OpenAILLMClient } from '../adapters/llm/openai-llm-client.js';
+import { PhoneRateLimiter } from '../adapters/rate-limiter/phone-rate-limiter.js';
 import { verifyTwilioSignature } from '../adapters/whatsapp/signature-verifier.js';
 import { parseTwilioInbound } from '../adapters/whatsapp/webhook-parser.js';
 import { handleInboundMessage } from '../use-cases/chatbot/handle-inbound-message.js';
@@ -17,6 +18,10 @@ const convRepo = new SqliteConversationRepository(db);
 const msgRepo = new SqliteWaMessageRepository(db);
 const whatsAppClient = new TwilioWhatsAppClient();
 const llmClient = new OpenAILLMClient(process.env.OPENAI_API_KEY || '');
+const rateLimiter = new PhoneRateLimiter({
+  maxRequests: 10,
+  windowMs: 60000 // 1 minute
+});
 
 // TODO: Make shop configurable; for now use shop 1
 const SHOP_ID = 1;
@@ -55,6 +60,7 @@ router.post('/webhooks/whatsapp', (req, res) => {
     msgRepo,
     whatsAppClient,
     llmClient,
+    rateLimiter,
     shopId: SHOP_ID,
     shopPhone: SHOP_PHONE,
   })

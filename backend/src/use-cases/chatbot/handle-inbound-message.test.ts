@@ -4,6 +4,7 @@ import { SQLiteCustomerRepository } from '../../repositories/sqlite-customer-rep
 import { SqliteConversationRepository } from '../../repositories/sqlite-conversation-repository.js';
 import { SqliteWaMessageRepository } from '../../repositories/sqlite-wa-message-repository.js';
 import { handleInboundMessage } from './handle-inbound-message.js';
+import { PhoneRateLimiter } from '../../adapters/rate-limiter/phone-rate-limiter.js';
 import type { ILLMClient } from '../../adapters/llm/llm-client.interface.js';
 
 describe('handleInboundMessage', () => {
@@ -17,6 +18,7 @@ describe('handleInboundMessage', () => {
   const customerRepo = new SQLiteCustomerRepository(db);
   const convRepo = new SqliteConversationRepository(db);
   const msgRepo = new SqliteWaMessageRepository(db);
+  const rateLimiter = new PhoneRateLimiter({ maxRequests: 100, windowMs: 60000 });
 
   const mockWhatsAppClient = {
     sendText: vi.fn(),
@@ -45,6 +47,7 @@ describe('handleInboundMessage', () => {
       msgRepo,
       whatsAppClient: mockWhatsAppClient,
       llmClient: mockLLMClient,
+      rateLimiter,
       shopId,
       shopPhone: '+15551234567',
     });
@@ -73,6 +76,7 @@ describe('handleInboundMessage', () => {
       msgRepo,
       whatsAppClient: mockWhatsAppClient,
       llmClient: mockLLMClient,
+      rateLimiter,
       shopId,
       shopPhone: '+15551234567',
     });

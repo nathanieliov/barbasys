@@ -5,6 +5,7 @@ import type { IWaMessageRepository } from '../../repositories/wa-message-reposit
 import type { IWhatsAppClient } from '../../adapters/whatsapp/whatsapp-client.interface.js';
 import type { ILLMClient } from '../../adapters/llm/llm-client.interface.js';
 import type { ParsedInbound } from '../../adapters/whatsapp/webhook-parser.js';
+import type { PhoneRateLimiter } from '../../adapters/rate-limiter/phone-rate-limiter.js';
 import { resolveCustomer } from './resolve-customer.js';
 import { routeIntent } from './route-intent.js';
 import { loadShopContext } from './shop-context-loader.js';
@@ -23,6 +24,7 @@ export interface HandleInboundInput {
   msgRepo: IWaMessageRepository;
   whatsAppClient: IWhatsAppClient;
   llmClient: ILLMClient;
+  rateLimiter: PhoneRateLimiter;
   shopId: number;
   shopPhone: string;
 }
@@ -34,6 +36,10 @@ export interface HandleInboundResult {
 }
 
 export async function handleInboundMessage(input: HandleInboundInput): Promise<HandleInboundResult> {
+  if (!input.rateLimiter.isAllowed(input.inbound.from)) {
+    throw new Error(`Rate limit exceeded for phone: ${input.inbound.from}`);
+  }
+
   const customer = await resolveCustomer(input.customerRepo, input.inbound.from);
 
   let conversation = await input.convRepo.findByPhone(input.inbound.from);
