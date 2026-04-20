@@ -10,7 +10,11 @@ import { routeIntent } from './route-intent.js';
 import { loadShopContext } from './shop-context-loader.js';
 import { FAQFlow } from './flows/faq-flow.js';
 import { BookAppointmentFlow } from './flows/book-appointment.js';
+import { ViewNextFlow } from './flows/view-next-flow.js';
+import { CancelFlow } from './flows/cancel-flow.js';
+import { RescheduleFlow } from './flows/reschedule-flow.js';
 import { SQLiteAppointmentRepository } from '../../repositories/sqlite-appointment-repository.js';
+import { SqliteConversationRepository } from '../../repositories/sqlite-conversation-repository.js';
 
 export interface HandleInboundInput {
   inbound: ParsedInbound;
@@ -62,6 +66,9 @@ export async function handleInboundMessage(input: HandleInboundInput): Promise<H
       const classified = await routeIntent(input.llmClient, shopContext, conversation.language as 'es' | 'en', input.inbound.body);
 
       // Dispatch to appropriate flow based on intent
+      const appointmentRepo = new SQLiteAppointmentRepository(db);
+      const convRepo = new SqliteConversationRepository(db);
+
       if (classified.intent === 'faq') {
         const faqFlow = new FAQFlow(input.llmClient, shopContext.shopName, input.shopPhone);
         const flowResult = await faqFlow.handle({ conversation, body: input.inbound.body });
@@ -69,21 +76,34 @@ export async function handleInboundMessage(input: HandleInboundInput): Promise<H
         await input.convRepo.updateState(conversation.id, flowResult.nextState, flowResult.nextContext);
         conversation.state = flowResult.nextState;
       } else if (classified.intent === 'book') {
-        const appointmentRepo = new SQLiteAppointmentRepository(db);
         const bookingFlow = new BookAppointmentFlow(appointmentRepo, input.convRepo, input.shopId);
         const flowResult = await bookingFlow.handle({ conversation, body: input.inbound.body });
         reply = flowResult.reply;
         await input.convRepo.updateState(conversation.id, flowResult.nextState, flowResult.nextContext);
         conversation.state = flowResult.nextState;
+      } else if (classified.intent === 'view_next') {
+        const viewNextFlow = new ViewNextFlow(appointmentRepo);
+        const flowResult = await viewNextFlow.handle({ conversation, body: input.inbound.body });
+        reply = flowResult.reply;
+        await input.convRepo.updateState(conversation.id, flowResult.nextState, flowResult.nextContext);
+        conversation.state = flowResult.nextState;
+      } else if (classified.intent === 'cancel') {
+        const cancelFlow = new CancelFlow(appointmentRepo, convRepo);
+        const flowResult = await cancelFlow.handle({ conversation, body: input.inbound.body });
+        reply = flowResult.reply;
+        await input.convRepo.updateState(conversation.id, flowResult.nextState, flowResult.nextContext);
+        conversation.state = flowResult.nextState;
+      } else if (classified.intent === 'reschedule') {
+        const rescheduleFlow = new RescheduleFlow(appointmentRepo, convRepo, input.shopId);
+        const flowResult = await rescheduleFlow.handle({ conversation, body: input.inbound.body });
+        reply = flowResult.reply;
+        await input.convRepo.updateState(conversation.id, flowResult.nextState, flowResult.nextContext);
+        conversation.state = flowResult.nextState;
       } else if (classified.intent === 'unknown') {
-        reply = conversation.language === 'es'
-          ? 'No entendí eso. ¿Puedo ayudarte con algo más?'
-          : 'I did not understand that. Can I help with something else?';
-      } else {
-        // Placeholder for other intents (cancel, reschedule, etc.)
-        reply = conversation.language === 'es'
-          ? `Tu intención: ${classified.intent} (próximamente disponible)`
-          : `Your intent: ${classified.intent} (coming soon)`;
+        reply =
+          conversation.language === 'es'
+            ? `No entendí eso. Aquí te muestro lo que puedo hacer:\n\n1. 📅 Ver mi próxima cita\n2. 💇 Agendar una cita\n3. ✏️ Cambiar mi cita\n4. ❌ Cancelar mi cita\n5. ❓ Hacer una pregunta\n\n¿Cuál te interesa?`
+            : `I didn't understand that. Here's what I can help you with:\n\n1. 📅 View my next appointment\n2. 💇 Book an appointment\n3. ✏️ Reschedule my appointment\n4. ❌ Cancel my appointment\n5. ❓ Ask a question\n\nWhich one interests you?`;
       }
     } catch (err) {
       console.error('Error routing intent:', err);
