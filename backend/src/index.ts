@@ -46,6 +46,7 @@ import { SendOTP } from './use-cases/SendOTP.js';
 import { VerifyOTP } from './use-cases/VerifyOTP.js';
 
 import { protect, authorize } from './middleware/auth-middleware.js';
+import chatbotRouter from './routes/chatbot.js';
 
 dotenv.config();
 
@@ -103,6 +104,9 @@ app.use((req, res, next) => {
   }
   next();
 });
+
+// Chatbot routes (public, no auth required)
+app.use(chatbotRouter);
 
 // Public Discovery
 app.get('/api/public/shops', (req, res) => {
