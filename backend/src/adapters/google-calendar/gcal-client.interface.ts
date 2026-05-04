@@ -21,4 +21,5 @@ export interface IGCalClient {
   patchEvent(barberId: number, eventId: string, patch: Partial<CalendarEvent>): Promise<void>;
   deleteEvent(barberId: number, eventId: string): Promise<void>;
   watch(barberId: number, webhookUrl: string): Promise<WatchResponse>;
+  stopWatch(barberId: number, channelId: string, resourceId: string): Promise<void>;
 }
