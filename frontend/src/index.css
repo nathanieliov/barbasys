@@ -467,6 +467,74 @@ input:focus, select:focus, textarea:focus {
   box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3);
 }
 
+.login-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Two-column login layout for desktop */
+.login-two-col {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+}
+
+.login-hero {
+  flex: 1;
+  display: none;
+  background: linear-gradient(135deg, var(--primary) 0%, #7c3aed 100%);
+  color: white;
+  padding: 3rem;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.login-hero-tagline {
+  font-size: 2rem;
+  font-weight: 900;
+  line-height: 1.2;
+  margin-bottom: 1rem;
+  letter-spacing: -0.025em;
+}
+
+.login-hero-sub {
+  opacity: 0.8;
+  font-size: 1.1rem;
+  font-weight: 500;
+  max-width: 320px;
+}
+
+.login-form-col {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f3f4f6;
+  background-image:
+    radial-gradient(at 0% 0%, hsla(253,16%,95%,1) 0, transparent 50%),
+    radial-gradient(at 50% 0%, hsla(225,39%,90%,1) 0, transparent 50%);
+  padding: 2rem 1rem;
+  flex: 1;
+}
+
+@media (min-width: 900px) {
+  .login-hero { display: flex; flex: 0 0 40%; }
+  .login-form-col { flex: 0 0 60%; }
+  .login-two-col { background: none; }
+}
+
 /* Booking Flow Revamp Styling */
 .booking-container {
   min-height: 100vh;

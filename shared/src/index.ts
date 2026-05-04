@@ -24,6 +24,8 @@ export interface Customer {
   birthday?: string | null;
   last_visit: string | null;
   notes: string | null;
+  tags?: string | null;
+  shop_id: number | null;
   created_at: string;
 }
 
@@ -60,6 +62,7 @@ export interface User {
   customer_id: number | null;
   shop_id: number | null;
   fullname?: string | null;
+  must_set_password?: number;
 }
 
 export interface Appointment {

@@ -6,7 +6,7 @@ export default function Users() {
   const [users, setUsers] = useState<any[]>([]);
   const [barbers, setBarbers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showAddModal, setShowBookModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
 
   // Form State
@@ -47,7 +47,7 @@ export default function Users() {
         barber_id: formData.barber_id ? parseInt(formData.barber_id) : null
       });
       setMessage({ text: 'User created successfully!', type: 'success' });
-      setShowBookModal(false);
+      setShowAddModal(false);
       setFormData({ username: '', email: '', password: '', role: 'BARBER', barber_id: '' });
       fetchData();
     } catch (err: any) {
@@ -75,7 +75,7 @@ export default function Users() {
           <h1>Team Management</h1>
           <p style={{ color: 'var(--text-muted)' }}>Manage system access and roles for your shop personnel.</p>
         </div>
-        <button onClick={() => setShowBookModal(true)} style={{ gap: '0.5rem' }}>
+        <button onClick={() => setShowAddModal(true)} style={{ gap: '0.5rem' }}>
           <PlusCircle size={20} /> Create New User
         </button>
       </div>
@@ -140,7 +140,7 @@ export default function Users() {
           <div className="modal-content">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
               <h2>Create System User</h2>
-              <button className="secondary" style={{ padding: '0.5rem' }} onClick={() => setShowBookModal(false)}>
+              <button className="secondary" style={{ padding: '0.5rem' }} onClick={() => setShowAddModal(false)}>
                 <X size={20} />
               </button>
             </div>

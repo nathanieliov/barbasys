@@ -30,7 +30,7 @@ export default function Inventory() {
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [prodName, setProdName] = useState('');
   const [prodDescription, setProdDescription] = useState('');
-  const [prodPrice, setProdNamePrice] = useState('');
+  const [prodPrice, setProdPrice] = useState('');
   const [prodThreshold, setProdThreshold] = useState('2');
   const [prodSupplierId, setProdSupplierId] = useState('');
 
@@ -92,7 +92,7 @@ export default function Inventory() {
     setEditingProduct(null);
     setProdName('');
     setProdDescription('');
-    setProdNamePrice('');
+    setProdPrice('');
     setProdThreshold('2');
     setProdSupplierId('');
     setShowProductModal(false);
@@ -102,7 +102,7 @@ export default function Inventory() {
     setEditingProduct(p);
     setProdName(p.name);
     setProdDescription(p.description || '');
-    setProdNamePrice(p.price.toString());
+    setProdPrice(p.price.toString());
     setProdThreshold(p.min_stock_threshold.toString());
     setProdSupplierId(p.supplier_id?.toString() || '');
     setShowProductModal(true);
@@ -356,7 +356,7 @@ export default function Inventory() {
                       type="number" 
                       step="0.01" 
                       value={prodPrice} 
-                      onChange={e => setProdNamePrice(e.target.value)} 
+                      onChange={e => setProdPrice(e.target.value)} 
                       style={{ paddingLeft: '2.25rem', marginBottom: 0 }}
                       required
                     />

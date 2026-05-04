@@ -32,7 +32,21 @@
     "cancelled": "Cancelled",
     "monthly": "Monthly",
     "weekly": "Weekly",
-    "biweekly": "Bi-weekly"
+    "biweekly": "Bi-weekly",
+    "close": "Close",
+    "confirm": "Confirm"
+  },
+  "auth": {
+    "signingIn": "Signing in...",
+    "forgotPassword": "Forgot password?",
+    "createShop": "Create my barbershop",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "errors": {
+      "invalid_credentials": "Incorrect username or password.",
+      "account_locked": "Account temporarily locked. Please try again later.",
+      "too_many_attempts": "Too many attempts. Please wait 15 minutes."
+    }
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -118,7 +132,12 @@
     "sign_in": "Sign In",
     "i_am_a_customer": "I am a Customer",
     "secure_access": "Secure Access",
-    "invalid_credentials": "Invalid credentials. Please try again."
+    "invalid_credentials": "Invalid credentials. Please try again.",
+    "staff": "Staff",
+    "customer": "Customer",
+    "no_account": "Don't have a barbershop yet?",
+    "hero_tagline": "Run your barbershop from one place",
+    "hero_sub": "Appointments, payments, inventory and more — all integrated."
   },
   "dashboard": {
     "welcome": "Welcome back, {{name}}!",
@@ -323,6 +342,7 @@
     "choose_professional": "Choose a Professional",
     "professional_barber": "Professional Barber",
     "select_services": "Select Services",
+    "add_service_hint": "Tap + to add at least one service before continuing.",
     "your_selection": "Your Selection",
     "total_duration": "Total: {{duration}} mins",
     "continue_to_schedule": "Continue to Schedule",

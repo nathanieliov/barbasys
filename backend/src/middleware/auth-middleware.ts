@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { UserRole } from '../domain/entities.js';
 import db from '../db.js';
+import { JWT_SECRET } from '../auth/jwt-secret.js';
 
 interface TokenPayload {
   id: number;
@@ -33,7 +34,7 @@ export const protect = (req: Request, res: Response, next: NextFunction) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret') as TokenPayload;
+    const decoded = jwt.verify(token, JWT_SECRET) as TokenPayload;
     
     // Fetch fresh user data from DB to ensure roles/ids are not stale
     const user = db.prepare('SELECT id, username, role, barber_id, customer_id, shop_id, fullname FROM users WHERE id = ?').get(decoded.id) as any;

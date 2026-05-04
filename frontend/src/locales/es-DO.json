@@ -32,7 +32,21 @@
     "cancelled": "Cancelado",
     "monthly": "Mensual",
     "weekly": "Semanal",
-    "biweekly": "Quincenal"
+    "biweekly": "Quincenal",
+    "close": "Cerrar",
+    "confirm": "Confirmar"
+  },
+  "auth": {
+    "signingIn": "Iniciando sesión...",
+    "forgotPassword": "¿Olvidaste tu contraseña?",
+    "createShop": "Crear mi barbería",
+    "showPassword": "Mostrar contraseña",
+    "hidePassword": "Ocultar contraseña",
+    "errors": {
+      "invalid_credentials": "Usuario o contraseña incorrectos.",
+      "account_locked": "Cuenta temporalmente bloqueada. Intenta más tarde.",
+      "too_many_attempts": "Demasiados intentos. Espera 15 minutos."
+    }
   },
   "nav": {
     "dashboard": "Tablero",
@@ -118,7 +132,12 @@
     "sign_in": "Iniciar Sesión",
     "i_am_a_customer": "Soy un Cliente",
     "secure_access": "Acceso Seguro",
-    "invalid_credentials": "Credenciales inválidas. Por favor intente de nuevo."
+    "invalid_credentials": "Credenciales inválidas. Por favor intente de nuevo.",
+    "staff": "Staff",
+    "customer": "Cliente",
+    "no_account": "¿Aún no tienes una barbería?",
+    "hero_tagline": "Gestiona tu barbería desde un solo lugar",
+    "hero_sub": "Agenda, pagos, inventario y más — todo integrado."
   },
   "dashboard": {
     "welcome": "¡Bienvenido de nuevo, {{name}}!",
@@ -323,6 +342,7 @@
     "choose_professional": "Elija un Profesional",
     "professional_barber": "Barbero Profesional",
     "select_services": "Seleccionar Servicios",
+    "add_service_hint": "Toca + para agregar al menos un servicio antes de continuar.",
     "your_selection": "Su Selección",
     "total_duration": "Total: {{duration}} mins",
     "continue_to_schedule": "Continuar al Horario",

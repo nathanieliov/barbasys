@@ -2,6 +2,7 @@ import { UserRepository } from '../repositories/user-repository.interface.js';
 import { ICustomerRepository } from '../repositories/customer-repository.interface.js';
 import jwt, { SignOptions } from 'jsonwebtoken';
 import i18n from '../i18n.js';
+import { JWT_SECRET } from '../auth/jwt-secret.js';
 
 export class VerifyOTP {
   constructor(
@@ -10,7 +11,6 @@ export class VerifyOTP {
   ) {}
 
   async execute(email: string, code: string) {
-    console.log(`🔐 [OTP VERIFICATION] Attempt for ${email} with code ${code}`);
     const user = await this.userRepo.findByEmail(email);
     
     if (!user || !user.otp_code || user.otp_code !== code) {
@@ -81,7 +81,7 @@ export class VerifyOTP {
         shop_id: user.shop_id,
         fullname: user.fullname
       },
-      process.env.JWT_SECRET || 'secret',
+      JWT_SECRET,
       options
     );
 

@@ -21,6 +21,9 @@ import Expenses from './pages/Expenses';
 import UserProfile from './pages/UserProfile';
 import Users from './pages/Users';
 import Login from './pages/Login';
+import Signup from './pages/Signup';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import Landing from './pages/Landing';
 import ShopDiscovery from './pages/ShopDiscovery';
 import BookingFlow from './pages/BookingFlow';
@@ -196,6 +199,9 @@ function App() {
           <Routes>
             <Route path="/" element={<HomeSelector />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/discovery" element={<ShopDiscovery />} />
             <Route path="/book/:shopId" element={<BookingFlow />} />
             <Route path="/b/:slug" element={<BarberDirect />} />

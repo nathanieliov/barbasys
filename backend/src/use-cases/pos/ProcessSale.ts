@@ -12,12 +12,14 @@ export interface ProcessSaleRequest {
     name: string;
     type: 'service' | 'product';
     price: number;
+    quantity?: number;
   }>;
   customer_email?: string | null;
   customer_phone?: string | null;
   tip_amount?: number;
   discount_amount?: number;
   shop_id: number;
+  appointment_id?: number | null;
 }
 
 export class ProcessSale {
@@ -30,7 +32,7 @@ export class ProcessSale {
   ) {}
 
   async execute(request: ProcessSaleRequest) {
-    let { barber_id, items, customer_email, customer_phone, tip_amount, discount_amount, shop_id } = request;
+    let { barber_id, items, customer_email, customer_phone, tip_amount, discount_amount, shop_id, appointment_id } = request;
 
     // Normalize values
     tip_amount = tip_amount || 0;
@@ -51,7 +53,7 @@ export class ProcessSale {
     const taxSetting = this.db.prepare('SELECT value FROM shop_settings WHERE shop_id = ? AND key = ?').get(shop_id, 'default_tax_rate') as { value: string } | undefined;
     const taxRate = parseFloat(taxSetting?.value || '0');
 
-    const total_items_amount = items.reduce((sum, item) => sum + (item.price || 0), 0);
+    const total_items_amount = items.reduce((sum, item) => sum + (item.price || 0) * (item.quantity ?? 1), 0);
     const taxable_amount = Math.max(0, total_items_amount - discount_amount);
     const tax_amount = taxable_amount * (taxRate / 100);
     const total_amount = taxable_amount + tax_amount + tip_amount;
@@ -66,32 +68,42 @@ export class ProcessSale {
         customerId = await this.customerRepo.create({
           email: customer_email,
           phone: customer_phone,
-          last_visit: new Date().toISOString()
-        });
+          last_visit: new Date().toISOString(),
+          shop_id
+        } as any);
       }
     }
 
-    const saleId = await this.saleRepo.create({
-      barber_id,
-      barber_name: barber.fullname || barber.name,
-      customer_id: customerId,
-      total_amount,
-      tip_amount,
-      tax_amount,
-      discount_amount,
-      customer_email,
-      customer_phone,
-      shop_id
-    }, items.map(item => ({
-      item_id: item.id,
-      item_name: item.name,
-      type: item.type,
-      price: item.price
-    })));
+    // Create sale + optionally mark appointment completed in a single transaction
+    let saleId: number;
+    const runCreate = this.db.transaction(() => {
+      const info = (this.db as any).prepare(
+        'INSERT INTO sales (barber_id, barber_name, customer_id, total_amount, tip_amount, tax_amount, discount_amount, customer_email, customer_phone, shop_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+      ).run(barber_id, barber.fullname || barber.name, customerId, total_amount, tip_amount, tax_amount, discount_amount, customer_email, customer_phone, shop_id);
+      const newSaleId = Number(info.lastInsertRowid);
+
+      for (const item of items) {
+        const qty = item.quantity ?? 1;
+        for (let q = 0; q < qty; q++) {
+          (this.db as any).prepare(
+            'INSERT INTO sale_items (sale_id, item_id, item_name, type, price) VALUES (?, ?, ?, ?, ?)'
+          ).run(newSaleId, item.id, item.name, item.type, item.price);
+        }
+      }
+
+      if (appointment_id) {
+        (this.db as any).prepare("UPDATE appointments SET status = 'completed' WHERE id = ?").run(appointment_id);
+      }
+
+      return newSaleId;
+    });
+
+    saleId = runCreate();
 
     for (const item of items) {
       if (item.type === 'product') {
-        await this.productRepo.reduceStock(item.id, 1, saleId);
+        const qty = item.quantity ?? 1;
+        await this.productRepo.reduceStock(item.id, qty, saleId);
         
         const product = await this.productRepo.findById(item.id);
         if (product && product.stock <= product.min_stock_threshold) {

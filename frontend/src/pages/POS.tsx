@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import apiClient from '../api/apiClient';
-import { Trash2, ShoppingCart, User, Plus, X, Scissors } from 'lucide-react';
+import { ShoppingCart, User, Plus, Minus, X, Scissors } from 'lucide-react';
 import { calculatePOSTotals } from '../utils/pos';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
@@ -46,64 +46,67 @@ export default function POS() {
 
   useEffect(() => {
     if (appointmentId) {
-      apiClient.get('/appointments').then(res => {
-        const appt = res.data.find((a: any) => a.id === parseInt(appointmentId));
-        if (appt) {
-          setSelectedBarber(appt.barber_id.toString());
-          
-          apiClient.get(`/appointments/${appointmentId}/items`).then(itemsRes => {
-            const finalItems = itemsRes.data.flatMap((item: any) => 
-              Array.from({ length: item.quantity }, () => ({
-                id: item.service_id,
-                name: item.name,
-                price: item.price,
-                type: 'service',
-                cartId: Math.random()
-              }))
-            );
-            setCart(finalItems);
-          });
+      apiClient.get(`/appointments/${appointmentId}`).then(apptRes => {
+        const appt = apptRes.data;
+        setSelectedBarber(appt.barber_id.toString());
 
-          if (appt.customer_id) {
-            apiClient.get('/customers').then(custRes => {
-              const customer = custRes.data.find((c: any) => c.id === appt.customer_id);
-              if (customer) {
-                setCustomerEmail(customer.email || '');
-                setCustomerPhone(customer.phone || '');
-              }
-            });
-          }
+        apiClient.get(`/appointments/${appointmentId}/items`).then(itemsRes => {
+          setCart(itemsRes.data.map((item: any) => ({
+            id: item.service_id,
+            name: item.name,
+            price: item.price,
+            type: 'service',
+            cartId: item.service_id,
+            quantity: item.quantity
+          })));
+        });
+
+        if (appt.customer_id) {
+          apiClient.get(`/customers/${appt.customer_id}`).then(custRes => {
+            setCustomerEmail(custRes.data.email || '');
+            setCustomerPhone(custRes.data.phone || '');
+          }).catch(() => {});
         }
-      });
+      }).catch(() => {});
     }
   }, [appointmentId]);
 
   const addToCart = (item: any, type: string) => {
-    setCart([...cart, { ...item, type, cartId: Date.now() }]);
+    setCart(prev => {
+      const key = `${type}-${item.id}`;
+      const existing = prev.find(i => i.cartId === key);
+      if (existing) {
+        return prev.map(i => i.cartId === key ? { ...i, quantity: i.quantity + 1 } : i);
+      }
+      return [...prev, { ...item, type, cartId: key, quantity: 1 }];
+    });
   };
 
-  const removeFromCart = (cartId: number) => {
-    setCart(cart.filter(item => item.cartId !== cartId));
+  const changeQty = (cartId: string, delta: number) => {
+    setCart(prev => prev
+      .map(i => i.cartId === cartId ? { ...i, quantity: i.quantity + delta } : i)
+      .filter(i => i.quantity > 0)
+    );
   };
+
+  const [saleError, setSaleError] = useState('');
 
   const submitSale = async () => {
+    setSaleError('');
     try {
       await apiClient.post('/sales', {
         barber_id: parseInt(selectedBarber),
         customer_email: customerEmail || undefined,
         customer_phone: customerPhone || undefined,
-        items: cart.map(i => ({ id: i.id, name: i.name, type: i.type, price: i.price })),
+        items: cart.map(i => ({ id: i.id, name: i.name, type: i.type, price: i.price, quantity: i.quantity })),
         tip_amount: tipAmount || 0,
-        discount_amount: discountAmount || 0
+        discount_amount: discountAmount || 0,
+        appointment_id: appointmentId ? parseInt(appointmentId) : undefined
       });
-
-      if (appointmentId) {
-        await apiClient.patch(`/appointments/${appointmentId}`, { status: 'completed' });
-      }
 
       setSaleSuccess(true);
     } catch (err: any) {
-      alert(err.response?.data?.error || 'Error processing sale. Please check values.');
+      setSaleError(err.response?.data?.error || 'Error processing sale. Please check values.');
     }
   };
 
@@ -225,11 +228,17 @@ export default function POS() {
                         <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>{item.name}</div>
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'capitalize' }}>{item.type}</div>
                       </div>
-                      <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                        <span style={{ fontWeight: '700' }}>{formatCurrency(item.price, settings.currency_symbol)}</span>
-                        <button className="secondary" style={{ padding: '0.5rem', color: 'var(--danger)', borderColor: 'transparent', borderRadius: '0.5rem' }} onClick={() => removeFromCart(item.cartId)}>
-                          <Trash2 size={16} />
-                        </button>
+                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                        <span style={{ fontWeight: '700', minWidth: '4rem', textAlign: 'right' }}>{formatCurrency(item.price * item.quantity, settings.currency_symbol)}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', border: '1px solid var(--border)', borderRadius: '0.5rem', overflow: 'hidden' }}>
+                          <button className="secondary" style={{ padding: '0.35rem 0.5rem', borderColor: 'transparent', borderRadius: 0 }} onClick={() => changeQty(item.cartId, -1)} aria-label="Decrease quantity">
+                            <Minus size={14} />
+                          </button>
+                          <span style={{ padding: '0 0.5rem', fontWeight: '700', fontSize: '0.9rem' }}>{item.quantity}</span>
+                          <button className="secondary" style={{ padding: '0.35rem 0.5rem', borderColor: 'transparent', borderRadius: 0 }} onClick={() => changeQty(item.cartId, 1)} aria-label="Increase quantity">
+                            <Plus size={14} />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -299,6 +308,11 @@ export default function POS() {
               <div style={{ fontSize: '2.5rem', fontWeight: '900' }}>{formatCurrency(total, settings.currency_symbol)}</div>
             </div>
 
+            {saleError && (
+              <div style={{ padding: '0.75rem', background: 'var(--danger-light, #fee2e2)', color: 'var(--danger)', borderRadius: '0.5rem', fontSize: '0.9rem', marginBottom: '1rem' }}>
+                {saleError}
+              </div>
+            )}
             <button onClick={submitSale} style={{ width: '100%', padding: '1.25rem', fontSize: '1.1rem' }}>
               {t('pos.complete_payment')}
             </button>

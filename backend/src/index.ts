@@ -46,6 +46,7 @@ import { SendOTP } from './use-cases/SendOTP.js';
 import { VerifyOTP } from './use-cases/VerifyOTP.js';
 
 import { protect, authorize } from './middleware/auth-middleware.js';
+import { loginRateLimiter, recordFailedLogin, clearLoginAttempts } from './middleware/login-rate-limiter.js';
 import chatbotRouter from './routes/chatbot.js';
 
 dotenv.config();
@@ -178,16 +179,17 @@ app.post('/api/auth/otp/verify', async (req, res) => {
   }
 });
 
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', loginRateLimiter, async (req, res) => {
   const { username, password } = req.body;
-  console.log(`Login attempt: ${username}`);
+  const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.socket.remoteAddress || 'unknown';
   try {
     const result = await loginUseCase.execute(username, password);
-    console.log(`Login success: ${username}`);
+    clearLoginAttempts(ip, username);
     res.json(result);
   } catch (err: any) {
-    console.log(`Login failed: ${username} - ${err.message}`);
-    res.status(401).json({ error: err.message });
+    recordFailedLogin(ip, username);
+    const code = err.code || 'invalid_credentials';
+    res.status(401).json({ error: code });
   }
 });
 
@@ -197,6 +199,102 @@ app.post('/api/auth/register', protect, authorize('OWNER'), async (req, res) => 
     res.status(201).json(result);
   } catch (err: any) {
     res.status(400).json({ error: err.message });
+  }
+});
+
+app.post('/api/auth/forgot-password', async (req, res) => {
+  const { email } = req.body;
+  // Always return 204 to prevent user enumeration
+  res.status(204).end();
+  if (!email) return;
+  try {
+    const user = await userRepo.findByEmail(email);
+    if (!user || user.role === 'CUSTOMER') return; // only reset staff accounts
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expires = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+    await userRepo.update({ id: user.id, otp_code: otp, otp_expires: expires });
+    const { sendOTP } = await import('./communication.js');
+    await sendOTP(email, otp);
+  } catch { /* silent — response already sent */ }
+});
+
+app.post('/api/auth/reset-password', async (req, res) => {
+  const { email, code, new_password } = req.body;
+  if (!email || !code || !new_password) {
+    return res.status(400).json({ error: 'Missing fields' });
+  }
+  if (new_password.length < 8) {
+    return res.status(400).json({ error: 'Password too short' });
+  }
+  try {
+    const user = await userRepo.findByEmail(email);
+    if (!user || !user.otp_code || user.otp_code !== code) {
+      return res.status(400).json({ error: 'invalid_code' });
+    }
+    if (user.otp_expires && new Date(user.otp_expires) < new Date()) {
+      return res.status(400).json({ error: 'code_expired' });
+    }
+    const bcrypt = await import('bcryptjs');
+    const password_hash = await bcrypt.hash(new_password, 10);
+    await userRepo.update({ id: user.id, password_hash, otp_code: null, otp_expires: null });
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/auth/signup', async (req, res) => {
+  const { shop_name, owner_email, owner_password, owner_fullname } = req.body;
+  if (!shop_name || !owner_email || !owner_password || !owner_fullname) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+  if (owner_password.length < 8) {
+    return res.status(400).json({ error: 'Password must be at least 8 characters' });
+  }
+  const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRe.test(owner_email)) {
+    return res.status(400).json({ error: 'Invalid email address' });
+  }
+  const existingUser = await userRepo.findByEmail(owner_email);
+  if (existingUser) {
+    return res.status(409).json({ error: 'Email already in use' });
+  }
+  try {
+    const bcrypt = await import('bcryptjs');
+    const password_hash = await bcrypt.hash(owner_password, 10);
+    const signup = db.transaction(() => {
+      const shopInfo = db.prepare('INSERT INTO shops (name) VALUES (?)').run(shop_name);
+      const shopId = Number(shopInfo.lastInsertRowid);
+      const username = owner_email.split('@')[0].replace(/[^a-z0-9_]/gi, '').toLowerCase() || 'owner';
+      let finalUsername = username;
+      let suffix = 1;
+      while (db.prepare('SELECT 1 FROM users WHERE username = ?').get(finalUsername)) {
+        finalUsername = `${username}${suffix++}`;
+      }
+      const userInfo = db.prepare(
+        'INSERT INTO users (username, email, password_hash, role, shop_id, fullname) VALUES (?, ?, ?, ?, ?, ?)'
+      ).run(finalUsername, owner_email, password_hash, 'OWNER', shopId, owner_fullname);
+      const userId = Number(userInfo.lastInsertRowid);
+      // Default shop settings
+      const defaults = [['open_time', '09:00'], ['close_time', '18:00'], ['currency_symbol', '$'], ['default_tax_rate', '0'], ['locale', 'es-DO']];
+      const ins = db.prepare('INSERT OR IGNORE INTO shop_settings (shop_id, key, value) VALUES (?, ?, ?)');
+      for (const [key, value] of defaults) ins.run(shopId, key, value);
+      return { shopId, userId, username: finalUsername };
+    });
+    const { shopId, userId, username: finalUsername } = signup();
+    const jwt = await import('jsonwebtoken');
+    const { JWT_SECRET } = await import('./auth/jwt-secret.js');
+    const token = jwt.sign(
+      { id: userId, username: finalUsername, role: 'OWNER', barber_id: null, customer_id: null, shop_id: shopId, fullname: owner_fullname },
+      JWT_SECRET,
+      { expiresIn: (process.env.JWT_EXPIRES_IN || '1d') as any }
+    );
+    res.status(201).json({
+      token,
+      user: { id: userId, username: finalUsername, email: owner_email, role: 'OWNER', shop_id: shopId, fullname: owner_fullname }
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -387,25 +485,28 @@ app.post('/api/barbers/:id/time-off', protect, authorize('OWNER', 'MANAGER', 'BA
   }
 });
 
-app.get('/api/customers', protect, (req, res) => {
-  let query = 'SELECT * FROM customers';
-  const params: any[] = [];
-
+app.get('/api/customers', protect, async (req, res) => {
+  const shopId = req.user?.shop_id ?? null;
   if (req.user?.role === 'BARBER') {
-    query = 'SELECT DISTINCT c.* FROM customers c JOIN sales s ON s.customer_id = c.id WHERE s.barber_id = ?';
-    params.push(req.user.barber_id);
+    const rows = shopId !== null
+      ? db.prepare('SELECT DISTINCT c.* FROM customers c JOIN sales s ON s.customer_id = c.id WHERE s.barber_id = ? AND c.shop_id = ? ORDER BY c.last_visit DESC').all(req.user.barber_id, shopId)
+      : db.prepare('SELECT DISTINCT c.* FROM customers c JOIN sales s ON s.customer_id = c.id WHERE s.barber_id = ? ORDER BY c.last_visit DESC').all(req.user.barber_id);
+    return res.json(rows);
   }
-
-  query += ' ORDER BY last_visit DESC';
-  const customers = db.prepare(query).all(...params);
+  const customers = shopId !== null
+    ? await customerRepo.findAll(shopId)
+    : db.prepare('SELECT * FROM customers ORDER BY last_visit DESC').all();
   res.json(customers);
 });
 
 app.get('/api/customers/:id', protect, (req, res) => {
   const { id } = req.params;
-  const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(id) as any;
+  const shopId = req.user?.shop_id ?? null;
+  const customer = shopId !== null
+    ? db.prepare('SELECT * FROM customers WHERE id = ? AND shop_id = ?').get(id, shopId) as any
+    : db.prepare('SELECT * FROM customers WHERE id = ?').get(id) as any;
   if (!customer) return res.status(404).json({ error: 'Customer not found' });
-  
+
   if (req.user?.role === 'BARBER') {
     const hasServed = db.prepare('SELECT 1 FROM sales WHERE customer_id = ? AND barber_id = ? LIMIT 1').get(id, req.user.barber_id);
     if (!hasServed) return res.status(403).json({ error: 'Not authorized to view this customer' });
@@ -433,19 +534,28 @@ app.get('/api/customers/:id', protect, (req, res) => {
 
 app.patch('/api/customers/:id', protect, (req, res) => {
   const { id } = req.params;
+  const shopId = req.user?.shop_id ?? null;
   const { name, email, phone, notes, tags } = req.body;
-  
+
+  // Verify ownership before mutation
+  const existing = shopId !== null
+    ? db.prepare('SELECT id FROM customers WHERE id = ? AND shop_id = ?').get(id, shopId)
+    : db.prepare('SELECT id FROM customers WHERE id = ?').get(id);
+  if (!existing) return res.status(404).json({ error: 'Customer not found' });
+
   if (req.user?.role === 'BARBER') {
     const hasServed = db.prepare('SELECT 1 FROM sales WHERE customer_id = ? AND barber_id = ? LIMIT 1').get(id, req.user.barber_id);
     if (!hasServed) return res.status(403).json({ error: 'Not authorized to update this customer' });
   }
 
   try {
-    db.prepare(`
-      UPDATE customers 
-      SET name = ?, email = ?, phone = ?, notes = ?, tags = ? 
-      WHERE id = ?
-    `).run(name, email, phone, notes, tags, id);
+    if (shopId !== null) {
+      db.prepare('UPDATE customers SET name = ?, email = ?, phone = ?, notes = ?, tags = ? WHERE id = ? AND shop_id = ?')
+        .run(name, email, phone, notes, tags, id, shopId);
+    } else {
+      db.prepare('UPDATE customers SET name = ?, email = ?, phone = ?, notes = ?, tags = ? WHERE id = ?')
+        .run(name, email, phone, notes, tags, id);
+    }
     res.json({ success: true });
   } catch (err: any) {
     res.status(400).json({ error: err.message });
@@ -454,6 +564,12 @@ app.patch('/api/customers/:id', protect, (req, res) => {
 
 app.get('/api/customers/:id/history', protect, (req, res) => {
   const { id } = req.params;
+  const shopId2 = req.user?.shop_id ?? null;
+  if (shopId2 !== null) {
+    const owned = db.prepare('SELECT id FROM customers WHERE id = ? AND shop_id = ?').get(id, shopId2);
+    if (!owned) return res.status(404).json({ error: 'Customer not found' });
+  }
+
   let query = `
     SELECT s.id, s.timestamp, s.total_amount, b.name as barber_name,
            (SELECT group_concat(name, ', ') FROM sale_items si JOIN services srv ON si.item_id = srv.id WHERE si.sale_id = s.id AND si.type = 'service') as services,
@@ -517,6 +633,26 @@ app.get('/api/appointments', protect, (req, res) => {
   query += ' ORDER BY a.start_time ASC';
   const appointments = db.prepare(query).all(...params);
   res.json(appointments);
+});
+
+app.get('/api/appointments/:id', protect, (req, res) => {
+  const shopId = req.user?.shop_id;
+  const query = shopId !== null
+    ? `SELECT a.*, b.name as barber_name, c.name as customer_name,
+         (SELECT group_concat(s.name || ' x' || ai.quantity, ', ')
+          FROM appointment_items ai JOIN services s ON ai.service_id = s.id WHERE ai.appointment_id = a.id) as services_summary
+       FROM appointments a JOIN barbers b ON a.barber_id = b.id LEFT JOIN customers c ON a.customer_id = c.id
+       WHERE a.id = ? AND (a.shop_id = ? OR ? IS NULL)`
+    : `SELECT a.*, b.name as barber_name, c.name as customer_name,
+         (SELECT group_concat(s.name || ' x' || ai.quantity, ', ')
+          FROM appointment_items ai JOIN services s ON ai.service_id = s.id WHERE ai.appointment_id = a.id) as services_summary
+       FROM appointments a JOIN barbers b ON a.barber_id = b.id LEFT JOIN customers c ON a.customer_id = c.id
+       WHERE a.id = ?`;
+  const appt = shopId !== null
+    ? db.prepare(query).get(req.params.id, shopId, shopId) as any
+    : db.prepare(query).get(req.params.id) as any;
+  if (!appt) return res.status(404).json({ error: 'Appointment not found' });
+  res.json(appt);
 });
 
 app.get('/api/appointments/:id/items', protect, (req, res) => {

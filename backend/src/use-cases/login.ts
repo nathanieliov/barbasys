@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt, { SignOptions } from 'jsonwebtoken';
 import { UserRepository } from '../repositories/user-repository.interface.js';
+import { JWT_SECRET } from '../auth/jwt-secret.js';
 
 export class LoginUseCase {
   constructor(private userRepository: UserRepository) {}
@@ -8,12 +9,16 @@ export class LoginUseCase {
   async execute(username: string, password_hash: string) {
     const user = await this.userRepository.findByUsername(username);
     if (!user) {
-      throw new Error('Invalid credentials');
+      const err = new Error('Invalid credentials') as any;
+      err.code = 'invalid_credentials';
+      throw err;
     }
 
     const isMatch = await bcrypt.compare(password_hash, user.password_hash);
     if (!isMatch) {
-      throw new Error('Invalid credentials');
+      const err = new Error('Invalid credentials') as any;
+      err.code = 'invalid_credentials';
+      throw err;
     }
 
     const options: SignOptions = {
@@ -21,16 +26,16 @@ export class LoginUseCase {
     };
 
     const token = jwt.sign(
-      { 
-        id: user.id, 
-        username: user.username, 
-        role: user.role, 
-        barber_id: user.barber_id, 
+      {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        barber_id: user.barber_id,
         customer_id: user.customer_id,
         shop_id: user.shop_id,
         fullname: user.fullname
       },
-      process.env.JWT_SECRET || 'secret',
+      JWT_SECRET,
       options
     );
 

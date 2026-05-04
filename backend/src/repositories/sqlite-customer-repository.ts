@@ -5,21 +5,39 @@ import { ICustomerRepository } from './customer-repository.interface.js';
 export class SQLiteCustomerRepository implements ICustomerRepository {
   constructor(private db: Database) {}
 
-  async findById(id: number): Promise<Customer | null> {
-    return this.db.prepare('SELECT * FROM customers WHERE id = ?').get(id) as Customer | null;
+  async findById(id: number, shopId?: number): Promise<Customer | null> {
+    const query = shopId !== undefined
+      ? 'SELECT * FROM customers WHERE id = ? AND shop_id = ?'
+      : 'SELECT * FROM customers WHERE id = ?';
+    const args = shopId !== undefined ? [id, shopId] : [id];
+    return this.db.prepare(query).get(...args as [any]) as Customer | null;
   }
 
-  async findByEmailOrPhone(email: string | null, phone: string | null): Promise<Customer | null> {
+  async findByEmailOrPhone(email: string | null, phone: string | null, shopId?: number): Promise<Customer | null> {
     if (!email && !phone) return null;
-    const query = 'SELECT * FROM customers WHERE (email = ? AND email IS NOT NULL) OR (phone = ? AND phone IS NOT NULL)';
-    const result = this.db.prepare(query).get(email, phone);
+    const shopFilter = shopId !== undefined ? ' AND shop_id = ?' : '';
+    const query = `SELECT * FROM customers WHERE ((email = ? AND email IS NOT NULL) OR (phone = ? AND phone IS NOT NULL))${shopFilter}`;
+    const args: any[] = [email, phone];
+    if (shopId !== undefined) args.push(shopId);
+    const result = this.db.prepare(query).get(...args);
     return (result as Customer) || null;
+  }
+
+  async findAll(shopId: number): Promise<Customer[]> {
+    return this.db.prepare('SELECT * FROM customers WHERE shop_id = ? ORDER BY last_visit DESC').all(shopId) as Customer[];
   }
 
   async create(customer: Partial<Customer>): Promise<number> {
     const result = this.db.prepare(
-      'INSERT INTO customers (name, email, phone, last_visit, birthday) VALUES (?, ?, ?, ?, ?)'
-    ).run(customer.name || null, customer.email || null, customer.phone || null, customer.last_visit || null, customer.birthday || null);
+      'INSERT INTO customers (name, email, phone, last_visit, birthday, shop_id) VALUES (?, ?, ?, ?, ?, ?)'
+    ).run(
+      customer.name || null,
+      customer.email || null,
+      customer.phone || null,
+      customer.last_visit || null,
+      customer.birthday || null,
+      (customer as any).shop_id || null
+    );
     return Number(result.lastInsertRowid);
   }
 
@@ -27,7 +45,7 @@ export class SQLiteCustomerRepository implements ICustomerRepository {
     const columns = Object.keys(customer).filter(k => k !== 'id');
     const values = columns.map(k => (customer as any)[k]);
     const setClause = columns.map(k => `${k} = ?`).join(', ');
-    
+
     this.db.prepare(`UPDATE customers SET ${setClause} WHERE id = ?`).run(...values, customer.id);
   }
 

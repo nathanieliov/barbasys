@@ -111,6 +111,7 @@ db.exec(`
     last_visit DATETIME,
     notes TEXT,
     tags TEXT, -- Comma-separated tags
+    shop_id INTEGER REFERENCES shops(id) ON DELETE SET NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 
@@ -128,6 +129,7 @@ db.exec(`
     otp_expires DATETIME,
     otp_requests_count INTEGER DEFAULT 0,
     last_otp_request_at DATETIME,
+    must_set_password INTEGER DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (barber_id) REFERENCES barbers(id) ON DELETE SET NULL,
     FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL,
@@ -369,6 +371,13 @@ try { db.exec('ALTER TABLE suppliers ADD COLUMN shop_id INTEGER'); } catch (e) {
 try { db.exec('ALTER TABLE sales ADD COLUMN barber_name TEXT'); } catch (e) {}
 try { db.exec('ALTER TABLE sales ADD COLUMN tax_amount REAL DEFAULT 0'); } catch (e) {}
 try { db.exec('ALTER TABLE sale_items ADD COLUMN item_name TEXT'); } catch (e) {}
+// Multi-tenant customer isolation (prod dbs that existed before this column was added)
+try { db.exec('ALTER TABLE customers ADD COLUMN shop_id INTEGER REFERENCES shops(id) ON DELETE SET NULL'); } catch (e) {}
+try { db.exec('UPDATE customers SET shop_id = 1 WHERE shop_id IS NULL'); } catch (e) {}
+try { db.exec('CREATE INDEX IF NOT EXISTS idx_customers_shop ON customers(shop_id)'); } catch (e) {}
+try { db.exec('ALTER TABLE customers ADD COLUMN tags TEXT'); } catch (e) {}
+// Invite flow
+try { db.exec('ALTER TABLE users ADD COLUMN must_set_password INTEGER DEFAULT 0'); } catch (e) {}
 
 // 3. Migration for shop_settings to support multi-shop
 try {
