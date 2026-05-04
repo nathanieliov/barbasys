@@ -34,4 +34,14 @@ export class SQLiteCustomerRepository implements ICustomerRepository {
   async updateLastVisit(id: number): Promise<void> {
     this.db.prepare('UPDATE customers SET last_visit = CURRENT_TIMESTAMP WHERE id = ?').run(id);
   }
+
+  async setWaOptIn(customerId: number, optedIn: boolean): Promise<void> {
+    this.db.prepare(
+      'UPDATE customers SET wa_opt_in = ?, wa_opt_in_at = CURRENT_TIMESTAMP WHERE id = ?'
+    ).run(optedIn ? 1 : 0, customerId);
+  }
+
+  async setPreferredLanguage(customerId: number, language: 'es' | 'en'): Promise<void> {
+    this.db.prepare('UPDATE customers SET preferred_language = ? WHERE id = ?').run(language, customerId);
+  }
 }

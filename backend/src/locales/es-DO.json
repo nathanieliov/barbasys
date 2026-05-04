@@ -25,6 +25,20 @@
     "otp_instruction": "Ingresa este código para verificar tu identidad:",
     "otp_expiry_notice": "Este código expirará en 10 minutos."
   },
+  "chatbot": {
+    "menu_header": "No entendí eso. Aquí te muestro lo que puedo hacer:",
+    "menu_view_next": "📅 Ver mi próxima cita",
+    "menu_book": "💇 Agendar una cita",
+    "menu_reschedule": "✏️ Cambiar mi cita",
+    "menu_cancel": "❌ Cancelar mi cita",
+    "menu_faq": "❓ Hacer una pregunta",
+    "menu_prompt": "¿Cuál te interesa?",
+    "no_appointments": "No tienes citas próximas",
+    "rate_limit_exceeded": "Has enviado demasiados mensajes. Por favor, intenta de nuevo en unos momentos."
+  },
+  "schedule": {
+    "guest_client": "Visitante"
+  },
   "errors": {
     "barber_not_found": "Barbero no encontrado",
     "failed_fetch_users": "Error al obtener usuarios",

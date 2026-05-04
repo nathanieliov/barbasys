@@ -449,4 +449,58 @@ if (barberToLink) {
   db.prepare('INSERT OR IGNORE INTO users (username, email, password_hash, role, barber_id, shop_id) VALUES (?, ?, ?, ?, ?, ?)').run('Nathaniel', 'nathaniel.calderon@gmail.com', passwordHash, 'BARBER', barberToLink.id, defaultShopId);
 }
 
+// WhatsApp chatbot tables
+db.exec(`
+  CREATE TABLE IF NOT EXISTS conversations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    customer_id INTEGER REFERENCES customers(id) ON DELETE SET NULL,
+    wa_phone TEXT NOT NULL,
+    language TEXT NOT NULL DEFAULT 'es',
+    state TEXT NOT NULL DEFAULT 'idle',
+    context_json TEXT,
+    last_inbound_at TEXT,
+    last_outbound_at TEXT,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+  CREATE INDEX IF NOT EXISTS idx_conversations_phone ON conversations(wa_phone);
+
+  CREATE TABLE IF NOT EXISTS wa_messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    conversation_id INTEGER NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+    direction TEXT NOT NULL CHECK(direction IN ('in','out')),
+    wa_message_sid TEXT UNIQUE,
+    body TEXT,
+    media_url TEXT,
+    intent TEXT,
+    status TEXT,
+    raw_payload_json TEXT,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+  CREATE INDEX IF NOT EXISTS idx_wa_msgs_conv ON wa_messages(conversation_id, created_at);
+
+  CREATE TABLE IF NOT EXISTS gcal_pending_ops (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    barber_id INTEGER NOT NULL REFERENCES barbers(id) ON DELETE CASCADE,
+    appointment_id INTEGER REFERENCES appointments(id) ON DELETE SET NULL,
+    op TEXT NOT NULL CHECK(op IN ('insert','patch','delete')),
+    payload_json TEXT NOT NULL,
+    attempts INTEGER DEFAULT 0,
+    next_attempt_at TEXT,
+    last_error TEXT,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+`);
+
+try { db.exec("ALTER TABLE customers ADD COLUMN wa_opt_in INTEGER DEFAULT 0"); } catch (e) {}
+try { db.exec("ALTER TABLE customers ADD COLUMN wa_opt_in_at TEXT"); } catch (e) {}
+try { db.exec("ALTER TABLE customers ADD COLUMN preferred_language TEXT DEFAULT 'es'"); } catch (e) {}
+try { db.exec("ALTER TABLE barbers ADD COLUMN gcal_token_enc TEXT"); } catch (e) {}
+try { db.exec("ALTER TABLE barbers ADD COLUMN gcal_refresh_token_enc TEXT"); } catch (e) {}
+try { db.exec("ALTER TABLE barbers ADD COLUMN gcal_calendar_id TEXT"); } catch (e) {}
+try { db.exec("ALTER TABLE barbers ADD COLUMN gcal_channel_id TEXT"); } catch (e) {}
+try { db.exec("ALTER TABLE barbers ADD COLUMN gcal_resource_id TEXT"); } catch (e) {}
+try { db.exec("ALTER TABLE barbers ADD COLUMN gcal_watch_expires_at TEXT"); } catch (e) {}
+try { db.exec("ALTER TABLE appointments ADD COLUMN gcal_event_id TEXT"); } catch (e) {}
+
 export default db;
