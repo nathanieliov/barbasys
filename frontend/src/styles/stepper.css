@@ -1,0 +1,69 @@
+/* ─── Stepper component ─────────────────────────────────── */
+.ds-stepper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 36px;
+  flex-wrap: wrap;
+}
+
+.ds-stepper-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ds-step {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 14px 7px 7px;
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  font-size: 13px;
+  color: var(--ink-3);
+  font-weight: 500;
+  font-family: var(--font);
+  white-space: nowrap;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.ds-step-num {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--ink-3);
+  display: grid;
+  place-items: center;
+  font-weight: 600;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.ds-step-done {
+  color: var(--ink);
+  border-color: var(--line-2);
+}
+.ds-step-done .ds-step-num {
+  background: var(--sage);
+  color: #fff;
+}
+
+.ds-step-current {
+  background: var(--ink);
+  color: var(--bg);
+  border-color: var(--ink);
+}
+.ds-step-current .ds-step-num {
+  background: var(--primary);
+  color: #fff;
+}
+
+.ds-step-line {
+  width: 18px;
+  height: 1px;
+  background: var(--line-2);
+  flex-shrink: 0;
+}

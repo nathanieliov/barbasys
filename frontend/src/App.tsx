@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react';
 import apiClient from './api/apiClient';
-import { BrowserRouter as Router, Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { LayoutDashboard, Scissors, Package, BarChart3, Users as UsersIcon, ShoppingCart, Calendar as CalendarIcon, LogOut, Settings as SettingsIcon, Clock, Truck, BarChart, Receipt, Menu, User, Shield } from 'lucide-react';
+import {
+  LayoutDashboard, Scissors, Package, BarChart3, Users as UsersIcon,
+  ShoppingCart, Calendar as CalendarIcon, LogOut, Settings as SettingsIcon,
+  Clock, Truck, BarChart, Receipt, Menu, User, Shield,
+} from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import POS from './pages/POS';
 import Inventory from './pages/Inventory';
@@ -31,23 +35,30 @@ import BarberDirect from './pages/BarberDirect';
 import CustomerPortal from './pages/CustomerPortal';
 import MyBookings from './pages/MyBookings';
 import ProtectedRoute from './components/ProtectedRoute';
+import AppTopBar from './components/AppTopBar';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { SettingsProvider } from './hooks/useSettings';
 
-const Sidebar = ({ isOpen, toggleSidebar }: { isOpen: boolean, toggleSidebar: () => void }) => {
+/* ─── Admin Sidebar ─────────────────────────────────────── */
+
+interface NavItemDef {
+  to: string;
+  icon: React.ReactNode;
+  label: string;
+  admin?: boolean;
+  roles?: string[];
+  badge?: number;
+}
+
+function AdminSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const { user, logout } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const location = useLocation();
-  const [shopName, setShopName] = useState('BarbaSys');
   const [shops, setShops] = useState<any[]>([]);
 
   useEffect(() => {
-    if (user?.shop_id) {
-      apiClient.get(`/shops/${user.shop_id}`).then(res => setShopName(res.data.name));
-    }
-    if (user?.role === 'OWNER' || user?.role === 'MANAGER') {
-      apiClient.get('/shops').then(res => setShops(res.data));
+    if ((user?.role === 'OWNER' || user?.role === 'MANAGER') && user.shop_id) {
+      apiClient.get('/shops').then(res => setShops(res.data)).catch(() => {});
     }
   }, [user]);
 
@@ -57,7 +68,7 @@ const Sidebar = ({ isOpen, toggleSidebar }: { isOpen: boolean, toggleSidebar: ()
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('user', JSON.stringify(res.data.user));
       window.location.reload();
-    } catch (err) {
+    } catch {
       alert(t('common.failed_switch_shop'));
     }
   };
@@ -68,120 +79,185 @@ const Sidebar = ({ isOpen, toggleSidebar }: { isOpen: boolean, toggleSidebar: ()
   };
 
   if (!user) return null;
-
   const isAdmin = user.role === 'OWNER' || user.role === 'MANAGER';
 
-  const navItems = [
-    { to: "/", icon: <LayoutDashboard size={20} />, label: t('nav.dashboard') },
-    { to: "/my-schedule", icon: <CalendarIcon size={20} />, label: t('nav.my_schedule'), roles: ['BARBER'] },
-    { to: "/pos", icon: <ShoppingCart size={20} />, label: t('nav.pos') },
-    { to: "/sales", icon: <Receipt size={20} />, label: t('nav.sales_log') },
-    { to: "/schedule", icon: <CalendarIcon size={20} />, label: t('nav.shop_calendar'), admin: true },
-    { to: "/shifts", icon: <Clock size={20} />, label: t('nav.shifts'), admin: true },
-    { to: "/inventory", icon: <Package size={20} />, label: t('nav.inventory') },
-    { to: "/services", icon: <Scissors size={20} />, label: t('nav.services'), admin: true },
-    { to: "/suppliers", icon: <Truck size={20} />, label: t('nav.suppliers'), admin: true },
-    { to: "/analytics", icon: <BarChart size={20} />, label: t('nav.analytics'), admin: true },
-    { to: "/expenses", icon: <Receipt size={20} />, label: t('nav.expenses'), admin: true },
-    { to: "/reports", icon: <BarChart3 size={20} />, label: t('nav.reports'), admin: true },
-    { to: "/barbers", icon: <UsersIcon size={20} />, label: t('nav.barbers'), admin: true },
-    { to: "/users", icon: <Shield size={20} />, label: t('nav.user_accounts'), admin: true },
-    { to: "/customers", icon: <UsersIcon size={20} />, label: t('nav.customers') },
-    { to: "/profile", icon: <User size={20} />, label: t('nav.my_profile') },
-    { to: "/settings", icon: <SettingsIcon size={20} />, label: t('nav.settings'), admin: true },
+  const workspaceItems: NavItemDef[] = [
+    { to: '/',           icon: <LayoutDashboard size={17} />, label: t('nav.dashboard') },
+    { to: '/schedule',   icon: <CalendarIcon size={17} />,    label: t('nav.shop_calendar'), admin: true },
+    { to: '/pos',        icon: <ShoppingCart size={17} />,    label: t('nav.pos') },
+    { to: '/barbers',    icon: <UsersIcon size={17} />,       label: t('nav.barbers'), admin: true },
+    { to: '/services',   icon: <Scissors size={17} />,        label: t('nav.services'), admin: true },
+    { to: '/my-schedule',icon: <CalendarIcon size={17} />,    label: t('nav.my_schedule'), roles: ['BARBER'] },
+    { to: '/inventory',  icon: <Package size={17} />,         label: t('nav.inventory') },
+    { to: '/sales',      icon: <Receipt size={17} />,         label: t('nav.sales_log') },
+    { to: '/customers',  icon: <UsersIcon size={17} />,       label: t('nav.customers') },
   ];
+
+  const shopItems: NavItemDef[] = [
+    { to: '/analytics',  icon: <BarChart size={17} />,        label: t('nav.analytics'), admin: true },
+    { to: '/reports',    icon: <BarChart3 size={17} />,       label: t('nav.reports'), admin: true },
+    { to: '/shifts',     icon: <Clock size={17} />,           label: t('nav.shifts'), admin: true },
+    { to: '/expenses',   icon: <Receipt size={17} />,         label: t('nav.expenses'), admin: true },
+    { to: '/suppliers',  icon: <Truck size={17} />,           label: t('nav.suppliers'), admin: true },
+    { to: '/users',      icon: <Shield size={17} />,          label: t('nav.user_accounts'), admin: true },
+    { to: '/profile',    icon: <User size={17} />,            label: t('nav.my_profile') },
+    { to: '/settings',   icon: <SettingsIcon size={17} />,    label: t('nav.settings'), admin: true },
+  ];
+
+  const renderItems = (items: NavItemDef[]) =>
+    items.map(item => {
+      if (item.admin && !isAdmin) return null;
+      if (item.roles && !item.roles.includes(user.role)) return null;
+      return (
+        <NavLink
+          key={item.to}
+          to={item.to}
+          end={item.to === '/'}
+          className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+          onClick={() => { if (window.innerWidth <= 768) onClose(); }}
+          aria-label={item.label}
+        >
+          {item.icon}
+          <span>{item.label}</span>
+          {item.badge != null && <span className="nav-badge">{item.badge}</span>}
+        </NavLink>
+      );
+    });
 
   return (
     <>
-      <div className={`sidebar-overlay ${isOpen ? 'open' : ''}`} onClick={toggleSidebar}></div>
-      <nav className={`sidebar ${isOpen ? 'open' : ''}`}>
-        <div className="logo-container">
-          <div className="logo">
-            <Scissors size={28} />
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span>{shopName}</span>
-              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 'normal' }}>{t('common.professional_management')}</span>
-            </div>
+      {/* Mobile overlay */}
+      {isOpen && (
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', backdropFilter: 'blur(4px)', zIndex: 90 }}
+          onClick={onClose}
+          aria-hidden="true"
+        />
+      )}
+
+      <aside
+        className="admin-sidebar"
+        style={window.innerWidth <= 768 ? {
+          position: 'fixed', left: 0, top: 0, bottom: 0, zIndex: 100, width: 260,
+          transform: isOpen ? 'none' : 'translateX(-100%)',
+          transition: 'transform .25s ease',
+          boxShadow: isOpen ? 'var(--shadow-lg)' : 'none',
+          background: 'var(--surface)',
+        } : undefined}
+        aria-label="Main navigation"
+      >
+        {/* Multi-shop switcher */}
+        {isAdmin && shops.length > 1 && (
+          <div style={{ marginBottom: 8 }}>
+            <select
+              value={user.shop_id ?? ''}
+              onChange={e => handleShopSwitch(e.target.value)}
+              style={{ width: '100%', padding: '8px 12px', borderRadius: 'var(--r)', border: '1px solid var(--line)', background: 'var(--surface-2)', fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 0 }}
+            >
+              {shops.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
           </div>
-          
-          {isAdmin && shops.length > 1 && (
-            <div style={{ marginTop: '1.25rem' }}>
-              <label style={{ fontSize: '0.65rem', textTransform: 'uppercase', fontWeight: '800', color: 'var(--text-muted)', display: 'block', marginBottom: '0.5rem', marginLeft: '0.25rem' }}>{t('common.active_location')}</label>
-              <select 
-                value={user?.shop_id || ''} 
-                onChange={e => handleShopSwitch(e.target.value)}
-                style={{ marginBottom: 0, fontSize: '0.85rem', fontWeight: '600', padding: '0.5rem', background: '#f3f4f6' }}
-              >
-                {shops.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
-            </div>
-          )}
-        </div>
-        
-        <ul className="nav-links">
-          {navItems.map(item => {
-            if (item.admin && !isAdmin) return null;
-            if (item.roles && !item.roles.includes(user.role)) return null;
-            const isActive = location.pathname === item.to;
-            return (
-              <li key={item.to}>
-                <Link to={item.to} className={isActive ? 'active' : ''} onClick={() => { if(window.innerWidth <= 768) toggleSidebar() }}>
-                  {item.icon}
-                  <span>{item.label}</span>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-        
-        <div className="sidebar-footer">
-          <div className="user-info">
-            <p className="user-name">{user.fullname || user.username}</p>
-            <p className="user-role">{user.role}</p>
+        )}
+
+        <div className="sidebar-eyebrow">{t('nav.workspace', 'Workspace')}</div>
+        {renderItems(workspaceItems)}
+
+        <div className="sidebar-eyebrow" style={{ marginTop: 8 }}>{t('nav.shop', 'Shop')}</div>
+        {renderItems(shopItems)}
+
+        {/* Drawer status card */}
+        <div style={{ flex: 1 }} aria-hidden="true" />
+        <div style={{ padding: 14, background: 'var(--surface-2)', borderRadius: 14, fontSize: 12.5, color: 'var(--ink-2)', marginTop: 8 }}>
+          <div style={{ fontWeight: 600, color: 'var(--ink)', marginBottom: 4 }}>
+            {user.fullname || user.username}
           </div>
-          <button onClick={handleLogout} className="logout-button" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', width: '100%', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
-            <LogOut size={18} style={{ marginRight: '0.5rem' }} /> {t('common.logout')}
+          <div style={{ fontSize: 11.5, color: 'var(--ink-3)', marginBottom: 10 }}>{user.role}</div>
+          <button
+            className="btn btn-ghost btn-sm"
+            style={{ width: '100%', color: 'var(--danger)' }}
+            onClick={handleLogout}
+          >
+            <LogOut size={14} aria-hidden="true" /> {t('common.logout')}
           </button>
         </div>
-      </nav>
+      </aside>
     </>
   );
-};
+}
 
-const Layout = ({ children }: { children: React.ReactNode }) => {
+/* ─── Layout ────────────────────────────────────────────── */
+
+function Layout({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [shopName, setShopName] = useState('BarbaSys');
   const { user } = useAuth();
+  const { t } = useTranslation();
+  const navigate = useNavigate();
   const location = useLocation();
-  
-  // Paths that should ALWAYS use the customer layout
+
   const customerPaths = ['/discovery', '/book/', '/my-bookings', '/b/'];
-  const isCustomerRoute = customerPaths.some(path => location.pathname.startsWith(path));
-  
-  const isCustomer = user?.role === 'CUSTOMER' || isCustomerRoute;
-  const isStaff = user && user.role !== 'CUSTOMER' && !isCustomerRoute;
+  const isCustomerRoute = customerPaths.some(p => location.pathname.startsWith(p));
+  const isAuthRoute = ['/login', '/signup', '/forgot-password', '/reset-password'].includes(location.pathname);
+
+  const isStaff = user != null && user.role !== 'CUSTOMER' && !isCustomerRoute;
+  const staffView: 'admin' | 'booking' = isCustomerRoute ? 'booking' : 'admin';
+
+  useEffect(() => {
+    if (user?.shop_id) {
+      apiClient.get(`/shops/${user.shop_id}`).then(res => setShopName(res.data.name)).catch(() => {});
+    }
+  }, [user]);
+
+  // Auth-only pages: no top bar or sidebar
+  if (isAuthRoute) {
+    return <>{children}</>;
+  }
 
   return (
-    <div className={`app-container ${isCustomer ? 'customer-layout' : ''}`}>
-      {isStaff && (
-        <header className="mobile-header">
-          <div className="logo" style={{ fontSize: '1.1rem' }}>
-            <Scissors size={20} />
-            <span>BarbaSys</span>
-          </div>
-          <button className="secondary" style={{ padding: '0.5rem' }} onClick={() => setIsSidebarOpen(true)}>
-            <Menu size={24} />
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <AppTopBar
+        shopName={shopName}
+        isStaff={isStaff}
+        staffView={staffView}
+        onStaffViewChange={v => {
+          if (v === 'booking') navigate(`/book/${user?.shop_id ?? ''}`);
+          else navigate('/');
+        }}
+      />
+
+      {isStaff ? (
+        <>
+          {/* Mobile hamburger */}
+          <div style={{ display: 'none' }} className="mobile-hamburger" />
+          <button
+            className="btn btn-soft btn-sm mobile-menu-btn"
+            style={{ borderRadius: '50%', width: 44, height: 44, padding: 0 }}
+            onClick={() => setIsSidebarOpen(o => !o)}
+            aria-label={t('common.open_menu', 'Menu')}
+          >
+            <Menu size={20} />
           </button>
-        </header>
+
+          <div className="admin-shell">
+            <AdminSidebar
+              isOpen={isSidebarOpen}
+              onClose={() => setIsSidebarOpen(false)}
+            />
+            <main className="main-pane" id="main-content">
+              {children}
+            </main>
+          </div>
+        </>
+      ) : (
+        <main style={{ flex: 1 }}>
+          {children}
+        </main>
       )}
-      
-      {isStaff && <Sidebar isOpen={isSidebarOpen} toggleSidebar={() => setIsSidebarOpen(false)} />}
-      
-      <main className="content">
-        {children}
-      </main>
     </div>
   );
-};
+}
+
+/* ─── Home selector ──────────────────────────────────────── */
 
 function HomeSelector() {
   const { user } = useAuth();
@@ -190,47 +266,49 @@ function HomeSelector() {
   return <Dashboard />;
 }
 
+/* ─── App root ───────────────────────────────────────────── */
+
 function App() {
   return (
     <AuthProvider>
       <SettingsProvider>
         <Router>
           <Layout>
-          <Routes>
-            <Route path="/" element={<HomeSelector />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/discovery" element={<ShopDiscovery />} />
-            <Route path="/book/:shopId" element={<BookingFlow />} />
-            <Route path="/b/:slug" element={<BarberDirect />} />
-            <Route path="/my-bookings" element={<MyBookings />} />
-            
-            <Route element={<ProtectedRoute />}>
-              <Route path="/my-schedule" element={<MySchedule />} />
-              <Route path="/pos" element={<POS />} />
-              <Route path="/sales" element={<SalesHistory />} />
-              <Route path="/inventory" element={<Inventory />} />
-              <Route path="/customers" element={<Customers />} />
-              <Route path="/profile" element={<UserProfile />} />
-            </Route>
+            <Routes>
+              <Route path="/" element={<HomeSelector />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/discovery" element={<ShopDiscovery />} />
+              <Route path="/book/:shopId" element={<BookingFlow />} />
+              <Route path="/b/:slug" element={<BarberDirect />} />
+              <Route path="/my-bookings" element={<MyBookings />} />
 
-            <Route element={<ProtectedRoute roles={['OWNER', 'MANAGER']} />}>
-              <Route path="/schedule" element={<Schedule />} />
-              <Route path="/shifts" element={<Shifts />} />
-              <Route path="/reports" element={<Reports />} />
-              <Route path="/analytics" element={<Analytics />} />
-              <Route path="/expenses" element={<Expenses />} />
-              <Route path="/barbers" element={<Barbers />} />
-              <Route path="/users" element={<Users />} />
-              <Route path="/services" element={<Services />} />
-              <Route path="/suppliers" element={<Suppliers />} />
-              <Route path="/settings" element={<Settings />} />
-            </Route>
-          </Routes>
-        </Layout>
-      </Router>
+              <Route element={<ProtectedRoute />}>
+                <Route path="/my-schedule" element={<MySchedule />} />
+                <Route path="/pos" element={<POS />} />
+                <Route path="/sales" element={<SalesHistory />} />
+                <Route path="/inventory" element={<Inventory />} />
+                <Route path="/customers" element={<Customers />} />
+                <Route path="/profile" element={<UserProfile />} />
+              </Route>
+
+              <Route element={<ProtectedRoute roles={['OWNER', 'MANAGER']} />}>
+                <Route path="/schedule" element={<Schedule />} />
+                <Route path="/shifts" element={<Shifts />} />
+                <Route path="/reports" element={<Reports />} />
+                <Route path="/analytics" element={<Analytics />} />
+                <Route path="/expenses" element={<Expenses />} />
+                <Route path="/barbers" element={<Barbers />} />
+                <Route path="/users" element={<Users />} />
+                <Route path="/services" element={<Services />} />
+                <Route path="/suppliers" element={<Suppliers />} />
+                <Route path="/settings" element={<Settings />} />
+              </Route>
+            </Routes>
+          </Layout>
+        </Router>
       </SettingsProvider>
     </AuthProvider>
   );

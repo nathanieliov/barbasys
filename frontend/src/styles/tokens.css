@@ -1,0 +1,59 @@
+/* ─── Barbasys Design Tokens ─────────────────────────────── */
+:root {
+  /* Surfaces — warm cream palette */
+  --bg:        #faf6f1;
+  --surface:   #ffffff;
+  --surface-2: #f4ede4;
+  --surface-3: #ebe1d3;
+
+  /* Text */
+  --ink:   #2a2520;
+  --ink-2: #5b5046;
+  --ink-3: #8a7d6e;
+  --ink-4: #b8ad9f;
+
+  /* Lines / borders */
+  --line:   #ece3d4;
+  --line-2: #ddd1bd;
+
+  /* Accents */
+  --primary:      #e07856;
+  --primary-soft: #fbe5db;
+  --primary-deep: #b85a3c;
+  --sage:         #8fa888;
+  --sage-soft:    #e3ecdf;
+  --butter:       #f4cf7a;
+  --butter-soft:  #fdf1d4;
+  --plum:         #a07391;
+  --plum-soft:    #f0e3eb;
+
+  /* Semantic (kept for legacy usage) */
+  --success: #4d6648;
+  --danger:  #b85a3c;
+  --warning: #8a6210;
+
+  /* Radius */
+  --r-sm:  8px;
+  --r:    14px;
+  --r-lg: 20px;
+  --r-xl: 28px;
+  --r-pill: 999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(60,40,25,.04), 0 1px 3px rgba(60,40,25,.05);
+  --shadow:    0 2px 6px rgba(60,40,25,.05), 0 8px 24px rgba(60,40,25,.06);
+  --shadow-lg: 0 4px 14px rgba(60,40,25,.07), 0 24px 48px rgba(60,40,25,.08);
+
+  /* Font stacks */
+  --font-display: "Fraunces", "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font:         "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono:    "JetBrains Mono", ui-monospace, monospace;
+
+  /* ── Backward-compat aliases (legacy code keeps working) ── */
+  --card:        var(--surface);
+  --border:      var(--line);
+  --text-main:   var(--ink);
+  --text-muted:  var(--ink-3);
+  --sidebar-bg:  var(--surface);
+  --primary-hover: var(--primary-deep);
+}
