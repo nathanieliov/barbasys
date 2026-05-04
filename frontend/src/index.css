@@ -1147,3 +1147,98 @@ input:focus, select:focus, textarea:focus {
 .appt-amber  { background: var(--butter-soft);  color: #75510e; }
 .appt-ink    { background: var(--surface-2);    color: var(--ink); }
 .appt-done   { opacity: 0.55; }
+
+/* ─── POS Design System ───────────────────────────────────── */
+.pos-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--surface-2);
+  padding: 4px;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  width: fit-content;
+}
+.pos-tabs button {
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 0;
+  background: transparent;
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background .1s;
+}
+.pos-tabs button.active {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-sm);
+}
+
+.svc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+}
+.svc-tile {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  cursor: pointer;
+  transition: transform .08s, border-color .1s, box-shadow .12s;
+  text-align: left;
+  font-family: var(--font);
+  color: var(--ink);
+}
+.svc-tile:hover { transform: translateY(-1px); border-color: var(--line-2); box-shadow: var(--shadow-sm); }
+.svc-tile:disabled { opacity: 0.5; cursor: default; }
+.svc-tile .svc-icon {
+  width: 40px; height: 40px; border-radius: 12px;
+  display: grid; place-items: center; font-size: 20px;
+  background: var(--surface-2);
+}
+.svc-tile .svc-name { font-weight: 600; font-size: 14px; line-height: 1.2; }
+.svc-tile .svc-meta { font-size: 12px; color: var(--ink-3); }
+.svc-tile .svc-price { font-family: var(--font-display); font-weight: 600; font-size: 17px; }
+
+.cart-ds {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: sticky;
+  top: 78px;
+}
+.cart-row-ds {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px dashed var(--line);
+}
+.cart-row-ds:last-child { border-bottom: 0; }
+
+.tip-row {
+  display: flex;
+  gap: 6px;
+}
+.tip-row button {
+  flex: 1;
+  height: 38px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-2);
+  font-weight: 500;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background .1s, border-color .1s;
+}
+.tip-row button.active { background: var(--ink); color: var(--bg); border-color: var(--ink); }

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import apiClient from '../api/apiClient';
-import { ShoppingCart, User, Plus, Minus, X, Scissors } from 'lucide-react';
+import { ShoppingCart, User, Plus, Minus, X, CheckCircle } from 'lucide-react';
 import { calculatePOSTotals } from '../utils/pos';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
@@ -124,72 +124,57 @@ export default function POS() {
 
   if (saleSuccess) {
     return (
-      <div className="card" style={{ textAlign: 'center', padding: '4rem' }}>
-        <div style={{ background: 'var(--success)', color: 'white', width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
+      <div className="card" style={{ maxWidth: 480, margin: '40px auto', padding: 36, textAlign: 'center' }}>
+        <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'var(--sage-soft)', display: 'grid', placeItems: 'center', margin: '0 auto 18px', color: '#4d6648' }}>
           <CheckCircle size={32} />
         </div>
-        <h2 style={{ marginBottom: '1rem' }}>{t('pos.payment_successful')}</h2>
-        <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>{t('pos.transaction_recorded')}</p>
-        <button onClick={resetPOS}>{t('pos.new_transaction')}</button>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 600, margin: '0 0 6px' }}>{t('pos.payment_successful')}</h2>
+        <p className="muted" style={{ margin: '0 0 22px' }}>{t('pos.transaction_recorded')}</p>
+        <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={resetPOS}>
+          {t('pos.new_transaction')}
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="pos-container">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-        <div>
-          <h1 style={{ marginBottom: '0.25rem' }}>{t('pos.title')}</h1>
-          {user && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary)', fontWeight: '700', fontSize: '0.9rem' }}>
-              <User size={16} /> {t('common.professional')}: {user.fullname || user.username}
-            </div>
-          )}
-        </div>
-        {appointmentId && (
-          <div className="status-badge status-scheduled" style={{ padding: '0.5rem 1rem' }}>
-            {t('pos.check_in')}: Appt #{appointmentId}
-          </div>
-        )}
+    <>
+      <div className="page-head">
+        <h1>{t('pos.title')}</h1>
+        {appointmentId && <span className="chip chip-success dot">Appt #{appointmentId}</span>}
+        <div className="spacer" />
+        {user && <span className="chip"><User size={12} /> {user.fullname || user.username}</span>}
       </div>
-      
+
       <div className="pos-grid">
-        <div className="items-section">
-          <div className="card" style={{ marginBottom: '1.5rem' }}>
-            <h2 style={{ fontSize: '1.1rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Scissors size={20} color="var(--primary)" /> {t('pos.services')}
-            </h2>
-            <div className="item-list-grid">
-              {services.map(s => (
-                <button key={s.id} className="secondary" onClick={() => addToCart(s, 'service')} style={{ flexDirection: 'column', alignItems: 'flex-start', padding: '1rem', height: 'auto', textAlign: 'left', minHeight: '100px' }}>
-                  <span style={{ fontWeight: '700', fontSize: '0.9rem', marginBottom: '0.25rem' }}>{s.name}</span>
-                  <span style={{ color: 'var(--primary)', fontWeight: '700' }}>{formatCurrency(s.price, settings.currency_symbol)}</span>
-                  <div style={{ marginTop: 'auto', alignSelf: 'flex-end', background: 'white', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 4px rgba(79, 70, 229, 0.3)' }}>
-                    <Plus size={18} />
-                  </div>
-                </button>
-              ))}
-            </div>
+        <div>
+          {/* Services */}
+          <div className="pos-tabs">
+            <button className="active">{t('pos.services', 'Services')}</button>
+            <button>{t('pos.products', 'Products')}</button>
           </div>
 
-          <div className="card">
-            <h2 style={{ fontSize: '1.1rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <ShoppingCart size={20} color="var(--primary)" /> {t('pos.products')}
-            </h2>
-            <div className="item-list-grid">
-              {products.map(p => (
-                <button key={p.id} className="secondary" onClick={() => addToCart(p, 'product')} style={{ flexDirection: 'column', alignItems: 'flex-start', padding: '1rem', height: 'auto', textAlign: 'left', minHeight: '100px' }}>
-                  <span style={{ fontWeight: '700', fontSize: '0.9rem', marginBottom: '0.25rem' }}>{p.name}</span>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center', marginTop: 'auto' }}>
-                    <span style={{ color: 'var(--primary)', fontWeight: '700' }}>{formatCurrency(p.price, settings.currency_symbol)}</span>
-                    <span style={{ fontSize: '0.7rem', color: p.stock < 5 ? 'var(--danger)' : 'var(--text-muted)', fontWeight: '700' }}>{t('common.stock')}: {p.stock}</span>
-                  </div>
-                  <div style={{ marginTop: '0.5rem', alignSelf: 'flex-end', background: 'white', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 4px rgba(79, 70, 229, 0.3)' }}>
-                    <Plus size={18} />
-                  </div>
-                </button>
-              ))}
-            </div>
+          <div className="svc-grid" style={{ marginBottom: 20 }}>
+            {services.map(s => (
+              <button key={s.id} className="svc-tile" onClick={() => addToCart(s, 'service')}>
+                <div className="svc-icon">✂️</div>
+                <div className="svc-name">{s.name}</div>
+                <div className="svc-meta">{s.duration_minutes ?? 30} min</div>
+                <div className="svc-price">{formatCurrency(s.price, settings.currency_symbol)}</div>
+              </button>
+            ))}
+          </div>
+
+          <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 12, color: 'var(--ink-2)' }}>{t('pos.products', 'Products')}</div>
+          <div className="svc-grid">
+            {products.map(p => (
+              <button key={p.id} className="svc-tile" onClick={() => addToCart(p, 'product')} disabled={p.stock === 0} style={{ opacity: p.stock === 0 ? 0.5 : 1 }}>
+                <div className="svc-icon">🧴</div>
+                <div className="svc-name">{p.name}</div>
+                <div className="svc-meta">{p.stock === 0 ? t('pos.out_of_stock', 'Out of stock') : `${p.stock} ${t('common.stock', 'in stock')}`}</div>
+                <div className="svc-price">{formatCurrency(p.price, settings.currency_symbol)}</div>
+              </button>
+            ))}
           </div>
         </div>
 
@@ -313,19 +298,13 @@ export default function POS() {
                 {saleError}
               </div>
             )}
-            <button onClick={submitSale} style={{ width: '100%', padding: '1.25rem', fontSize: '1.1rem' }}>
+            <button className="btn btn-accent" onClick={submitSale} style={{ width: '100%', justifyContent: 'center', fontSize: '1rem' }}>
               {t('pos.complete_payment')}
             </button>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
 
-const CheckCircle = ({ size }: { size: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-    <polyline points="22 4 12 14.01 9 11.01"></polyline>
-  </svg>
-);
