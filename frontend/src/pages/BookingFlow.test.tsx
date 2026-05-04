@@ -18,7 +18,11 @@ vi.mock('lucide-react', () => ({
   Loader2: () => <div data-testid="icon-loader" />,
   Plus: () => <div data-testid="icon-plus" />,
   Minus: () => <div data-testid="icon-minus" />,
-  Trash2: () => <div data-testid="icon-trash" />
+  Trash2: () => <div data-testid="icon-trash" />,
+  Scissors: () => <div data-testid="icon-scissors" />,
+  Calendar: () => <div data-testid="icon-calendar" />,
+  Clock: () => <div data-testid="icon-clock" />,
+  CreditCard: () => <div data-testid="icon-credit-card" />,
 }));
 
 vi.mock('react-i18next', () => ({
@@ -242,7 +246,7 @@ describe('BookingFlow Component', () => {
     
     // Should advance to Step 5
     await waitFor(() => expect(screen.getByText('Review & Confirm')).toBeInTheDocument());
-    expect(screen.getByText('Service One (x1)')).toBeInTheDocument();
+    expect(screen.getByText('1x Service One')).toBeInTheDocument();
   });
 
   it('completes the booking successfully in Step 5', async () => {

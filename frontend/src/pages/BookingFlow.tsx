@@ -48,6 +48,7 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [resendSent, setResendSent] = useState(false);
 
   const shopId = preSelectedBarber?.shop_id || routeShopId;
 
@@ -193,10 +194,11 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
 
   const handleResendOTP = async () => {
     setError('');
+    setResendSent(false);
     setSubmitting(true);
     try {
       await apiClient.post('/auth/otp/send', { email });
-      alert(t('booking.code_resent'));
+      setResendSent(true);
     } catch (err: any) {
       setError(err.response?.data?.error || t('schedule.failed_booking'));
     } finally {
@@ -376,6 +378,11 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
                 })}
               </div>
 
+              {cart.length === 0 && (
+                <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '1rem', fontWeight: '600' }}>
+                  {t('booking.add_service_hint')}
+                </p>
+              )}
             </section>
           )}
 
@@ -446,6 +453,11 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
                     <button type="submit" className="primary" style={{ width: '100%', padding: '1.1rem', fontSize: '1.05rem', borderRadius: '0.75rem', marginTop: '1rem' }} disabled={submitting}>
                       {submitting ? <Loader2 size={18} className="spinner" style={{ width: '20px', height: '20px', borderTopColor: '#fff' }} /> : t('booking.verify_continue')}
                     </button>
+                    {resendSent && (
+                      <p style={{ color: 'var(--success)', fontSize: '0.85rem', fontWeight: '600', marginTop: '1rem', textAlign: 'center' }}>
+                        {t('booking.code_resent')}
+                      </p>
+                    )}
                     <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
                       <button type="button" onClick={handleResendOTP} disabled={submitting} className="secondary" style={{ flex: 1, padding: '0.75rem', fontSize: '0.9rem', borderRadius: '0.5rem' }}>
                         {t('booking.resend_code')}
