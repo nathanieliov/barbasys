@@ -1080,3 +1080,70 @@ input:focus, select:focus, textarea:focus {
 /* Spinner (for Loader2 inside buttons) */
 @keyframes spin { to { transform: rotate(360deg); } }
 .spinner { animation: spin 1s linear infinite; }
+
+/* ─── Schedule Grid ───────────────────────────────────────── */
+.schedule-grid {
+  display: grid;
+  grid-template-columns: 64px repeat(var(--cols, 1), 1fr);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  overflow: hidden;
+}
+.schedule-grid .col-head {
+  border-bottom: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+  padding: 12px 14px;
+  background: var(--surface-2);
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.schedule-grid .col-head:last-child { border-right: 0; }
+.schedule-grid .time-cell {
+  border-bottom: 1px dashed var(--line);
+  border-right: 1px solid var(--line);
+  padding: 6px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ink-3);
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  height: 56px;
+}
+.schedule-grid .slot {
+  border-bottom: 1px dashed var(--line);
+  border-right: 1px solid var(--line);
+  position: relative;
+  height: 56px;
+}
+.schedule-grid .slot:last-child { border-right: 0; }
+.schedule-grid .slot.now { background: var(--butter-soft); }
+
+.appt {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  border-radius: 10px;
+  padding: 6px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-size: 11.5px;
+  cursor: pointer;
+  border: 1px solid rgba(0,0,0,.05);
+  overflow: hidden;
+  z-index: 1;
+}
+.appt .appt-name { font-weight: 600; font-size: 12.5px; }
+.appt .appt-svc  { font-size: 11px; opacity: .8; }
+
+.appt-peach  { background: var(--primary-soft); color: var(--primary-deep); }
+.appt-sage   { background: var(--sage-soft);    color: #4d6648; }
+.appt-plum   { background: var(--plum-soft);    color: #6f4861; }
+.appt-amber  { background: var(--butter-soft);  color: #75510e; }
+.appt-ink    { background: var(--surface-2);    color: var(--ink); }
+.appt-done   { opacity: 0.55; }

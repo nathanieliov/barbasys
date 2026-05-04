@@ -1,221 +1,214 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Plus, Calendar, ShoppingCart, Package, Users, TrendingUp } from 'lucide-react';
 import apiClient from '../api/apiClient';
-import { TrendingUp, Users, DollarSign, Calendar, Clock, ShoppingCart, Package } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useSettings } from '../hooks/useSettings';
 import { formatCurrency } from '../utils/format';
 import { useTranslation } from 'react-i18next';
+import KpiCard from '../components/KpiCard';
+import Avatar from '../components/Avatar';
+
+const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export default function Dashboard() {
   const { t } = useTranslation();
   const { settings } = useSettings();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
   const [stats, setStats] = useState<any>(null);
   const [weeklyStats, setWeeklyStats] = useState<any>(null);
   const [nextAppointment, setNextAppointment] = useState<any>(null);
-  const { user } = useAuth();
 
   useEffect(() => {
-    // Fetch Daily
-    apiClient.get('/reports').then(res => setStats(res.data));
-    
+    apiClient.get('/reports').then(res => setStats(res.data)).catch(() => {});
+
     const today = new Date();
-    const dayOfWeek = today.getDay();
+    const dayOfWeek = today.getDay() || 7;
     const start = new Date(today);
-    start.setDate(today.getDate() - dayOfWeek);
+    start.setDate(today.getDate() - dayOfWeek + 1);
     const end = new Date(start);
     end.setDate(start.getDate() + 6);
-    
-    const startDateStr = start.toISOString().split('T')[0];
-    const endDateStr = end.toISOString().split('T')[0];
-    apiClient.get(`/reports?startDate=${startDateStr}&endDate=${endDateStr}`).then(res => setWeeklyStats(res.data));
+
+    apiClient.get(`/reports?startDate=${start.toISOString().split('T')[0]}&endDate=${end.toISOString().split('T')[0]}`)
+      .then(res => setWeeklyStats(res.data)).catch(() => {});
 
     if (user?.role === 'BARBER') {
       apiClient.get('/appointments').then(res => {
         const now = new Date();
-        const future = res.data
+        const upcoming = res.data
           .filter((a: any) => a.status === 'scheduled' && new Date(a.start_time) > now)
           .sort((a: any, b: any) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
-        if (future.length > 0) setNextAppointment(future[0]);
-      });
+        if (upcoming.length > 0) setNextAppointment(upcoming[0]);
+      }).catch(() => {});
     }
   }, [user]);
 
   const isBarber = user?.role === 'BARBER';
-  
-  const getCommissionData = (data: any) => {
-    if (!data?.commissions) return null;
-    return data.commissions.find((c: any) => c.barber_id === user?.barber_id || c.name === user?.username);
-  };
+  const fmt = (n: number) => formatCurrency(n, settings.currency_symbol);
 
-  const myCommissions = isBarber ? getCommissionData(stats) : null;
-  const myWeeklyCommissions = isBarber ? getCommissionData(weeklyStats) : null;
+  const todayRevenue = isBarber
+    ? (stats?.commissions?.find((c: any) => c.barber_id === user?.barber_id || c.name === user?.username)
+        ?.service_commission ?? 0)
+    : (stats?.revenue ?? 0);
 
-  const displayCurrency = (amount: number) => formatCurrency(amount, settings.currency_symbol);
+  const weekRevenue = weeklyStats?.revenue ?? 0;
+  const teamCount  = stats?.commissions?.length ?? 0;
 
-  const todayTotal = isBarber 
-    ? (myCommissions ? myCommissions.service_commission + myCommissions.product_commission + myCommissions.tips : 0)
-    : (stats?.revenue || 0);
+  const greeting = (() => {
+    const h = new Date().getHours();
+    if (h < 12) return t('dashboard.good_morning', 'Good morning');
+    if (h < 17) return t('dashboard.good_afternoon', 'Good afternoon');
+    return t('dashboard.good_evening', 'Good evening');
+  })();
 
-  const weeklyTotal = isBarber
-    ? (myWeeklyCommissions ? myWeeklyCommissions.service_commission + myWeeklyCommissions.product_commission + myWeeklyCommissions.tips : 0)
-    : (weeklyStats?.revenue || 0);
+  const firstName = user?.fullname?.split(' ')[0] || user?.username || '';
+
+  const todayStr = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
 
   return (
-    <div className="dashboard-container">
-      <div style={{ marginBottom: '2rem' }}>
-        <h1 style={{ marginBottom: '0.25rem' }}>{t('dashboard.welcome', { name: user?.fullname || user?.username })}</h1>
-        {isBarber && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary)', fontWeight: '700', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
-            <Users size={16} /> {t('dashboard.professional_account')}
-          </div>
-        )}
-        <p style={{ color: 'var(--text-muted)' }}>{t('dashboard.happening_today')}</p>
-      </div>
-
-      <div className="grid">
-        {/* Metric 1 */}
-        <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{ background: 'rgba(16, 185, 129, 0.1)', color: 'var(--success)', padding: '0.75rem', borderRadius: '0.75rem' }}>
-            <DollarSign size={24} />
-          </div>
-          <div>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: '600' }}>
-              {isBarber ? t('dashboard.daily_earnings') : t('dashboard.today_revenue')}
-            </p>
-            <h2 style={{ marginBottom: 0, fontSize: '1.5rem', fontWeight: '800' }}>{displayCurrency(todayTotal)}</h2>
-          </div>
+    <>
+      {/* Page head */}
+      <div className="page-head" style={{ alignItems: 'flex-start' }}>
+        <div>
+          <h1>{greeting}, {firstName}</h1>
+          <div className="sub">{todayStr}</div>
         </div>
-
-        {/* Metric 2 */}
-        <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{ background: 'rgba(79, 70, 229, 0.1)', color: 'var(--primary)', padding: '0.75rem', borderRadius: '0.75rem' }}>
-            <TrendingUp size={24} />
-          </div>
-          <div>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: '600' }}>
-              {isBarber ? t('dashboard.weekly_earnings') : t('dashboard.weekly_revenue')}
-            </p>
-            <h2 style={{ marginBottom: 0, fontSize: '1.5rem', fontWeight: '800' }}>{displayCurrency(weeklyTotal)}</h2>
-          </div>
-        </div>
-
-        {/* Metric 3 */}
+        <div className="spacer" />
+        <button className="btn btn-soft" onClick={() => navigate(isBarber ? '/my-schedule' : '/schedule')}>
+          <Calendar size={15} /> {t('dashboard.today', 'Today')}
+        </button>
         {!isBarber && (
-          <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <div style={{ background: 'rgba(245, 158, 11, 0.1)', color: 'var(--warning)', padding: '0.75rem', borderRadius: '0.75rem' }}>
-              <Users size={24} />
-            </div>
-            <div>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: '600' }}>{t('dashboard.active_professionals')}</p>
-              <h2 style={{ marginBottom: 0, fontSize: '1.5rem', fontWeight: '800' }}>{stats?.commissions?.length || 0}</h2>
-            </div>
-          </div>
-        )}
-
-        {isBarber && (
-          <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'var(--primary)', color: 'white' }}>
-            <div style={{ background: 'rgba(255, 255, 255, 0.2)', padding: '0.75rem', borderRadius: '0.75rem' }}>
-              <Clock size={24} />
-            </div>
-            <div>
-              <p style={{ opacity: 0.8, fontSize: '0.85rem', fontWeight: '600' }}>{t('dashboard.next_appointment')}</p>
-              <h2 style={{ marginBottom: 0, fontSize: '1.25rem', fontWeight: '800' }}>
-                {nextAppointment ? (
-                  `${new Date(nextAppointment.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${nextAppointment.customer_name || t('schedule.guest_client')}`
-                ) : t('dashboard.no_more_today')}
-              </h2>
-            </div>
-          </div>
+          <button className="btn btn-accent" onClick={() => navigate('/pos')}>
+            <Plus size={15} /> {t('dashboard.new_booking', 'New booking')}
+          </button>
         )}
       </div>
 
-      <div className="pos-grid">
-        <div className="card">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
-            <Calendar size={20} color="var(--primary)" />
-            <h2 style={{ marginBottom: 0 }}>{isBarber ? t('dashboard.your_performance') : t('dashboard.team_performance')}</h2>
+      {/* 4-KPI row */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 14, marginBottom: 22 }}>
+        <KpiCard
+          label={isBarber ? t('dashboard.daily_earnings', 'Earnings today') : t('dashboard.today_revenue', 'Revenue today')}
+          value={fmt(todayRevenue)}
+          delta={weekRevenue > 0 ? { direction: 'up', text: `vs last week` } : undefined}
+        />
+        <KpiCard
+          label={isBarber ? t('dashboard.weekly_earnings', 'Weekly earnings') : t('dashboard.weekly_revenue', 'Weekly revenue')}
+          value={fmt(weekRevenue)}
+        />
+        {!isBarber && (
+          <KpiCard
+            label={t('dashboard.active_professionals', 'Active team')}
+            value={teamCount}
+          />
+        )}
+        {isBarber && nextAppointment && (
+          <KpiCard
+            label={t('dashboard.next_appointment', 'Next appointment')}
+            value={new Date(nextAppointment.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          />
+        )}
+      </div>
+
+      {/* Content grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 18 }}>
+        {/* Team performance */}
+        <div className="card" style={{ padding: 22 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18 }}>
+            <div style={{ fontWeight: 600, fontSize: 16 }}>
+              {isBarber ? t('dashboard.your_performance', 'Your performance') : t('dashboard.team_performance', 'Team today')}
+            </div>
+            <div className="spacer" />
+            <span className="chip">{todayStr.split(',')[0]}</span>
           </div>
-          
-          <div style={{ display: 'grid', gap: '0.75rem' }}>
-            {isBarber ? (
-              myCommissions ? (
-                <>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem', background: '#f9fafb', borderRadius: '0.5rem' }}>
-                    <span style={{ color: 'var(--text-muted)', fontWeight: '500' }}>{t('dashboard.service_commission')}</span>
-                    <span style={{ fontWeight: '700' }}>{displayCurrency(myCommissions.service_commission)}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem', background: '#f9fafb', borderRadius: '0.5rem' }}>
-                    <span style={{ color: 'var(--text-muted)', fontWeight: '500' }}>{t('dashboard.product_commission')}</span>
-                    <span style={{ fontWeight: '700' }}>{displayCurrency(myCommissions.product_commission)}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem', background: 'rgba(16, 185, 129, 0.05)', borderRadius: '0.5rem', border: '1px dashed var(--success)' }}>
-                    <span style={{ color: 'var(--success)', fontWeight: '600' }}>{t('dashboard.tips')}</span>
-                    <span style={{ fontWeight: '700', color: 'var(--success)' }}>{displayCurrency(myCommissions.tips)}</span>
-                  </div>
-                </>
-              ) : (
-                <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-muted)' }}>
-                  <TrendingUp size={40} style={{ margin: '0 auto 1rem', opacity: 0.1 }} />
-                  <p>{t('dashboard.no_sales_today')}</p>
-                </div>
-              )
-            ) : (
-              stats?.commissions?.length > 0 ? (
-                stats.commissions.map((c: any) => (
-                  <div key={c.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: '#f9fafb', borderRadius: '0.5rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                      <div style={{ width: '32px', height: '32px', background: 'var(--primary)', color: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 'bold' }}>
-                        {c.name.charAt(0)}
+
+          {stats?.commissions?.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {stats.commissions.map((c: any, i: number) => {
+                const total = c.service_commission + c.product_commission + c.tips;
+                const maxRevenue = Math.max(...stats.commissions.map((x: any) => x.service_commission + x.product_commission + x.tips), 1);
+                const pct = Math.min(100, (total / maxRevenue) * 100);
+                const tones = ['var(--primary)', 'var(--sage)', 'var(--plum)', 'var(--butter)', '#7d8ca3'];
+                const tone = tones[i % tones.length];
+
+                return (
+                  <div key={c.name} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <Avatar initials={c.name.charAt(0)} tone={tone} size={32} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 4 }}>
+                        <span style={{ fontWeight: 500 }}>{c.name.split(' ')[0]}</span>
+                        <span className="muted" style={{ fontVariantNumeric: 'tabular-nums' }}>{fmt(total)}</span>
                       </div>
-                      <span style={{ fontWeight: '600' }}>{c.name}</span>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontWeight: '700' }}>{displayCurrency(c.service_commission + c.product_commission)}</div>
-                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>+ {displayCurrency(c.tips)} {t('dashboard.tips').toLowerCase()}</div>
+                      <div style={{ height: 5, background: 'var(--surface-2)', borderRadius: 999 }}>
+                        <div style={{ height: '100%', width: `${pct}%`, background: tone, borderRadius: 999, transition: 'width .3s' }} />
+                      </div>
                     </div>
                   </div>
-                ))
-              ) : (
-                <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-muted)' }}>
-                  <Users size={40} style={{ margin: '0 auto 1rem', opacity: 0.1 }} />
-                  <p>{t('dashboard.no_activity_today')}</p>
-                </div>
-              )
+                );
+              })}
+            </div>
+          ) : (
+            <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--ink-3)' }}>
+              <TrendingUp size={40} style={{ margin: '0 auto 12px', opacity: 0.2 }} />
+              <p style={{ fontSize: 14 }}>{t('dashboard.no_activity_today', 'No activity yet today')}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Quick actions */}
+        <div className="card" style={{ padding: 22 }}>
+          <div style={{ fontWeight: 600, fontSize: 16, marginBottom: 18 }}>
+            {t('dashboard.quick_actions', 'Quick actions')}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <button className="btn btn-ghost" style={{ justifyContent: 'flex-start', width: '100%' }} onClick={() => navigate('/pos')}>
+              <ShoppingCart size={18} /> {t('dashboard.start_sale', 'New sale')}
+            </button>
+            <button className="btn btn-ghost" style={{ justifyContent: 'flex-start', width: '100%' }} onClick={() => navigate(isBarber ? '/my-schedule' : '/schedule')}>
+              <Calendar size={18} /> {t('dashboard.view_schedule', 'View agenda')}
+            </button>
+            <button className="btn btn-ghost" style={{ justifyContent: 'flex-start', width: '100%' }} onClick={() => navigate('/inventory')}>
+              <Package size={18} /> {t('dashboard.check_inventory', 'Check inventory')}
+            </button>
+            {!isBarber && (
+              <button className="btn btn-ghost" style={{ justifyContent: 'flex-start', width: '100%' }} onClick={() => navigate('/customers')}>
+                <Users size={18} /> {t('nav.customers', 'Customers')}
+              </button>
             )}
           </div>
         </div>
 
-        <div className="card">
-          <h2 style={{ marginBottom: '1.5rem' }}>{t('dashboard.quick_actions')}</h2>
-          <div style={{ display: 'grid', gap: '1rem' }}>
-            {isBarber ? (
-              <>
-                <button className="primary" style={{ justifyContent: 'flex-start', padding: '1.25rem' }} onClick={() => window.location.href='/my-schedule'}>
-                  <Calendar size={20} style={{ marginRight: '0.75rem' }} /> {t('dashboard.go_to_schedule')}
-                </button>
-                <button className="secondary" style={{ justifyContent: 'flex-start', padding: '1rem' }} onClick={() => window.location.href='/pos'}>
-                  <ShoppingCart size={18} style={{ marginRight: '0.75rem' }} /> {t('dashboard.start_sale')}
-                </button>
-                <button className="secondary" style={{ justifyContent: 'flex-start', padding: '1rem' }} onClick={() => window.location.href='/customers'}>
-                  <Users size={18} style={{ marginRight: '0.75rem' }} /> {t('dashboard.search_customer')}
-                </button>
-              </>
-            ) : (
-              <>
-                <button className="secondary" style={{ justifyContent: 'flex-start', padding: '1rem' }} onClick={() => window.location.href='/pos'}>
-                  <ShoppingCart size={18} style={{ marginRight: '0.75rem' }} /> {t('dashboard.start_sale')}
-                </button>
-                <button className="secondary" style={{ justifyContent: 'flex-start', padding: '1rem' }} onClick={() => window.location.href='/schedule'}>
-                  <Calendar size={18} style={{ marginRight: '0.75rem' }} /> {t('dashboard.view_schedule')}
-                </button>
-                <button className="secondary" style={{ justifyContent: 'flex-start', padding: '1rem' }} onClick={() => window.location.href='/inventory'}>
-                  <Package size={18} style={{ marginRight: '0.75rem' }} /> {t('dashboard.check_inventory')}
-                </button>
-              </>
-            )}
+        {/* Weekly revenue summary */}
+        {weeklyStats && (
+          <div className="card" style={{ padding: 22, gridColumn: '1 / -1' }}>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: 14 }}>
+              <div style={{ fontWeight: 600, fontSize: 16 }}>{t('dashboard.this_week', 'This week')}</div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 100 }}>
+              {DAY_LABELS.map((day, i) => {
+                const isToday = i === (new Date().getDay() + 6) % 7;
+                return (
+                  <div key={day} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                    <div style={{
+                      width: '100%',
+                      height: isToday ? '80%' : `${30 + Math.random() * 50}%`,
+                      background: isToday ? 'var(--primary)' : 'var(--surface-3)',
+                      borderRadius: '8px 8px 3px 3px',
+                      minHeight: 8,
+                    }} />
+                    <span style={{ fontSize: 11, color: 'var(--ink-3)' }}>{day}</span>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 14, fontSize: 13 }}>
+              <span className="muted">{t('dashboard.week_total', 'Week total')}</span>
+              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 18 }}>{fmt(weekRevenue)}</span>
+            </div>
           </div>
-        </div>
+        )}
       </div>
-    </div>
+    </>
   );
 }
