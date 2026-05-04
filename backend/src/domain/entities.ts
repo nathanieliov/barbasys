@@ -114,3 +114,44 @@ export interface Appointment {
   shop_id: number | null;
   notes?: string | null;
 }
+
+export type Intent = 'book' | 'reschedule' | 'cancel' | 'view_next' | 'faq' | 'unknown';
+export type ConversationState = 'idle' | 'booking' | 'rescheduling' | 'cancelling' | 'faq';
+
+export interface Conversation {
+  id: number;
+  customer_id: number | null;
+  wa_phone: string;
+  language: 'es' | 'en';
+  state: ConversationState;
+  context_json: string | null;
+  last_inbound_at: string | null;
+  last_outbound_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WaMessage {
+  id: number;
+  conversation_id: number;
+  direction: 'in' | 'out';
+  wa_message_sid: string | null;
+  body: string | null;
+  media_url: string | null;
+  intent: Intent | null;
+  status: string | null;
+  raw_payload_json: string | null;
+  created_at: string;
+}
+
+export interface GCalPendingOp {
+  id: number;
+  barber_id: number;
+  appointment_id: number | null;
+  op: 'insert' | 'patch' | 'delete';
+  payload_json: string;
+  attempts: number;
+  next_attempt_at: string | null;
+  last_error: string | null;
+  created_at: string;
+}
