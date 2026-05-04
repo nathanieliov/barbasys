@@ -495,6 +495,7 @@ db.exec(`
 try { db.exec("ALTER TABLE customers ADD COLUMN wa_opt_in INTEGER DEFAULT 0"); } catch (e) {}
 try { db.exec("ALTER TABLE customers ADD COLUMN wa_opt_in_at TEXT"); } catch (e) {}
 try { db.exec("ALTER TABLE customers ADD COLUMN preferred_language TEXT DEFAULT 'es'"); } catch (e) {}
+try { db.exec("ALTER TABLE barbers ADD COLUMN gcal_token_enc TEXT"); } catch (e) {}
 try { db.exec("ALTER TABLE barbers ADD COLUMN gcal_refresh_token_enc TEXT"); } catch (e) {}
 try { db.exec("ALTER TABLE barbers ADD COLUMN gcal_calendar_id TEXT"); } catch (e) {}
 try { db.exec("ALTER TABLE barbers ADD COLUMN gcal_channel_id TEXT"); } catch (e) {}
