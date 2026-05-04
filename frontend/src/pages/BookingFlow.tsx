@@ -1,162 +1,78 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { MapPin, Star, Clock, ChevronLeft, ChevronRight, Sparkles, CheckCircle, Calendar, Loader2, AlertCircle, User } from 'lucide-react';
 import apiClient from '../api/apiClient';
-import { User, ChevronLeft, CheckCircle, AlertCircle, Mail, Key, Cake, Loader2, Plus, Minus, Trash2, Calendar, Clock, Scissors, CreditCard } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useSettings } from '../hooks/useSettings';
 import { formatCurrency } from '../utils/format';
 import { useTranslation, Trans } from 'react-i18next';
+import Stepper from '../components/Stepper';
+import Modal from '../components/Modal';
+import Avatar from '../components/Avatar';
 
 interface BookingFlowProps {
   preSelectedBarber?: any;
 }
 
-export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
-  const { t } = useTranslation();
-  const { shopId: routeShopId } = useParams();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { user, login, updateUser } = useAuth();
-  const { settings } = useSettings();
-  
-  const rescheduleId = location.state?.rescheduleId;
-  const initialBarberId = location.state?.barberId;
+const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-  const [step, setStep] = useState(preSelectedBarber || initialBarberId ? 2 : 1);
-  const [shop, setShop] = useState<any>(null);
-  const [barbers, setBarbers] = useState<any[]>([]);
-  const [services, setServices] = useState<any[]>([]);
-  
-  const [selectedBarber, setSelectedBarber] = useState<any>(preSelectedBarber || null);
-  const [cart, setCart] = useState<Array<{ id: number, name: string, price: number, duration: number, quantity: number }>>([]);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [selectedTime, setSelectedTime] = useState('');
-  const [notes, setNotes] = useState(location.state?.notes || '');
-  
-  // Auth & Profile State
+function buildDays(n = 14) {
+  const today = new Date();
+  return Array.from({ length: n }).map((_, i) => {
+    const d = new Date(today);
+    d.setDate(today.getDate() + i);
+    return d;
+  });
+}
+
+/* ─── Sub-components ─────────────────────────────────────── */
+
+function OptionCard({ selected, onClick, children, style }: { selected?: boolean; onClick: () => void; children: React.ReactNode; style?: React.CSSProperties }) {
+  return (
+    <button
+      className={`option-card ${selected ? 'selected' : ''}`}
+      onClick={onClick}
+      style={style}
+    >
+      {children}
+    </button>
+  );
+}
+
+function SummaryRow({ icon, label, value, sub, onEdit, last }: { icon: React.ReactNode; label: string; value: string; sub?: string; onEdit: () => void; last?: boolean }) {
+  const { t } = useTranslation();
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 0', borderBottom: last ? 0 : '1px solid var(--line)' }}>
+      <div style={{ width: 40, height: 40, borderRadius: 12, background: 'var(--surface-2)', display: 'grid', placeItems: 'center', color: 'var(--ink-2)', flexShrink: 0 }}>
+        {icon}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div className="muted" style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>{label}</div>
+        <div style={{ fontWeight: 600, fontSize: 16, marginTop: 1 }}>{value}</div>
+        {sub && <div className="muted" style={{ fontSize: 13 }}>{sub}</div>}
+      </div>
+      <button className="btn btn-soft btn-sm" onClick={onEdit} aria-label={t('common.edit', 'Edit')}>
+        {t('common.edit', 'Edit')}
+      </button>
+    </div>
+  );
+}
+
+/* ─── OTP Modal ──────────────────────────────────────────── */
+
+function OtpModal({ isOpen, onClose, onVerified }: { isOpen: boolean; onClose: () => void; onVerified: () => void }) {
+  const { t } = useTranslation();
+  const { login } = useAuth();
+  const [otpStep, setOtpStep] = useState<'ID' | 'OTP'>('ID');
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
-  const [otpStep, setOtpStep] = useState<'ID' | 'OTP'>('ID');
   const [fullname, setFullname] = useState('');
   const [birthday, setBirthday] = useState('');
   const [requiresProfile, setRequiresProfile] = useState(false);
-
-  const [availableSlots, setAvailableSlots] = useState<string[]>([]);
-  const [loadingSlots, setLoadingSlots] = useState(false);
-
-  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
   const [resendSent, setResendSent] = useState(false);
-
-  const shopId = preSelectedBarber?.shop_id || routeShopId;
-
-  useEffect(() => {
-    if (shopId) {
-      apiClient.get(`/public/shops/${shopId}`).then(res => {
-        setShop(res.data.shop);
-        setBarbers(res.data.barbers);
-        setServices(res.data.services);
-        
-        // Auto-select barber if initialBarberId is provided (rescheduling)
-        if (initialBarberId && res.data.barbers) {
-          const b = res.data.barbers.find((barber: any) => barber.id === initialBarberId);
-          if (b) setSelectedBarber(b);
-        }
-      }).finally(() => setLoading(false));
-
-      // Pre-load cart for rescheduling
-      if (rescheduleId) {
-        apiClient.get(`/appointments/${rescheduleId}/items`).then(res => {
-          const loadedCart = res.data.map((item: any) => ({
-            id: item.service_id,
-            name: item.name,
-            price: item.price,
-            duration: item.duration_minutes,
-            quantity: item.quantity
-          }));
-          setCart(loadedCart);
-        }).catch(err => {
-          console.error('Failed to pre-load appointment items', err);
-        });
-      }
-    }
-  }, [shopId, initialBarberId, rescheduleId]);
-
-  useEffect(() => {
-    if (selectedBarber && selectedDate && cart.length > 0) {
-      const totalDur = cart.reduce((sum, item) => sum + (item.duration * item.quantity), 0);
-      setLoadingSlots(true);
-      apiClient.get(`/public/barbers/${selectedBarber.id}/availability`, {
-        params: { date: selectedDate, duration: totalDur }
-      }).then(res => {
-        setAvailableSlots(res.data);
-      }).catch(err => {
-        console.error('Failed to fetch slots', err);
-      }).finally(() => {
-        setLoadingSlots(false);
-      });
-    }
-  }, [selectedBarber, selectedDate, cart]);
-
-  const handleTimeSelect = (t_val: string) => {
-    setSelectedTime(t_val);
-    if (!user) {
-      setStep(4);
-    } else {
-      setSubmitting(true);
-      apiClient.get('/auth/me').then(res => {
-        updateUser(res.data); // Update global auth state with fresh customer_id
-        if (res.data && res.data.requires_profile_completion) {
-          setRequiresProfile(true);
-          setStep(4);
-        } else {
-          setStep(5);
-        }
-      }).catch(err => {
-        console.error('Failed to refresh user info', err);
-        setStep(5);
-      }).finally(() => setSubmitting(false));
-    }
-  };
-
-  const handleBack = () => {
-    if (step === 5 || (step === 4 && user && !requiresProfile)) {
-      setStep(3);
-    } else if (step > 1) {
-      setStep(step - 1);
-    } else {
-      navigate('/discovery');
-    }
-  };
-
-  const addToCart = (service: any) => {
-    setCart(prev => {
-      const existing = prev.find(item => item.id === service.id);
-      if (existing) {
-        return prev.map(item => item.id === service.id ? { ...item, quantity: item.quantity + 1 } : item);
-      }
-      return [...prev, { id: service.id, name: service.name, price: service.price, duration: service.duration_minutes, quantity: 1 }];
-    });
-  };
-
-  const removeFromCart = (id: number) => {
-    setCart(prev => prev.filter(item => item.id !== id));
-  };
-
-  const updateQuantity = (id: number, delta: number) => {
-    setCart(prev => prev.map(item => {
-      if (item.id === id) {
-        const newQty = Math.max(1, item.quantity + delta);
-        return { ...item, quantity: newQty };
-      }
-      return item;
-    }));
-  };
-
-  const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const totalDuration = cart.reduce((sum, item) => sum + (item.duration * item.quantity), 0);
 
   const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -166,10 +82,8 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
       await apiClient.post('/auth/otp/send', { email });
       setOtpStep('OTP');
     } catch (err: any) {
-      setError(err.response?.data?.error || t('schedule.failed_booking'));
-    } finally {
-      setSubmitting(false);
-    }
+      setError(err.response?.data?.error || t('booking.otp_send_error', 'Failed to send code.'));
+    } finally { setSubmitting(false); }
   };
 
   const handleVerifyOTP = async (e: React.FormEvent) => {
@@ -182,28 +96,11 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
       if (res.data.requires_profile_completion) {
         setRequiresProfile(true);
       } else {
-        setRequiresProfile(false);
-        setStep(5);
+        onVerified();
       }
     } catch (err: any) {
-      setError(err.response?.data?.error || t('login.invalid_credentials'));
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleResendOTP = async () => {
-    setError('');
-    setResendSent(false);
-    setSubmitting(true);
-    try {
-      await apiClient.post('/auth/otp/send', { email });
-      setResendSent(true);
-    } catch (err: any) {
-      setError(err.response?.data?.error || t('schedule.failed_booking'));
-    } finally {
-      setSubmitting(false);
-    }
+      setError(err.response?.data?.error || t('login.invalid_credentials', 'Invalid code.'));
+    } finally { setSubmitting(false); }
   };
 
   const handleCompleteProfile = async (e: React.FormEvent) => {
@@ -211,371 +108,542 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
     setSubmitting(true);
     try {
       await apiClient.patch('/auth/profile', { fullname, birthday });
-      // Logic inside backend will update the customer record
-      setStep(5);
-    } catch (err) {
-      setError(t('customers.failed_update'));
-    } finally {
-      setSubmitting(false);
-    }
+      onVerified();
+    } catch {
+      setError(t('customers.failed_update', 'Failed to update profile.'));
+    } finally { setSubmitting(false); }
   };
 
-  const handleBook = async () => {
+  const handleResend = async () => {
+    setSubmitting(true);
+    try {
+      await apiClient.post('/auth/otp/send', { email });
+      setResendSent(true);
+    } catch (err: any) {
+      setError(err.response?.data?.error || '');
+    } finally { setSubmitting(false); }
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title={requiresProfile ? t('booking.almost_there', 'Almost there') : otpStep === 'ID' ? t('booking.confirm_identity', 'Confirm identity') : t('booking.enter_code', 'Enter code')}>
+      {error && (
+        <div style={{ background: 'var(--primary-soft)', color: 'var(--primary-deep)', padding: '10px 14px', borderRadius: 'var(--r)', marginBottom: 16, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <AlertCircle size={15} /> {error}
+        </div>
+      )}
+
+      {!requiresProfile ? (
+        otpStep === 'ID' ? (
+          <form onSubmit={handleSendOTP} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <p className="muted" style={{ fontSize: 14, margin: 0 }}>{t('booking.otp_hint', 'Enter your email and we\'ll send a code.')}</p>
+            <div className="field">
+              <label className="field-label">{t('booking.email_address', 'Email address')}</label>
+              <input className="input" type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} required />
+            </div>
+            <button className="btn btn-accent" type="submit" disabled={submitting} style={{ width: '100%', justifyContent: 'center' }}>
+              {submitting ? <Loader2 size={16} className="spinner" /> : t('booking.send_code', 'Send code')}
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleVerifyOTP} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <p className="muted" style={{ fontSize: 14, margin: 0 }}>
+              <Trans i18nKey="booking.check_email" values={{ email }} components={{ strong: <strong /> }} />
+            </p>
+            <div className="field">
+              <input className="input" type="text" placeholder="123456" value={otp} onChange={e => setOtp(e.target.value)} required maxLength={6} style={{ textAlign: 'center', letterSpacing: '0.5rem', fontSize: 22, fontWeight: 700 }} />
+            </div>
+            <button className="btn btn-accent" type="submit" disabled={submitting} style={{ width: '100%', justifyContent: 'center' }}>
+              {submitting ? <Loader2 size={16} className="spinner" /> : t('booking.verify_continue', 'Verify & continue')}
+            </button>
+            {resendSent && <p style={{ color: 'var(--sage)', fontSize: 13, textAlign: 'center', fontWeight: 500 }}>{t('booking.code_resent', 'Code resent!')}</p>}
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button type="button" className="btn btn-ghost btn-sm" style={{ flex: 1, justifyContent: 'center' }} disabled={submitting} onClick={handleResend}>{t('booking.resend_code', 'Resend')}</button>
+              <button type="button" className="btn btn-soft btn-sm" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setOtpStep('ID')}>{t('booking.change_email', 'Change email')}</button>
+            </div>
+          </form>
+        )
+      ) : (
+        <form onSubmit={handleCompleteProfile} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <p className="muted" style={{ fontSize: 14, margin: 0 }}>{t('booking.profile_hint', 'Fill in your details to complete the booking.')}</p>
+          <div className="field">
+            <label className="field-label">{t('booking.full_name', 'Full name')}</label>
+            <input className="input" type="text" placeholder="Alex Morgan" value={fullname} onChange={e => setFullname(e.target.value)} required />
+          </div>
+          <div className="field">
+            <label className="field-label">{t('booking.birthday', 'Birthday')}</label>
+            <input className="input" type="date" value={birthday} onChange={e => setBirthday(e.target.value)} required />
+          </div>
+          <button className="btn btn-accent" type="submit" disabled={submitting} style={{ width: '100%', justifyContent: 'center' }}>
+            {submitting ? <Loader2 size={16} className="spinner" /> : t('booking.complete_profile', 'Complete profile')}
+          </button>
+        </form>
+      )}
+    </Modal>
+  );
+}
+
+/* ─── Main component ─────────────────────────────────────── */
+
+export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
+  const { t } = useTranslation();
+  const { shopId: routeShopId } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { user } = useAuth();
+  const { settings } = useSettings();
+
+  const rescheduleId = location.state?.rescheduleId;
+  const initialBarberId = location.state?.barberId;
+  const hasShopId = !!(preSelectedBarber?.shop_id || routeShopId);
+
+  const STEPS = hasShopId
+    ? [t('nav.barbers', 'Barber'), t('nav.services', 'Service'), t('booking.date_time', 'Date & Time'), t('booking.confirm', 'Confirm')]
+    : [t('nav.barbers', 'Barber'), t('nav.services', 'Service'), t('booking.location', 'Location'), t('booking.date_time', 'Date & Time'), t('booking.confirm', 'Confirm')];
+
+  const STEP = {
+    BARBER:   0,
+    SERVICE:  1,
+    LOCATION: hasShopId ? -1 : 2,
+    DATETIME: hasShopId ? 2 : 3,
+    CONFIRM:  hasShopId ? 3 : 4,
+  };
+
+  const [step, setStep] = useState(preSelectedBarber || initialBarberId ? STEP.SERVICE : STEP.BARBER);
+  const [maxStep, setMaxStep] = useState(preSelectedBarber || initialBarberId ? STEP.SERVICE : STEP.BARBER);
+  const [shop, setShop] = useState<any>(null);
+  const [barbers, setBarbers] = useState<any[]>([]);
+  const [services, setServices] = useState<any[]>([]);
+  const [serviceCategory, setServiceCategory] = useState('All');
+
+  const [selectedBarber, setSelectedBarber] = useState<any>(preSelectedBarber || null);
+  const [selectedService, setSelectedService] = useState<any>(null);
+  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedTime, setSelectedTime] = useState('');
+  const [notes, setNotes] = useState(location.state?.notes || '');
+  const [customerName, setCustomerName] = useState(user?.fullname || '');
+  const [customerPhone, setCustomerPhone] = useState('');
+
+  const [availableSlots, setAvailableSlots] = useState<string[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+
+  const [loading, setLoading] = useState(hasShopId);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
+  const [confirmRef, setConfirmRef] = useState('');
+  const [showOtp, setShowOtp] = useState(false);
+
+  const shopId = preSelectedBarber?.shop_id || routeShopId;
+
+  useEffect(() => {
+    if (shopId) {
+      apiClient.get(`/public/shops/${shopId}`).then(res => {
+        setShop(res.data.shop);
+        setBarbers(res.data.barbers);
+        setServices(res.data.services);
+        if (initialBarberId && res.data.barbers) {
+          const b = res.data.barbers.find((bar: any) => bar.id === initialBarberId);
+          if (b) setSelectedBarber(b);
+        }
+      }).finally(() => setLoading(false));
+
+      if (rescheduleId) {
+        apiClient.get(`/appointments/${rescheduleId}/items`).then(res => {
+          const first = res.data[0];
+          if (first) {
+            setSelectedService({ id: first.service_id, name: first.name, price: first.price, duration_minutes: first.duration_minutes });
+          }
+        }).catch(() => {});
+      }
+    }
+  }, [shopId, initialBarberId, rescheduleId]);
+
+  useEffect(() => {
+    if (selectedBarber && selectedDate && selectedService) {
+      setLoadingSlots(true);
+      apiClient.get(`/public/barbers/${selectedBarber.id}/availability`, {
+        params: { date: selectedDate, duration: selectedService.duration_minutes }
+      }).then(res => setAvailableSlots(res.data))
+        .catch(() => setAvailableSlots([]))
+        .finally(() => setLoadingSlots(false));
+    }
+  }, [selectedBarber, selectedDate, selectedService]);
+
+  const advance = (nextStep: number) => {
+    setStep(nextStep);
+    setMaxStep(m => Math.max(m, nextStep));
+  };
+
+  const canContinue = (() => {
+    if (step === STEP.BARBER) return selectedBarber != null;
+    if (step === STEP.SERVICE) return selectedService != null;
+    if (STEP.LOCATION >= 0 && step === STEP.LOCATION) return !!shopId;
+    if (step === STEP.DATETIME) return !!selectedDate && !!selectedTime;
+    return true;
+  })();
+
+  const doBook = async () => {
     setSubmitting(true);
     setError('');
-    
-    // Ensure shopId is correct
-    const finalShopId = selectedBarber?.shop_id || shopId;
-
     try {
+      const body = {
+        barber_id: selectedBarber.id,
+        services: [{ id: selectedService.id, quantity: 1 }],
+        customer_id: user?.customer_id || null,
+        start_time: `${selectedDate}T${selectedTime}:00`,
+        shop_id: shopId ? parseInt(shopId.toString()) : null,
+        notes,
+      };
+
       if (rescheduleId) {
-        await apiClient.put(`/appointments/${rescheduleId}`, {
-          barber_id: selectedBarber.id,
-          services: cart.map(item => ({ id: item.id, quantity: item.quantity })),
-          start_time: `${selectedDate}T${selectedTime}:00`,
-          notes
-        });
+        await apiClient.put(`/appointments/${rescheduleId}`, { ...body, barber_id: selectedBarber.id });
       } else {
-        await apiClient.post('/appointments', {
-          barber_id: selectedBarber.id,
-          services: cart.map(item => ({ id: item.id, quantity: item.quantity })),
-          customer_id: user?.customer_id || null,
-          start_time: `${selectedDate}T${selectedTime}:00`,
-          shop_id: finalShopId ? parseInt(finalShopId.toString()) : null,
-          notes
-        });
+        await apiClient.post('/appointments', body);
       }
+
+      const refNum = `BBS-${Math.floor(Math.random() * 9000) + 1000}`;
+      setConfirmRef(refNum);
       setSuccess(true);
     } catch (err: any) {
-      setError(err.response?.data?.error || t('schedule.failed_booking'));
+      setError(err.response?.data?.error || t('schedule.failed_booking', 'Booking failed.'));
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (loading) return <div className="booking-container"><div className="spinner" style={{ margin: '0 auto' }}></div></div>;
+  const handleConfirm = () => {
+    if (!user) {
+      setShowOtp(true);
+    } else {
+      doBook();
+    }
+  };
 
+  const days = useMemo(() => buildDays(14), []);
+
+  const categories = ['All', ...Array.from(new Set(services.map((s: any) => s.category).filter(Boolean)))];
+  const filteredServices = serviceCategory === 'All' ? services : services.filter((s: any) => s.category === serviceCategory);
+
+  const morning   = availableSlots.filter(s => parseInt(s) < 12);
+  const afternoon = availableSlots.filter(s => parseInt(s) >= 12 && parseInt(s) < 17);
+  const evening   = availableSlots.filter(s => parseInt(s) >= 17);
+
+  const dateStr = selectedDate
+    ? new Date(selectedDate + 'T00:00').toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })
+    : '';
+
+  /* ── Loading ─────────────────────────────────────────────── */
+  if (loading) {
+    return (
+      <div className="booking-wrap" style={{ display: 'flex', justifyContent: 'center', paddingTop: 80 }}>
+        <Loader2 size={32} className="spinner" style={{ color: 'var(--primary)' }} />
+      </div>
+    );
+  }
+
+  /* ── Success screen ──────────────────────────────────────── */
   if (success) {
     return (
-      <div className="booking-container">
-        <div className="glass-panel animate-fade-in-up" style={{ padding: '3rem 2rem', textAlign: 'center' }}>
-          <div style={{ background: 'var(--success)', color: 'white', width: '90px', height: '90px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 2rem', boxShadow: '0 10px 25px -5px rgba(16, 185, 129, 0.4)' }}>
-            <CheckCircle size={56} />
+      <div className="booking-wrap" style={{ textAlign: 'center' }}>
+        <div style={{ width: 84, height: 84, margin: '20px auto 24px', borderRadius: '50%', background: 'var(--sage-soft)', display: 'grid', placeItems: 'center', color: '#4d6648', animation: 'toast-in .4s ease' }}>
+          <CheckCircle size={40} />
+        </div>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 38, letterSpacing: '-0.025em', margin: '0 0 10px' }}>
+          {rescheduleId ? t('booking.updated', "You're updated.") : t('booking.success', "You're booked.")}
+        </h1>
+        <p className="muted" style={{ fontSize: 16, margin: '0 0 28px' }}>
+          <Trans i18nKey={rescheduleId ? 'booking.updated_msg' : 'booking.confirmed_msg'} values={{ shopName: shop?.name }} components={{ strong: <strong /> }} />
+        </p>
+
+        <div className="card" style={{ maxWidth: 520, margin: '0 auto', padding: 24, textAlign: 'left' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <span className="chip chip-success dot">{t('booking.confirmed', 'Confirmed')}</span>
+            <span className="muted" style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>{confirmRef}</span>
           </div>
-          <h1 style={{ fontSize: '2rem', fontWeight: '900', marginBottom: '1rem', color: 'var(--text-main)' }}>
-            {rescheduleId ? t('booking.updated') : t('booking.success')}
-          </h1>
-          <p style={{ color: 'var(--text-muted)', marginBottom: '2.5rem', fontSize: '1.1rem' }}>
-            <Trans 
-              i18nKey={rescheduleId ? 'booking.updated_msg' : 'booking.confirmed_msg'}
-              values={{ shopName: shop?.name }}
-              components={{ strong: <strong /> }}
-            />
-          </p>
-          <button className="primary" style={{ width: '100%', padding: '1.25rem', fontSize: '1.1rem', borderRadius: '1rem' }} onClick={() => navigate('/my-bookings')}>
-            {t('booking.go_to_dashboard')}
-          </button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontSize: 14 }}>
+            {selectedService && <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}><div style={{ width: 32, height: 32, borderRadius: 10, background: 'var(--surface-2)', display: 'grid', placeItems: 'center', flexShrink: 0 }}><CheckCircle size={15} /></div><div><div className="muted" style={{ fontSize: 12 }}>{t('booking.service', 'Service')}</div><div style={{ fontWeight: 500 }}>{selectedService.name} · {selectedService.duration_minutes} min</div></div></div>}
+            {selectedBarber && <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}><div style={{ width: 32, height: 32, borderRadius: 10, background: 'var(--surface-2)', display: 'grid', placeItems: 'center', flexShrink: 0 }}><User size={15} /></div><div><div className="muted" style={{ fontSize: 12 }}>{t('booking.barber', 'Barber')}</div><div style={{ fontWeight: 500 }}>{selectedBarber.fullname || selectedBarber.name}</div></div></div>}
+            {selectedDate && <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}><div style={{ width: 32, height: 32, borderRadius: 10, background: 'var(--surface-2)', display: 'grid', placeItems: 'center', flexShrink: 0 }}><Calendar size={15} /></div><div><div className="muted" style={{ fontSize: 12 }}>{t('booking.when', 'When')}</div><div style={{ fontWeight: 500 }}>{dateStr} · {selectedTime}</div></div></div>}
+            {shop && <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}><div style={{ width: 32, height: 32, borderRadius: 10, background: 'var(--surface-2)', display: 'grid', placeItems: 'center', flexShrink: 0 }}><MapPin size={15} /></div><div><div className="muted" style={{ fontSize: 12 }}>{t('booking.where', 'Where')}</div><div style={{ fontWeight: 500 }}>{shop.name}</div></div></div>}
+            <hr className="divider" style={{ margin: '6px 0' }} />
+            {selectedService && <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 600 }}><span>{t('common.total', 'Total')}</span><span>{formatCurrency(selectedService.price, settings.currency_symbol)}</span></div>}
+            <p className="muted" style={{ fontSize: 12 }}>{t('booking.pay_at_shop', "You'll pay at the shop. Cancel free up to 2 hours before.")}</p>
+          </div>
+          <div style={{ display: 'flex', gap: 8, marginTop: 18 }}>
+            <button className="btn btn-ghost" style={{ flex: 1, justifyContent: 'center' }} onClick={() => navigate('/my-bookings')}>{t('booking.go_to_dashboard', 'My bookings')}</button>
+            <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }} onClick={() => navigate('/')}>{t('common.done', 'Done')}</button>
+          </div>
         </div>
       </div>
     );
   }
 
-  const steps = [
-    { num: 1, label: t('nav.barbers') },
-    { num: 2, label: t('nav.services') },
-    { num: 3, label: t('nav.shop_calendar') },
-    { num: 4, label: t('booking.enter_code') },
-    { num: 5, label: t('booking.review_confirm') },
-  ];
-
-  return (
-    <div className="booking-container">
-      <div className="glass-panel animate-fade-in-up">
-        
-        {/* Header */}
-        <header style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1.5rem 2rem', borderBottom: '1px solid rgba(255, 255, 255, 0.4)' }}>
-          <button className="secondary" style={{ padding: '0.5rem', borderRadius: '0.75rem', background: '#fff' }} onClick={handleBack}>
-            <ChevronLeft size={24} />
-          </button>
-          <div>
-            <h1 style={{ fontSize: '1.25rem', marginBottom: 0, fontWeight: '800' }}>{shop?.name}</h1>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-              {selectedBarber ? t('booking.booking_with', { name: selectedBarber.fullname || selectedBarber.name }) : t('booking.new_appointment')}
-            </p>
-          </div>
-        </header>
-
-        {/* Stepper */}
-        <div className="stepper-container">
-          <div className="stepper-progress-bg"></div>
-          <div className="stepper-progress-fill" style={{ width: `${((step - 1) / (steps.length - 1)) * 100}%` }}></div>
-          {steps.map(s => (
-            <div key={s.num} className={`step-indicator ${step === s.num ? 'active' : step > s.num ? 'completed' : ''}`}>
-              <div className="step-circle">
-                {step > s.num ? <CheckCircle size={16} /> : s.num}
-              </div>
-              <div className="step-label">{s.label}</div>
-            </div>
+  /* ── TimeBlock helper ────────────────────────────────────── */
+  const TimeBlock = ({ label, slots }: { label: string; slots: string[] }) => (
+    slots.length === 0 ? null : (
+      <div style={{ marginBottom: 18 }}>
+        <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600, color: 'var(--ink-3)', marginBottom: 8 }}>{label}</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(86px, 1fr))', gap: 8 }}>
+          {slots.map(s => (
+            <button
+              key={s}
+              className={selectedTime === s ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'}
+              style={{ justifyContent: 'center', fontVariantNumeric: 'tabular-nums' }}
+              onClick={() => setSelectedTime(s)}
+            >
+              {s}
+            </button>
           ))}
         </div>
+      </div>
+    )
+  );
 
-        <div style={{ padding: '2rem', position: 'relative' }}>
-          {error && (
-            <div className="animate-fade-in-up" style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', padding: '1rem', borderRadius: '1rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.9rem', fontWeight: '600' }}>
-              <AlertCircle size={18} /> {error}
-            </div>
-          )}
+  return (
+    <div className="booking-wrap">
+      <Stepper steps={STEPS.map(label => ({ label }))} current={step} max={maxStep} onJump={setStep} />
 
-          {step === 1 && (
-            <section className="animate-fade-in-up">
-              <h2 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '1.5rem', color: 'var(--text-main)' }}>{t('booking.choose_professional')}</h2>
-              <div style={{ display: 'grid', gap: '1rem' }}>
-                {barbers.map(b => (
-                  <div key={b.id} className="glass-item" onClick={() => { setSelectedBarber(b); setStep(2); }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-                      <div style={{ width: '56px', height: '56px', background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%)', color: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem', fontWeight: '800', boxShadow: '0 4px 10px rgba(79, 70, 229, 0.3)' }}>
-                        {(b.fullname || b.name).charAt(0)}
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: '800', fontSize: '1.1rem', color: 'var(--text-main)' }}>{b.fullname || b.name}</div>
-                        <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{t('booking.professional_barber')}</div>
-                      </div>
-                      <ChevronLeft size={20} style={{ transform: 'rotate(180deg)', color: 'var(--text-muted)' }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {step === 2 && (
-            <section className="animate-fade-in-up">
-              <h2 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '1.5rem', color: 'var(--text-main)' }}>{t('booking.select_services')}</h2>
-              <div style={{ display: 'grid', gap: '1rem', marginBottom: cart.length > 0 ? '100px' : '0' }}>
-                {services.map(s => {
-                  const inCart = cart.find(c => c.id === s.id);
-                  return (
-                    <div key={s.id} className={`glass-item ${inCart ? 'selected' : ''}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: '800', fontSize: '1.05rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <Scissors size={16} className="text-primary" /> {s.name}
-                        </div>
-                        <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.25rem', display: 'flex', gap: '0.75rem' }}>
-                          <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><Clock size={14} /> {s.duration_minutes} mins</span>
-                          <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><CreditCard size={14} /> {formatCurrency(s.price, settings.currency_symbol)}</span>
-                        </div>
-                        {s.description && (
-                          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.5rem', lineHeight: 1.4 }}>
-                            {s.description}
-                          </div>
-                        )}
-                      </div>
-                      <button className="primary" style={{ padding: '0.6rem', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => addToCart(s)}>
-                        <Plus size={20} />
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {cart.length === 0 && (
-                <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '1rem', fontWeight: '600' }}>
-                  {t('booking.add_service_hint')}
-                </p>
-              )}
-            </section>
-          )}
-
-          {step === 3 && (
-            <section className="animate-fade-in-up">
-              <h2 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '1.5rem', color: 'var(--text-main)' }}>{t('booking.pick_date_time')}</h2>
-              
-              <div style={{ background: '#fff', borderRadius: '1rem', padding: '1rem', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
-                <Calendar size={24} className="text-primary" />
-                <input type="date" value={selectedDate} min={new Date().toISOString().split('T')[0]} onChange={e => setSelectedDate(e.target.value)} style={{ fontSize: '1.1rem', fontWeight: '700', border: 'none', background: 'transparent', outline: 'none', flex: 1, color: 'var(--text-main)', margin: 0, padding: 0 }} />
-              </div>
-              
-              <div>
-                {loadingSlots ? (
-                  <div style={{ textAlign: 'center', padding: '3rem 0' }}>
-                    <Loader2 size={40} className="spinner" style={{ margin: '0 auto', borderColor: 'var(--primary)', borderTopColor: 'transparent' }} />
-                    <p style={{ marginTop: '1rem', fontSize: '0.95rem', color: 'var(--text-muted)', fontWeight: '600' }}>{t('booking.finding_slots')}</p>
-                  </div>
-                ) : availableSlots.length === 0 ? (
-                  <div className="glass-item" style={{ textAlign: 'center', padding: '3rem 2rem', border: '1px dashed var(--border)' }}>
-                    <AlertCircle size={40} style={{ margin: '0 auto 1rem', color: 'var(--text-muted)', opacity: 0.5 }} />
-                    <p style={{ color: 'var(--text-main)', fontWeight: '600', fontSize: '1.1rem' }}>{t('booking.no_slots')}</p>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '0.5rem' }}>Try selecting a different date.</p>
-                  </div>
-                ) : (
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.85rem' }}>
-                    {availableSlots.map(t_val => (
-                      <div key={t_val} className={`glass-time-slot ${selectedTime === t_val ? 'selected' : ''}`} onClick={() => handleTimeSelect(t_val)}>
-                        {t_val}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </section>
-          )}
-
-          {step === 4 && (
-            <section className="animate-fade-in-up">
-              {!requiresProfile ? (
-                otpStep === 'ID' ? (
-                  <form onSubmit={handleSendOTP} style={{ background: '#fff', padding: '2rem', borderRadius: '1rem', border: '1px solid var(--border)', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.05)' }}>
-                    <h2 style={{ fontSize: '1.4rem', fontWeight: '800', marginBottom: '0.5rem' }}>{t('booking.confirm_identity')}</h2>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '2rem' }}>{t('booking.otp_hint')}</p>
-                    <div className="form-group">
-                      <label>{t('booking.email_address')}</label>
-                      <div className="input-with-icon">
-                        <Mail size={18} className="input-icon" />
-                        <input type="email" placeholder={t('booking.email_placeholder')} value={email} onChange={e => setEmail(e.target.value)} required style={{ padding: '0.85rem 0.85rem 0.85rem 2.8rem', borderRadius: '0.75rem' }} />
-                      </div>
-                    </div>
-                    <button type="submit" className="primary" style={{ width: '100%', padding: '1.1rem', fontSize: '1.05rem', borderRadius: '0.75rem', marginTop: '1rem' }} disabled={submitting}>
-                      {submitting ? <Loader2 size={18} className="spinner" style={{ width: '20px', height: '20px', borderTopColor: '#fff' }} /> : t('booking.send_code')}
-                    </button>
-                  </form>
-                ) : (
-                  <form onSubmit={handleVerifyOTP} style={{ background: '#fff', padding: '2rem', borderRadius: '1rem', border: '1px solid var(--border)', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.05)' }}>
-                    <h2 style={{ fontSize: '1.4rem', fontWeight: '800', marginBottom: '0.5rem' }}>{t('booking.enter_code')}</h2>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '2rem' }}>
-                      <Trans i18nKey="booking.check_email" values={{ email }} components={{ strong: <strong /> }} />
-                    </p>
-                    <div className="form-group">
-                      <div className="input-with-icon">
-                        <Key size={18} className="input-icon" />
-                        <input type="text" placeholder="123456" value={otp} onChange={e => setOtp(e.target.value)} required maxLength={6} style={{ textAlign: 'center', letterSpacing: '0.75rem', fontSize: '1.5rem', padding: '1rem', borderRadius: '0.75rem', fontWeight: '800' }} />
-                      </div>
-                    </div>
-                    <button type="submit" className="primary" style={{ width: '100%', padding: '1.1rem', fontSize: '1.05rem', borderRadius: '0.75rem', marginTop: '1rem' }} disabled={submitting}>
-                      {submitting ? <Loader2 size={18} className="spinner" style={{ width: '20px', height: '20px', borderTopColor: '#fff' }} /> : t('booking.verify_continue')}
-                    </button>
-                    {resendSent && (
-                      <p style={{ color: 'var(--success)', fontSize: '0.85rem', fontWeight: '600', marginTop: '1rem', textAlign: 'center' }}>
-                        {t('booking.code_resent')}
-                      </p>
-                    )}
-                    <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
-                      <button type="button" onClick={handleResendOTP} disabled={submitting} className="secondary" style={{ flex: 1, padding: '0.75rem', fontSize: '0.9rem', borderRadius: '0.5rem' }}>
-                        {t('booking.resend_code')}
-                      </button>
-                      <button type="button" onClick={() => setOtpStep('ID')} style={{ flex: 1, background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '0.9rem', cursor: 'pointer', fontWeight: '600' }}>
-                        {t('booking.change_email')}
-                      </button>
-                    </div>
-                  </form>
-                )
-              ) : (
-                <form onSubmit={handleCompleteProfile} style={{ background: '#fff', padding: '2rem', borderRadius: '1rem', border: '1px solid var(--border)', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.05)' }}>
-                  <h2 style={{ fontSize: '1.4rem', fontWeight: '800', marginBottom: '0.5rem' }}>{t('booking.almost_there')}</h2>
-                  <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '2rem' }}>{t('booking.profile_hint')}</p>
-                  <div className="form-group">
-                    <label>{t('booking.full_name')}</label>
-                    <div className="input-with-icon">
-                      <User size={18} className="input-icon" />
-                      <input type="text" placeholder={t('booking.fullname_placeholder')} value={fullname} onChange={e => setFullname(e.target.value)} required style={{ padding: '0.85rem 0.85rem 0.85rem 2.8rem', borderRadius: '0.75rem' }} />
-                    </div>
-                  </div>
-                  <div className="form-group">
-                    <label>{t('booking.birthday')}</label>
-                    <div className="input-with-icon">
-                      <Cake size={18} className="input-icon" />
-                      <input type="date" value={birthday} onChange={e => setBirthday(e.target.value)} required style={{ padding: '0.85rem 0.85rem 0.85rem 2.8rem', borderRadius: '0.75rem' }} />
-                    </div>
-                  </div>
-                  <button type="submit" className="primary" style={{ width: '100%', padding: '1.1rem', fontSize: '1.05rem', borderRadius: '0.75rem', marginTop: '1rem' }} disabled={submitting}>
-                    {submitting ? <Loader2 size={18} className="spinner" style={{ width: '20px', height: '20px', borderTopColor: '#fff' }} /> : t('booking.complete_profile')}
-                  </button>
-                </form>
-              )}
-            </section>
-          )}
-
-          {step === 5 && (
-            <section className="animate-fade-in-up">
-              <h2 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '1.5rem', color: 'var(--text-main)' }}>{t('booking.review_confirm')}</h2>
-              
-              <div style={{ background: 'linear-gradient(145deg, #ffffff 0%, #f9fafb 100%)', border: '1px solid var(--border)', borderRadius: '1rem', padding: '1.5rem', marginBottom: '2rem', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.05)' }}>
-                <div style={{ borderBottom: '1px dashed var(--border)', paddingBottom: '1.25rem', marginBottom: '1.25rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                    <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '800' }}>{t('booking.barber')}</span>
-                    <span style={{ fontWeight: '800' }}>{selectedBarber?.fullname || selectedBarber?.name}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '800' }}>{t('booking.time')}</span>
-                    <span style={{ fontWeight: '800', color: 'var(--primary)' }}>{selectedDate} @ {selectedTime}</span>
-                  </div>
-                </div>
-                
-                <div>
-                  <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '800', display: 'block', marginBottom: '1rem' }}>{t('booking.services')}</span>
-                  <div style={{ display: 'grid', gap: '0.75rem' }}>
-                    {cart.map(item => (
-                      <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontWeight: '600' }}>{item.quantity}x {item.name}</span>
-                        <span style={{ fontWeight: '800' }}>{formatCurrency(item.price * item.quantity, settings.currency_symbol)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div style={{ borderTop: '1px solid var(--border)', marginTop: '1.25rem', paddingTop: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '1.25rem', fontWeight: '900' }}>
-                  <span>Total</span>
-                  <span style={{ color: 'var(--primary)' }}>{formatCurrency(totalAmount, settings.currency_symbol)}</span>
-                </div>
-              </div>
-
-              <div className="form-group" style={{ marginBottom: '2rem' }}>
-                <label style={{ color: 'var(--text-main)', fontSize: '0.9rem', fontWeight: '700' }}>{t('booking.additional_notes')} (Optional)</label>
-                <textarea placeholder={t('booking.notes_placeholder')} value={notes} onChange={e => setNotes(e.target.value)} style={{ minHeight: '100px', marginTop: '0.5rem', borderRadius: '0.75rem', padding: '1rem' }} />
-              </div>
-              
-              <button className="primary" style={{ width: '100%', padding: '1.25rem', fontSize: '1.15rem', borderRadius: '1rem', fontWeight: '800', boxShadow: '0 10px 20px -5px rgba(79, 70, 229, 0.4)' }} onClick={handleBook} disabled={submitting}>
-                {submitting ? <Loader2 size={24} className="spinner" style={{ width: '24px', height: '24px', borderTopColor: '#fff', margin: '0 auto' }} /> : t('booking.confirm_booking')}
-              </button>
-            </section>
-          )}
-
+      {error && (
+        <div style={{ background: 'var(--primary-soft)', color: 'var(--primary-deep)', padding: '10px 14px', borderRadius: 'var(--r)', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 500 }}>
+          <AlertCircle size={15} /> {error}
         </div>
-        
-        {/* Cart Sticky Footer for Step 2 */}
-        {step === 2 && cart.length > 0 && (
-          <div className="glass-cart animate-fade-in-up" style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(255,255,255,0.9)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <div>
-                <div style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--primary)', fontWeight: '800' }}>{t('booking.your_selection')}</div>
-                <div style={{ fontWeight: '800', fontSize: '1.2rem' }}>{formatCurrency(totalAmount, settings.currency_symbol)}</div>
+      )}
+
+      {/* Step 0 — Barber */}
+      {step === STEP.BARBER && (
+        <>
+          <h2 className="section-title" style={{ fontSize: 28, margin: '0 0 6px' }}>{t('booking.choose_professional', 'Pick your barber')}</h2>
+          <p className="muted" style={{ margin: '0 0 22px', fontSize: 15 }}>{t('booking.barber_hint', "Or skip — we'll match you with the next available.")}</p>
+          <div className="option-grid">
+            <OptionCard selected={selectedBarber?.id === 'any'} onClick={() => { setSelectedBarber({ id: 'any' }); }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--surface-2)', display: 'grid', placeItems: 'center', color: 'var(--ink-2)' }}>
+                  <Sparkles size={22} />
+                </div>
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 16 }}>{t('booking.any_available', 'Any available')}</div>
+                  <div className="muted" style={{ fontSize: 13 }}>{t('booking.fastest_match', 'Fastest match')}</div>
+                </div>
               </div>
-              <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: '600' }}>
-                {t('booking.total_duration', { duration: totalDuration })}
-              </div>
-            </div>
-            
-            <div style={{ display: 'grid', gap: '0.5rem', marginBottom: '1.25rem', maxHeight: '100px', overflowY: 'auto' }}>
-              {cart.map(item => (
-                <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.03)', padding: '0.5rem 0.75rem', borderRadius: '0.5rem' }}>
-                  <div style={{ fontSize: '0.9rem', fontWeight: '700' }}>{item.name}</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', background: '#fff', borderRadius: '0.5rem', border: '1px solid var(--border)', padding: '0.1rem' }}>
-                      <button className="secondary" style={{ padding: '0.25rem', border: 'none', background: 'transparent' }} onClick={() => updateQuantity(item.id, -1)}><Minus size={14} /></button>
-                      <span style={{ fontWeight: '800', fontSize: '0.9rem', width: '20px', textAlign: 'center' }}>{item.quantity}</span>
-                      <button className="secondary" style={{ padding: '0.25rem', border: 'none', background: 'transparent' }} onClick={() => updateQuantity(item.id, 1)}><Plus size={14} /></button>
-                    </div>
-                    <button className="secondary" style={{ padding: '0.35rem', color: 'var(--danger)', borderRadius: '0.5rem', border: 'none', background: 'rgba(239, 68, 68, 0.1)' }} onClick={() => removeFromCart(item.id)}><Trash2 size={16} /></button>
+              <div style={{ fontSize: 13, color: 'var(--ink-2)', marginTop: 4 }}>{t('booking.soonest_opening', 'Soonest opening across the team')}</div>
+            </OptionCard>
+
+            {barbers.map(b => (
+              <OptionCard key={b.id} selected={selectedBarber?.id === b.id} onClick={() => setSelectedBarber(b)}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                  <Avatar initials={(b.fullname || b.name || '').slice(0, 2).toUpperCase()} tone="var(--primary)" size={48} />
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontWeight: 600, fontSize: 15.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.fullname || b.name}</div>
+                    <div className="muted" style={{ fontSize: 13 }}>{t('booking.professional_barber', 'Professional Barber')}</div>
                   </div>
                 </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, fontWeight: 600 }}>
+                    <Star size={13} fill="currentColor" /> 4.9
+                  </span>
+                  <span className="muted" style={{ fontSize: 12 }}>· {t('booking.professional_barber', 'Barber')}</span>
+                </div>
+              </OptionCard>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Step 1 — Service */}
+      {step === STEP.SERVICE && (
+        <>
+          <h2 className="section-title" style={{ fontSize: 28, margin: '0 0 6px' }}>{t('booking.select_services', 'What are we doing today?')}</h2>
+          <p className="muted" style={{ margin: '0 0 22px', fontSize: 15 }}>{t('booking.service_hint', 'Pick one service to start.')}</p>
+
+          {categories.length > 1 && (
+            <div style={{ display: 'flex', gap: 8, marginBottom: 18, flexWrap: 'wrap' }}>
+              {categories.map(c => (
+                <button key={c} className={serviceCategory === c ? 'btn btn-primary btn-sm' : 'btn btn-soft btn-sm'} onClick={() => setServiceCategory(c)}>{c}</button>
               ))}
             </div>
-            
-            <button className="primary" style={{ width: '100%', padding: '1.1rem', fontSize: '1.05rem', borderRadius: '0.75rem', fontWeight: '800' }} onClick={() => setStep(3)}>
-              {t('booking.continue_to_schedule')}
-            </button>
+          )}
+
+          <div className="option-grid">
+            {filteredServices.map((s: any) => (
+              <OptionCard key={s.id} selected={selectedService?.id === s.id} onClick={() => setSelectedService(s)}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--surface-2)', display: 'grid', placeItems: 'center', fontSize: 22 }}>✂️</div>
+                </div>
+                <div style={{ fontWeight: 600, fontSize: 16, marginTop: 4 }}>{s.name}</div>
+                {s.description && <div className="muted" style={{ fontSize: 12.5, lineHeight: 1.4 }}>{s.description}</div>}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
+                  <span className="muted" style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <Clock size={13} /> {s.duration_minutes} min
+                  </span>
+                  <span style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 19 }}>
+                    {formatCurrency(s.price, settings.currency_symbol)}
+                  </span>
+                </div>
+              </OptionCard>
+            ))}
           </div>
+        </>
+      )}
+
+      {/* Step 2 — Location (only when no shopId in route) */}
+      {STEP.LOCATION >= 0 && step === STEP.LOCATION && (
+        <>
+          <h2 className="section-title" style={{ fontSize: 28, margin: '0 0 6px' }}>{t('booking.where_to', 'Where to?')}</h2>
+          <p className="muted" style={{ margin: '0 0 22px', fontSize: 15 }}>{t('booking.location_hint', 'Choose a location near you.')}</p>
+          <div className="option-grid">
+            <OptionCard selected={!!shop} onClick={() => {}} style={{ padding: 0, overflow: 'hidden' }}>
+              <div style={{ height: 130, background: 'repeating-linear-gradient(45deg,var(--surface-2),var(--surface-2) 8px,var(--surface-3) 8px,var(--surface-3) 16px)', borderRadius: 0, display: 'grid', placeItems: 'center', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)' }}>map placeholder</div>
+              <div style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <MapPin size={15} />
+                  <div style={{ fontWeight: 600, fontSize: 16 }}>{shop?.name}</div>
+                </div>
+                <div className="muted" style={{ fontSize: 13 }}>{shop?.address}</div>
+              </div>
+            </OptionCard>
+          </div>
+        </>
+      )}
+
+      {/* Step 3/2 — Date & Time */}
+      {step === STEP.DATETIME && (
+        <>
+          <h2 className="section-title" style={{ fontSize: 28, margin: '0 0 6px' }}>{t('booking.pick_date_time', 'Pick a time')}</h2>
+          <p className="muted" style={{ margin: '0 0 22px', fontSize: 15 }}>{t('booking.datetime_hint', 'Times shown for your selected barber & location.')}</p>
+
+          {/* 14-day horizontal strip */}
+          <div style={{ marginBottom: 22 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-2)', marginBottom: 10 }}>{t('booking.choose_day', 'Choose a day')}</div>
+            <div data-testid="day-strip" style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 6 }}>
+              {days.map((d, i) => {
+                const iso = d.toISOString().slice(0, 10);
+                const sel = selectedDate === iso;
+                const isToday = i === 0;
+                return (
+                  <button
+                    key={iso}
+                    onClick={() => { setSelectedDate(iso); setSelectedTime(''); }}
+                    style={{
+                      flex: '0 0 72px', height: 88, borderRadius: 16,
+                      border: sel ? '2px solid var(--ink)' : '1px solid var(--line)',
+                      background: sel ? 'var(--ink)' : 'var(--surface)',
+                      color: sel ? 'var(--bg)' : 'var(--ink)',
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2,
+                      cursor: 'pointer', position: 'relative',
+                    }}
+                    aria-pressed={sel}
+                  >
+                    <div style={{ fontSize: 11, fontWeight: 500, opacity: 0.7, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{DAY_NAMES[d.getDay()]}</div>
+                    <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 22, letterSpacing: '-0.02em' }}>{d.getDate()}</div>
+                    <div style={{ fontSize: 10.5, opacity: 0.65 }}>{MONTH_NAMES[d.getMonth()]}</div>
+                    {isToday && <div style={{ position: 'absolute', top: 6, right: 8, width: 6, height: 6, borderRadius: '50%', background: 'var(--primary)' }} aria-hidden="true" />}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {selectedDate && (
+            loadingSlots ? (
+              <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--ink-3)' }}>
+                <Loader2 size={28} className="spinner" style={{ display: 'block', margin: '0 auto 12px' }} />
+                <span style={{ fontSize: 14 }}>{t('booking.finding_slots', 'Finding available slots…')}</span>
+              </div>
+            ) : availableSlots.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--ink-3)', fontSize: 14 }}>
+                {t('booking.no_slots', 'No slots available — try another day.')}
+              </div>
+            ) : (
+              <>
+                <TimeBlock label={t('booking.morning', 'Morning')} slots={morning} />
+                <TimeBlock label={t('booking.afternoon', 'Afternoon')} slots={afternoon} />
+                <TimeBlock label={t('booking.evening', 'Evening')} slots={evening} />
+              </>
+            )
+          )}
+        </>
+      )}
+
+      {/* Step 4/3 — Confirm */}
+      {step === STEP.CONFIRM && (
+        <>
+          <h2 className="section-title" style={{ fontSize: 28, margin: '0 0 6px' }}>{t('booking.review_confirm', 'Look right?')}</h2>
+          <p className="muted" style={{ margin: '0 0 22px', fontSize: 15 }}>{t('booking.confirm_hint', 'One last check before we lock it in.')}</p>
+
+          <div className="card" style={{ padding: 28, marginBottom: 20 }}>
+            {selectedBarber && selectedBarber.id !== 'any' && (
+              <SummaryRow icon={<User size={18} />} label={t('booking.barber', 'Barber')} value={selectedBarber.fullname || selectedBarber.name} sub={t('booking.professional_barber', 'Professional Barber')} onEdit={() => setStep(STEP.BARBER)} />
+            )}
+            {selectedService && (
+              <SummaryRow icon={<CheckCircle size={18} />} label={t('booking.service', 'Service')} value={selectedService.name} sub={`${selectedService.duration_minutes} min · ${formatCurrency(selectedService.price, settings.currency_symbol)}`} onEdit={() => setStep(STEP.SERVICE)} />
+            )}
+            {selectedDate && (
+              <SummaryRow icon={<Calendar size={18} />} label={t('booking.date_time', 'Date & time')} value={`${dateStr} · ${selectedTime}`} sub={t('booking.calendar_invite', 'Calendar invite by email')} onEdit={() => setStep(STEP.DATETIME)} last />
+            )}
+          </div>
+
+          <div className="card" style={{ padding: 22, marginBottom: 20 }}>
+            <div style={{ fontWeight: 600, marginBottom: 14 }}>{t('booking.your_details', 'Your details')}</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="field">
+                <label className="field-label">{t('booking.full_name', 'Full name')}</label>
+                <input className="input" placeholder="Alex Morgan" value={customerName} onChange={e => setCustomerName(e.target.value)} />
+              </div>
+              <div className="field">
+                <label className="field-label">{t('booking.phone', 'Phone')}</label>
+                <input className="input" placeholder="(555) 000-0000" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} />
+              </div>
+              <div className="field" style={{ gridColumn: '1 / -1' }}>
+                <label className="field-label">{t('booking.additional_notes', 'Notes for your barber (optional)')}</label>
+                <textarea className="textarea" placeholder={t('booking.notes_placeholder', 'Anything we should know?')} value={notes} onChange={e => setNotes(e.target.value)} />
+              </div>
+            </div>
+          </div>
+
+          <button
+            className="btn btn-accent btn-lg"
+            style={{ width: '100%', justifyContent: 'center' }}
+            onClick={handleConfirm}
+            disabled={submitting}
+          >
+            {submitting ? <Loader2 size={20} className="spinner" /> : `${t('booking.confirm_booking', 'Confirm booking')} · ${selectedService ? formatCurrency(selectedService.price, settings.currency_symbol) : ''}`}
+          </button>
+          <p className="muted" style={{ textAlign: 'center', marginTop: 12, fontSize: 12.5 }}>
+            {t('booking.pay_at_shop', "No charge now. You'll pay at the shop.")}
+          </p>
+        </>
+      )}
+
+      {/* Footer nav */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 36, paddingTop: 24, borderTop: '1px solid var(--line)' }}>
+        <button
+          className="btn btn-ghost"
+          disabled={step === 0}
+          onClick={() => step > 0 ? setStep(step - 1) : navigate('/discovery')}
+        >
+          <ChevronLeft size={16} /> {t('common.back', 'Back')}
+        </button>
+
+        {step < STEP.CONFIRM && (
+          <button
+            className="btn btn-primary"
+            disabled={!canContinue}
+            onClick={() => advance(step + 1)}
+          >
+            {t('common.continue', 'Continue')} <ChevronRight size={16} />
+          </button>
         )}
       </div>
+
+      {/* OTP Modal — shown post-confirm when user is not logged in */}
+      <OtpModal
+        isOpen={showOtp}
+        onClose={() => setShowOtp(false)}
+        onVerified={() => {
+          setShowOtp(false);
+          doBook();
+        }}
+      />
     </div>
   );
 }
