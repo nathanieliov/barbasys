@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../api/apiClient';
-import { UserPlus, User, Percent, Phone, Mail, Trash2, Edit2 } from 'lucide-react';
+import { UserPlus, User, Phone, Mail, Trash2, Edit2 } from 'lucide-react';
 import { useSettings } from '../hooks/useSettings';
 import { formatCurrency } from '../utils/format';
 import { useTranslation } from 'react-i18next';
 import Modal from '../components/Modal';
 import EmptyState from '../components/EmptyState';
+import Avatar from '../components/Avatar';
 import { useToast } from '../components/Toast';
 import { useConfirm } from '../components/ConfirmDialog';
+
+const BARBER_TONES = ['var(--primary)', 'var(--sage)', 'var(--plum)', 'var(--butter)', '#7d8ca3'];
 
 export default function Barbers() {
   const { t } = useTranslation();
@@ -101,68 +104,76 @@ export default function Barbers() {
   };
 
   return (
-    <div className="barbers-container">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+    <>
+      <div className="page-head">
         <div>
           <h1>{t('barbers.title')}</h1>
-          <p style={{ color: 'var(--text-muted)' }}>{t('barbers.manage_team')}</p>
+          <div className="sub">{barbers.length} {t('barbers.active', 'active')}</div>
         </div>
-        <button onClick={() => { setEditingBarber(null); setShowModal(true); }} style={{ gap: '0.5rem' }}>
-          <UserPlus size={20} /> <span className="hide-mobile">{t('barbers.add_professional')}</span>
+        <div className="spacer" />
+        <button className="btn btn-accent" onClick={() => { setEditingBarber(null); setShowModal(true); }}>
+          <UserPlus size={16} /> {t('barbers.add_professional', 'Add barber')}
         </button>
       </div>
 
-      <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }}>
-        {barbers.map(b => (
-          <div key={b.id} className="card" style={{ marginBottom: 0, padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem' }}>
-              <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                <div style={{ width: '56px', height: '56px', background: 'rgba(79, 70, 229, 0.1)', color: 'var(--primary)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem', fontWeight: '800', border: '2px solid white', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
-                  {(b.fullname || b.name).charAt(0)}
-                </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
+        {barbers.map((b, i) => (
+          <div key={b.id} className="card" style={{ padding: 22, display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+                <Avatar
+                  initials={(b.fullname || b.name || '').slice(0, 2).toUpperCase()}
+                  tone={BARBER_TONES[i % BARBER_TONES.length]}
+                  size={56}
+                />
                 <div>
-                  <div style={{ fontWeight: '800', fontSize: '1.1rem', color: 'var(--text-main)' }}>{b.fullname || b.name}</div>
+                  <div style={{ fontWeight: 600, fontSize: 16 }}>{b.fullname || b.name}</div>
+                  <div className="muted" style={{ fontSize: 13 }}>
+                    {b.payment_model === 'COMMISSION' ? t('barbers.commission_based', 'Commission') : b.payment_model === 'FIXED' ? t('barbers.salary', 'Salary') : t('barbers.rental_fee', 'Booth rental')}
+                  </div>
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: '0.25rem' }}>
-                <button className="secondary" style={{ padding: '0.4rem', border: 'none' }} onClick={() => startEdit(b)} aria-label={t('common.edit')}>
-                  <Edit2 size={16} />
+              <div style={{ display: 'flex', gap: 4 }}>
+                <button className="btn btn-soft btn-sm" style={{ padding: '0 10px' }} onClick={() => startEdit(b)} aria-label={t('common.edit')}>
+                  <Edit2 size={14} />
                 </button>
-                <button className="secondary" style={{ padding: '0.4rem', color: 'var(--danger)', border: 'none' }} onClick={() => deleteBarber(b.id, b.fullname || b.name)} aria-label={t('common.delete')}>
-                  <Trash2 size={16} />
+                <button className="btn btn-soft btn-sm" style={{ padding: '0 10px', color: 'var(--danger)' }} onClick={() => deleteBarber(b.id, b.fullname || b.name)} aria-label={t('common.delete')}>
+                  <Trash2 size={14} />
                 </button>
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.5rem' }}>
+            <hr className="divider" />
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
               {b.payment_model === 'FIXED' || b.payment_model === 'FIXED_FEE' ? (
-                <div style={{ gridColumn: '1 / -1', background: 'rgba(79, 70, 229, 0.05)', padding: '0.75rem', borderRadius: '0.75rem', border: '1px solid rgba(79, 70, 229, 0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ gridColumn: '1 / -1', background: 'var(--surface-2)', padding: '12px 14px', borderRadius: 'var(--r)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '800', marginBottom: '0.25rem' }}>
+                    <div style={{ fontSize: 11, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600, marginBottom: 4 }}>
                       {b.payment_model === 'FIXED' ? t('barbers.salary') : t('barbers.rental_fee')}
                     </div>
-                    <div style={{ fontSize: '1.25rem', fontWeight: '900', color: 'var(--primary)' }}>
+                    <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 600, color: 'var(--ink)' }}>
                       {formatCurrency(b.fixed_amount, settings.currency_symbol)}
                     </div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '800', marginBottom: '0.25rem' }}>{t('barbers.period')}</div>
-                    <div style={{ fontSize: '0.9rem', fontWeight: '700', color: 'var(--text-main)' }}>{t(`common.${b.fixed_period?.toLowerCase() || 'monthly'}`)}</div>
+                    <div style={{ fontSize: 11, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600, marginBottom: 4 }}>{t('barbers.period')}</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>{t(`common.${b.fixed_period?.toLowerCase() || 'monthly'}`)}</div>
                   </div>
                 </div>
               ) : (
                 <>
-                  <div style={{ background: '#f9fafb', padding: '0.75rem', borderRadius: '0.75rem', border: '1px solid var(--border)' }}>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '800', marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                      <Percent size={12} /> {t('barbers.service_rate')}
+                  <div style={{ background: 'var(--surface-2)', padding: '12px 14px', borderRadius: 'var(--r)' }}>
+                    <div style={{ fontSize: 11, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600, marginBottom: 4 }}>
+                      {t('barbers.service_rate')}
                     </div>
-                    <div style={{ fontSize: '1.25rem', fontWeight: '900', color: 'var(--primary)' }}>{(b.service_commission_rate * 100).toFixed(0)}%</div>
+                    <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 600 }}>{(b.service_commission_rate * 100).toFixed(0)}%</div>
                   </div>
-                  <div style={{ background: '#f9fafb', padding: '0.75rem', borderRadius: '0.75rem', border: '1px solid var(--border)' }}>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '800', marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                      <Percent size={12} /> {t('barbers.product_rate')}
+                  <div style={{ background: 'var(--surface-2)', padding: '12px 14px', borderRadius: 'var(--r)' }}>
+                    <div style={{ fontSize: 11, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600, marginBottom: 4 }}>
+                      {t('barbers.product_rate')}
                     </div>
-                    <div style={{ fontSize: '1.25rem', fontWeight: '900', color: 'var(--success)' }}>{(b.product_commission_rate * 100).toFixed(0)}%</div>
+                    <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 600 }}>{(b.product_commission_rate * 100).toFixed(0)}%</div>
                   </div>
                 </>
               )}
@@ -274,11 +285,11 @@ export default function Barbers() {
             </div>
           )}
 
-          <button type="submit" style={{ width: '100%', padding: '1.1rem', fontSize: '1.1rem' }}>
+          <button className="btn btn-accent" type="submit" style={{ width: '100%', justifyContent: 'center', marginTop: 8 }}>
             {editingBarber ? t('barbers.update_professional') : t('barbers.confirm_registration')}
           </button>
         </form>
       </Modal>
-    </div>
+    </>
   );
 }
