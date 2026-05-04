@@ -3,6 +3,7 @@ import type { IAppointmentRepository } from '../../../repositories/appointment-r
 import type { IConversationRepository } from '../../../repositories/conversation-repository.interface.js';
 import type { Conversation } from '../../../domain/entities.js';
 import { buildBarberList, buildServiceList, buildDateList, buildSlotList } from './list-builders.js';
+import { GetAvailableSlots } from '../../booking/GetAvailableSlots.js';
 import db from '../../../db.js';
 
 interface BookingContext {
@@ -11,13 +12,15 @@ interface BookingContext {
   serviceId?: number;
   date?: string;
   slotTime?: string;
+  availableSlots?: string[];
 }
 
 export class BookAppointmentFlow implements IFlow {
   constructor(
     private appointmentRepo: IAppointmentRepository,
     private convRepo: IConversationRepository,
-    private shopId: number
+    private shopId: number,
+    private getAvailableSlots: GetAvailableSlots
   ) {}
 
   async handle(input: { conversation: Conversation; body: string }) {
@@ -110,11 +113,34 @@ export class BookAppointmentFlow implements IFlow {
       }
 
       context.date = dates[dateIdx].id;
+
+      // Fetch real availability for the selected barber + date
+      const service = services.find(s => s.id === context.serviceId);
+      const duration = service?.duration_minutes ?? 30;
+      const slots = await this.getAvailableSlots.execute({
+        barber_id: context.barberId!,
+        date: context.date,
+        duration,
+      });
+
+      if (slots.length === 0) {
+        // No slots — stay at date step so user can pick a different day
+        const noSlotsMsg = language === 'es'
+          ? 'No hay horarios disponibles ese día. Elige otra fecha:'
+          : 'No available slots for that day. Choose another date:';
+        const dateList = buildDateList(language);
+        await this.convRepo.updateState(conversation.id, 'booking', context);
+        return {
+          reply: `${noSlotsMsg}\n\n${dateList.items.map((item, i) => `${i + 1}. ${item.title}`).join('\n')}`,
+          nextState: 'booking' as const,
+          nextContext: context,
+        };
+      }
+
+      context.availableSlots = slots;
       context.step = 4;
       await this.convRepo.updateState(conversation.id, 'booking', context);
 
-      // Step 4: Select slot (mock slots for now)
-      const slots = ['09:00', '10:00', '14:00', '15:00', '16:00'];
       const list = buildSlotList(slots, language);
       return {
         reply: `${list.body}\n\n${list.items.map((item, i) => `${i + 1}. ${item.title}`).join('\n')}`,
@@ -122,8 +148,8 @@ export class BookAppointmentFlow implements IFlow {
         nextContext: context,
       };
     } else if (context.step === 4) {
-      // Parse time selection
-      const slots = ['09:00', '10:00', '14:00', '15:00', '16:00'];
+      // Parse time selection using stored slots so validation matches exactly what was shown
+      const slots = context.availableSlots ?? [];
       const slotIdx = parseInt(body) - 1;
       if (slotIdx < 0 || slotIdx >= slots.length) {
         return {

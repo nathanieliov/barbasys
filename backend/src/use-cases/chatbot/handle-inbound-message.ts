@@ -17,6 +17,8 @@ import { CancelFlow } from './flows/cancel-flow.js';
 import { RescheduleFlow } from './flows/reschedule-flow.js';
 import { SQLiteAppointmentRepository } from '../../repositories/sqlite-appointment-repository.js';
 import { SqliteConversationRepository } from '../../repositories/sqlite-conversation-repository.js';
+import { SQLiteBarberShiftRepository } from '../../repositories/sqlite-barber-shift-repository.js';
+import { GetAvailableSlots } from '../booking/GetAvailableSlots.js';
 
 export interface HandleInboundInput {
   inbound: ParsedInbound;
@@ -75,6 +77,8 @@ export async function handleInboundMessage(input: HandleInboundInput): Promise<H
       // Dispatch to appropriate flow based on intent
       const appointmentRepo = new SQLiteAppointmentRepository(db);
       const convRepo = new SqliteConversationRepository(db);
+      const shiftRepo = new SQLiteBarberShiftRepository(db);
+      const getAvailableSlots = new GetAvailableSlots(appointmentRepo, shiftRepo, db);
 
       if (classified.intent === 'faq') {
         const faqFlow = new FAQFlow(input.llmClient, shopContext.shopName, input.shopPhone);
@@ -83,7 +87,7 @@ export async function handleInboundMessage(input: HandleInboundInput): Promise<H
         await input.convRepo.updateState(conversation.id, flowResult.nextState, flowResult.nextContext);
         conversation.state = flowResult.nextState;
       } else if (classified.intent === 'book') {
-        const bookingFlow = new BookAppointmentFlow(appointmentRepo, input.convRepo, input.shopId);
+        const bookingFlow = new BookAppointmentFlow(appointmentRepo, input.convRepo, input.shopId, getAvailableSlots);
         const flowResult = await bookingFlow.handle({ conversation, body: input.inbound.body });
         reply = flowResult.reply;
         await input.convRepo.updateState(conversation.id, flowResult.nextState, flowResult.nextContext);
@@ -101,7 +105,7 @@ export async function handleInboundMessage(input: HandleInboundInput): Promise<H
         await input.convRepo.updateState(conversation.id, flowResult.nextState, flowResult.nextContext);
         conversation.state = flowResult.nextState;
       } else if (classified.intent === 'reschedule') {
-        const rescheduleFlow = new RescheduleFlow(appointmentRepo, convRepo, input.shopId);
+        const rescheduleFlow = new RescheduleFlow(appointmentRepo, convRepo, input.shopId, getAvailableSlots);
         const flowResult = await rescheduleFlow.handle({ conversation, body: input.inbound.body });
         reply = flowResult.reply;
         await input.convRepo.updateState(conversation.id, flowResult.nextState, flowResult.nextContext);
