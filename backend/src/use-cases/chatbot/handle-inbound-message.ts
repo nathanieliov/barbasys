@@ -1,3 +1,4 @@
+import db from '../../db.js';
 import type { ICustomerRepository } from '../../repositories/customer-repository.interface.js';
 import type { IConversationRepository } from '../../repositories/conversation-repository.interface.js';
 import type { IWaMessageRepository } from '../../repositories/wa-message-repository.interface.js';
@@ -8,6 +9,8 @@ import { resolveCustomer } from './resolve-customer.js';
 import { routeIntent } from './route-intent.js';
 import { loadShopContext } from './shop-context-loader.js';
 import { FAQFlow } from './flows/faq-flow.js';
+import { BookAppointmentFlow } from './flows/book-appointment.js';
+import { SQLiteAppointmentRepository } from '../../repositories/sqlite-appointment-repository.js';
 
 export interface HandleInboundInput {
   inbound: ParsedInbound;
@@ -58,17 +61,26 @@ export async function handleInboundMessage(input: HandleInboundInput): Promise<H
       const shopContext = await loadShopContext(input.shopId);
       const classified = await routeIntent(input.llmClient, shopContext, conversation.language as 'es' | 'en', input.inbound.body);
 
-      // For now, handle FAQ intent; other intents will be handled in future phases
+      // Dispatch to appropriate flow based on intent
       if (classified.intent === 'faq') {
         const faqFlow = new FAQFlow(input.llmClient, shopContext.shopName, input.shopPhone);
         const flowResult = await faqFlow.handle({ conversation, body: input.inbound.body });
         reply = flowResult.reply;
+        await input.convRepo.updateState(conversation.id, flowResult.nextState, flowResult.nextContext);
+        conversation.state = flowResult.nextState;
+      } else if (classified.intent === 'book') {
+        const appointmentRepo = new SQLiteAppointmentRepository(db);
+        const bookingFlow = new BookAppointmentFlow(appointmentRepo, input.convRepo, input.shopId);
+        const flowResult = await bookingFlow.handle({ conversation, body: input.inbound.body });
+        reply = flowResult.reply;
+        await input.convRepo.updateState(conversation.id, flowResult.nextState, flowResult.nextContext);
+        conversation.state = flowResult.nextState;
       } else if (classified.intent === 'unknown') {
         reply = conversation.language === 'es'
           ? 'No entendí eso. ¿Puedo ayudarte con algo más?'
           : 'I did not understand that. Can I help with something else?';
       } else {
-        // Placeholder for other intents (book, cancel, etc.)
+        // Placeholder for other intents (cancel, reschedule, etc.)
         reply = conversation.language === 'es'
           ? `Tu intención: ${classified.intent} (próximamente disponible)`
           : `Your intent: ${classified.intent} (coming soon)`;
