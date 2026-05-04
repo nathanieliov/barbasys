@@ -6,4 +6,6 @@ export interface ICustomerRepository {
   create(customer: Partial<Customer>): Promise<number>;
   update(customer: Partial<Customer> & { id: number }): Promise<void>;
   updateLastVisit(id: number): Promise<void>;
+  setWaOptIn(customerId: number, optedIn: boolean): Promise<void>;
+  setPreferredLanguage(customerId: number, language: 'es' | 'en'): Promise<void>;
 }
