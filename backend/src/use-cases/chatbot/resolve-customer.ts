@@ -13,6 +13,8 @@ export async function resolveCustomer(repo: ICustomerRepository, phone: string):
     notes: null,
   });
 
+  await repo.setWaOptIn(customerId, true);
+
   const created = await repo.findById(customerId);
   if (!created) throw new Error('Failed to retrieve created customer');
   return created;

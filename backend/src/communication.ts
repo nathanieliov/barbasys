@@ -1,6 +1,8 @@
 import nodemailer from 'nodemailer';
 import twilio from 'twilio';
 import i18n from './i18n.js';
+import { isInSessionWindow } from './use-cases/chatbot/session-window.js';
+import type { IWhatsAppClient } from './adapters/whatsapp/whatsapp-client.interface.js';
 
 // Use environment variables for credentials
 const EMAIL_USER = process.env.EMAIL_USER;
@@ -16,7 +18,7 @@ const transporter = EMAIL_USER && EMAIL_PASS ? nodemailer.createTransport({
 
 const twilioClient = TWILIO_SID && TWILIO_AUTH ? twilio(TWILIO_SID, TWILIO_AUTH) : null;
 
-export const sendReceipt = async (sale: { 
+export const sendReceipt = async (sale: {
   id: number;
   customer_email?: string;
   customer_phone?: string;
@@ -25,7 +27,9 @@ export const sendReceipt = async (sale: {
   discount_amount: number;
   items: any[];
   barber_name: string;
-}) => {
+  wa_opt_in?: boolean;
+  last_inbound_at?: string | null;
+}, whatsAppClient?: IWhatsAppClient) => {
   const t = i18n.t.bind(i18n);
   const receiptBody = `
     ${t('notifications.receipt_title', { id: sale.id })}
@@ -72,7 +76,20 @@ export const sendReceipt = async (sale: {
     </div>
   `;
 
-  // 1. Send Email
+  const preferWhatsApp = sale.wa_opt_in && sale.last_inbound_at && isInSessionWindow(sale.last_inbound_at);
+
+  // 1. Send WhatsApp (if opted in and in session window)
+  if (preferWhatsApp && sale.customer_phone && whatsAppClient) {
+    try {
+      await whatsAppClient.sendText(`whatsapp:${sale.customer_phone}`, receiptBody);
+      console.log(`WhatsApp receipt sent to ${sale.customer_phone}`);
+      return;
+    } catch (err) {
+      console.error('Failed to send WhatsApp receipt, falling back to Email:', err);
+    }
+  }
+
+  // 2. Send Email
   if (sale.customer_email && transporter) {
     try {
       await transporter.sendMail({
@@ -90,7 +107,7 @@ export const sendReceipt = async (sale: {
     console.log('[MOCK] Sending Email to:', sale.customer_email, '\n', receiptBody);
   }
 
-  // 2. Send SMS
+  // 3. Send SMS
   if (sale.customer_phone && twilioClient && TWILIO_PHONE) {
     try {
       await twilioClient.messages.create({
@@ -115,23 +132,38 @@ export const sendAppointmentNotification = async (appointment: {
   service_name: string;
   barber_name: string;
   type: 'confirmation' | 'reminder' | 'cancellation';
-}) => {
+  wa_opt_in?: boolean;
+  last_inbound_at?: string | null;
+}, whatsAppClient?: IWhatsAppClient) => {
   const t = i18n.t.bind(i18n);
   const dateStr = new Date(appointment.start_time).toLocaleString();
   const title = t(`notifications.appointment_${appointment.type}`);
   const body = `
     ${t('notifications.hi', { name: appointment.customer_name || t('schedule.guest_client') })},
-    
+
     ${t('notifications.notification_body', { type: title.toLowerCase() })}
     - ${t('notifications.service')}: ${appointment.service_name}
     - ${t('notifications.barber')}: ${appointment.barber_name}
     - ${t('notifications.time')}: ${dateStr}
-    
+
     ${appointment.type === 'cancellation' ? t('notifications.cancellation_sorry') : t('notifications.see_you_soon')}
     - ${t('notifications.team')}
   `.trim();
 
-  // 1. Send Email
+  const preferWhatsApp = appointment.wa_opt_in && appointment.last_inbound_at && isInSessionWindow(appointment.last_inbound_at);
+
+  // 1. Send WhatsApp (if opted in and in session window)
+  if (preferWhatsApp && appointment.customer_phone && whatsAppClient) {
+    try {
+      await whatsAppClient.sendText(`whatsapp:${appointment.customer_phone}`, body);
+      console.log(`WhatsApp notification sent to ${appointment.customer_phone}`);
+      return;
+    } catch (err) {
+      console.error('Failed to send WhatsApp notification, falling back to SMS:', err);
+    }
+  }
+
+  // 2. Send Email
   if (appointment.customer_email && transporter) {
     try {
       await transporter.sendMail({
@@ -148,7 +180,7 @@ export const sendAppointmentNotification = async (appointment: {
     console.log(`[MOCK EMAIL] ${title} to:`, appointment.customer_email, '\n', body);
   }
 
-  // 2. Send SMS
+  // 3. Send SMS
   if (appointment.customer_phone && twilioClient && TWILIO_PHONE) {
     try {
       await twilioClient.messages.create({
