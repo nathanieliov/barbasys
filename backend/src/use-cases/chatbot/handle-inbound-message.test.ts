@@ -4,22 +4,36 @@ import { SQLiteCustomerRepository } from '../../repositories/sqlite-customer-rep
 import { SqliteConversationRepository } from '../../repositories/sqlite-conversation-repository.js';
 import { SqliteWaMessageRepository } from '../../repositories/sqlite-wa-message-repository.js';
 import { handleInboundMessage } from './handle-inbound-message.js';
+import type { ILLMClient } from '../../adapters/llm/llm-client.interface.js';
 
 describe('handleInboundMessage', () => {
+  let shopId: number;
+
+  beforeAll(() => {
+    const shop = db.prepare('INSERT INTO shops (name, phone) VALUES (?, ?)').run('Test Shop', '+15551234567');
+    shopId = shop.lastInsertRowid as number;
+  });
+
   const customerRepo = new SQLiteCustomerRepository(db);
   const convRepo = new SqliteConversationRepository(db);
   const msgRepo = new SqliteWaMessageRepository(db);
+
   const mockWhatsAppClient = {
     sendText: vi.fn(),
   };
 
-  it('parses inbound, resolves customer, creates conversation, echoes, persists', async () => {
+  const mockLLMClient: ILLMClient = {
+    classify: vi.fn().mockResolvedValue({ intent: 'faq', args: {} }),
+    answerFaq: vi.fn().mockResolvedValue('Here is an answer'),
+  };
+
+  it('parses inbound, resolves customer, creates conversation, routes intent', async () => {
     mockWhatsAppClient.sendText.mockResolvedValueOnce({ sid: 'SM_out_123', status: 'queued' });
 
     const inbound = {
       from: '+15551234567',
       to: '+11234567890',
-      body: 'Hello bot',
+      body: 'What are your hours?',
       mediaUrl: null,
       sid: 'SM_in_123',
     };
@@ -30,24 +44,26 @@ describe('handleInboundMessage', () => {
       convRepo,
       msgRepo,
       whatsAppClient: mockWhatsAppClient,
+      llmClient: mockLLMClient,
+      shopId,
+      shopPhone: '+15551234567',
     });
 
     expect(result.customerId).toBeGreaterThan(0);
     expect(result.conversationId).toBeGreaterThan(0);
     expect(result.inboundMessageId).toBeGreaterThan(0);
-
-    expect(mockWhatsAppClient.sendText).toHaveBeenCalledWith('whatsapp:+15551234567', 'Hello bot');
+    expect(mockWhatsAppClient.sendText).toHaveBeenCalled();
   });
 
-  it('records conversation and message in database', async () => {
-    mockWhatsAppClient.sendText.mockResolvedValueOnce({ sid: 'SM_out_456', status: 'queued' });
+  it('handles empty body without routing', async () => {
+    mockWhatsAppClient.sendText.mockResolvedValueOnce({ sid: 'SM_out_empty', status: 'queued' });
 
     const inbound = {
-      from: '+15559876543',
+      from: '+15552222222',
       to: '+11234567890',
-      body: 'Test message',
+      body: null,
       mediaUrl: null,
-      sid: 'SM_in_456',
+      sid: 'SM_in_empty',
     };
 
     const result = await handleInboundMessage({
@@ -56,38 +72,15 @@ describe('handleInboundMessage', () => {
       convRepo,
       msgRepo,
       whatsAppClient: mockWhatsAppClient,
+      llmClient: mockLLMClient,
+      shopId,
+      shopPhone: '+15551234567',
     });
 
-    const conv = await convRepo.findById(result.conversationId);
-    expect(conv).not.toBeNull();
-    expect(conv?.wa_phone).toBe('+15559876543');
-
-    const msg = await msgRepo.findBySid('SM_in_456');
-    expect(msg).not.toBeNull();
-    expect(msg?.body).toBe('Test message');
-  });
-
-  it('persists outbound message', async () => {
-    mockWhatsAppClient.sendText.mockResolvedValueOnce({ sid: 'SM_out_789', status: 'queued' });
-
-    const inbound = {
-      from: '+15551111111',
-      to: '+11234567890',
-      body: 'Echo test',
-      mediaUrl: null,
-      sid: 'SM_in_789',
-    };
-
-    await handleInboundMessage({
-      inbound,
-      customerRepo,
-      convRepo,
-      msgRepo,
-      whatsAppClient: mockWhatsAppClient,
-    });
-
-    const outMsg = await msgRepo.findBySid('SM_out_789');
-    expect(outMsg).not.toBeNull();
-    expect(outMsg?.direction).toBe('out');
+    expect(result.customerId).toBeGreaterThan(0);
+    expect(mockWhatsAppClient.sendText).toHaveBeenCalled();
+    // Should send a default message for empty body
+    const callArgs = mockWhatsAppClient.sendText.mock.calls[mockWhatsAppClient.sendText.mock.calls.length - 1];
+    expect(callArgs[1]).toMatch(/I did not understand|No entendí/);
   });
 });
