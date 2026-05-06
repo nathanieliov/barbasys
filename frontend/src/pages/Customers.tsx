@@ -65,7 +65,7 @@ export default function Customers() {
   };
 
   return (
-    <div className="customers-container">
+    <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <h1>{t('customers.title')}</h1>
@@ -127,11 +127,11 @@ export default function Customers() {
             </div>
             
             <div style={{ marginTop: 'auto', display: 'flex', gap: '0.5rem' }}>
-              <button className="secondary" style={{ flex: 1, padding: '0.6rem', fontSize: '0.85rem' }} onClick={() => openProfile(c)}>
+              <button className="btn btn-ghost" style={{ flex: 1 }} onClick={() => openProfile(c)}>
                 {t('customers.full_profile')}
               </button>
               {c.phone && (
-                <button className="secondary" style={{ padding: '0.6rem', color: 'var(--success)' }} onClick={() => window.location.href=`tel:${c.phone}`}>
+                <button className="btn btn-ghost" style={{ color: 'var(--success)' }} onClick={() => window.location.href=`tel:${c.phone}`}>
                   <Phone size={16} />
                 </button>
               )}
@@ -164,7 +164,7 @@ export default function Customers() {
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>{t('customers.member_since', { date: formatVisitDate(selectedCustomer.created_at) })}</div>
                 </div>
               </div>
-              <button className="secondary" style={{ padding: '0.5rem' }} onClick={() => setSelectedCustomer(null)}>
+              <button className="btn btn-ghost" onClick={() => setSelectedCustomer(null)}>
                 <X size={20} />
               </button>
             </div>
@@ -211,7 +211,7 @@ export default function Customers() {
                   </div>
                 </div>
 
-                <button onClick={saveProfile} style={{ width: '100%', padding: '1rem', gap: '0.5rem' }}>
+                <button className="btn btn-sm" onClick={saveProfile} style={{ width: '100%', gap: '0.5rem' }}>
                   <Save size={20} /> {t('customers.save_profile')}
                 </button>
               </div>

@@ -131,7 +131,7 @@ export default function Analytics() {
           <User size={20} color="var(--primary)" />
           <h2 style={{ margin: 0 }}>Matriz de Rendimiento de Barberos</h2>
         </div>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <table className="tbl" style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--border)' }}>
               <th style={{ padding: '1rem' }}>Barbero</th>

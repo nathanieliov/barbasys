@@ -69,7 +69,7 @@ export default function Users() {
   if (loading) return <div className="loading">Loading team...</div>;
 
   return (
-    <div className="users-container">
+    <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <div>
           <h1>Team Management</h1>
@@ -88,7 +88,7 @@ export default function Users() {
       )}
 
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <table className="tbl" style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead style={{ background: '#f9fafb', borderBottom: '1px solid var(--border)' }}>
             <tr>
               <th style={{ padding: '1.25rem', textAlign: 'left', fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: '800' }}>User</th>
@@ -122,8 +122,8 @@ export default function Users() {
                 <td style={{ padding: '1.25rem', textAlign: 'right' }}>
                   <button 
                     onClick={() => handleDeleteUser(u.id)}
-                    className="secondary" 
-                    style={{ padding: '0.5rem', color: 'var(--danger)', border: 'none', background: 'transparent' }}
+                    className="btn btn-ghost"
+                    style={{ color: 'var(--danger)', border: 'none', background: 'transparent' }}
                     title="Remove Access"
                   >
                     <Trash2 size={18} />
@@ -140,7 +140,7 @@ export default function Users() {
           <div className="modal-content">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
               <h2>Create System User</h2>
-              <button className="secondary" style={{ padding: '0.5rem' }} onClick={() => setShowAddModal(false)}>
+              <button className="btn btn-ghost" onClick={() => setShowAddModal(false)}>
                 <X size={20} />
               </button>
             </div>

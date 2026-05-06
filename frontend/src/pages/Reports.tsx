@@ -74,7 +74,7 @@ export default function Reports() {
   const profitMargin = report?.revenue ? (netProfit / report.revenue) * 100 : 0;
 
   return (
-    <div className="reports-container">
+    <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <h1>Business Insights</h1>
@@ -82,17 +82,15 @@ export default function Reports() {
         </div>
         
         <div className="report-controls" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-          <button onClick={exportData} className="secondary" style={{ gap: '0.5rem', fontWeight: '700' }}>
+          <button onClick={exportData} className="btn btn-ghost" style={{ gap: '0.5rem', fontWeight: '700' }}>
             <Download size={18} /> <span className="hide-mobile">Export CSV</span>
           </button>
           <div style={{ display: 'flex', background: '#f3f4f6', borderRadius: '0.75rem', padding: '0.25rem', border: '1px solid var(--border)' }}>
             {(['day', 'week', 'month'] as const).map(type => (
-              <button 
+              <button
                 key={type}
-                className="secondary"
-                style={{ 
-                  padding: '0.4rem 0.85rem', 
-                  fontSize: '0.75rem', 
+                className="btn btn-ghost"
+                style={{
                   fontWeight: '700',
                   border: 'none',
                   background: rangeType === type ? 'white' : 'transparent',

@@ -62,7 +62,7 @@ export default function SalesHistory() {
   };
 
   return (
-    <div className="sales-history-container">
+    <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <h1>{isBarber ? 'My Sales Log' : 'Shop Sales Log'}</h1>
@@ -172,7 +172,7 @@ export default function SalesHistory() {
                 <Receipt size={24} color="var(--primary)" />
                 <h2 style={{ marginBottom: 0 }}>Transaction Details</h2>
               </div>
-              <button className="secondary" style={{ padding: '0.5rem' }} onClick={() => setSelectedSale(null)}>
+              <button className="btn btn-ghost" onClick={() => setSelectedSale(null)}>
                 <X size={20} />
               </button>
             </div>
@@ -238,8 +238,8 @@ export default function SalesHistory() {
             </div>
 
             <div style={{ marginTop: '1.5rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-              <button className="secondary" style={{ padding: '0.75rem' }}>Print Receipt</button>
-              <button className="secondary" style={{ padding: '0.75rem' }}>Email Receipt</button>
+              <button className="btn btn-ghost">Print Receipt</button>
+              <button className="btn btn-ghost">Email Receipt</button>
             </div>
           </div>
         </div>

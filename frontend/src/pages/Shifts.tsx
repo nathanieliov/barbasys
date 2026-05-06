@@ -73,7 +73,7 @@ export default function Shifts() {
   };
 
   return (
-    <div className="shifts-container">
+    <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <h1>Shift Management</h1>
@@ -105,7 +105,7 @@ export default function Shifts() {
               <h2 style={{ margin: 0 }}>Weekly Schedule</h2>
             </div>
             {isAdmin && (
-              <button className="secondary" onClick={addShift} style={{ gap: '0.4rem', fontSize: '0.8rem' }}>
+              <button className="btn btn-ghost" onClick={addShift} style={{ gap: '0.4rem' }}>
                 <Plus size={16} /> Add Day
               </button>
             )}
@@ -142,7 +142,7 @@ export default function Shifts() {
                 </div>
 
                 {isAdmin && (
-                  <button className="secondary" onClick={() => removeShift(i)} style={{ color: 'var(--danger)', padding: '0.5rem', border: 'none', background: 'transparent' }}>
+                  <button className="btn btn-ghost" onClick={() => removeShift(i)} style={{ color: 'var(--danger)', border: 'none', background: 'transparent' }}>
                     <Trash2 size={18} />
                   </button>
                 )}
@@ -158,7 +158,7 @@ export default function Shifts() {
           </div>
 
           {isAdmin && shifts.length > 0 && (
-            <button onClick={saveShifts} style={{ marginTop: '2rem', width: '100%', gap: '0.5rem', padding: '1rem' }}>
+            <button onClick={saveShifts} className="btn btn-sm" style={{ marginTop: '2rem', width: '100%', gap: '0.5rem' }}>
               <Save size={20} /> Save Weekly Schedule
             </button>
           )}
@@ -210,7 +210,7 @@ export default function Shifts() {
                 />
               </div>
               
-              <button type="submit" className="secondary" style={{ width: '100%', padding: '0.75rem', fontWeight: '700' }}>
+              <button type="submit" className="btn btn-ghost" style={{ width: '100%', fontWeight: '700' }}>
                 <Plus size={18} style={{ marginRight: '0.4rem' }} /> Add Time Off
               </button>
             </form>
