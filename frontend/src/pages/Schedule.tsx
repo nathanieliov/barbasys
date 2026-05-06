@@ -26,6 +26,15 @@ function apptHeight(durationMin: number) {
   return Math.max((durationMin / 60) * HOUR_HEIGHT - 4, 20);
 }
 
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <span style={{ fontSize: 12, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</span>
+      <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--ink)' }}>{value}</span>
+    </div>
+  );
+}
+
 export default function Schedule() {
   const { t } = useTranslation();
   const { settings } = useSettings();
@@ -40,6 +49,7 @@ export default function Schedule() {
   const [showBook, setShowBook] = useState(false);
   const [bookingError, setBookingError] = useState('');
   const [bookingSuccess, setBookingSuccess] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState<any | null>(null);
 
   // Booking form state
   const [selBarber, setSelBarber]   = useState('');
@@ -102,6 +112,8 @@ export default function Schedule() {
       alert(err.response?.data?.error || t('schedule.failed_update_status', 'Failed to update'));
     }
   };
+  // Retained for upcoming action-button handlers (Tasks 8–11)
+  void updateStatus;
 
   const changeDate = (days: number) => {
     const d = new Date(date);
@@ -209,9 +221,7 @@ export default function Schedule() {
                               top: apptTop(a.start_time) % HOUR_HEIGHT,
                               height: apptHeight(svc?.duration_minutes || 30),
                             }}
-                            onClick={() => {
-                              if (a.status === 'scheduled') updateStatus(a.id, 'in-chair');
-                            }}
+                            onClick={() => setSelectedAppointment(a)}
                             title={`${a.customer_name || 'Walk-in'} — ${svc?.name || 'Service'}`}
                           >
                             <div className="appt-name">{a.customer_name || t('schedule.walk_in', 'Walk-in')}</div>
@@ -315,6 +325,48 @@ export default function Schedule() {
             </button>
           </form>
         )}
+      </Modal>
+
+      {/* Appointment Detail Modal */}
+      <Modal
+        isOpen={selectedAppointment != null}
+        onClose={() => setSelectedAppointment(null)}
+        title={selectedAppointment?.customer_name || t('schedule.walk_in', 'Walk-in')}
+        size="md"
+      >
+        {selectedAppointment && (() => {
+          const appt = selectedAppointment;
+          const svc = services.find((s: any) => s.id === appt.service_id);
+          const brb = barbers.find((b: any) => b.id === appt.barber_id);
+          const start = new Date(appt.start_time);
+          const dur = svc?.duration_minutes || 30;
+          const end = new Date(start.getTime() + dur * 60000);
+          const fmtTime = (d: Date) => d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+          const fmtDate = (d: Date) => d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+
+          const statusKey = (() => {
+            switch (appt.status) {
+              case 'in-chair': return 'in_chair';
+              case 'no-show': return 'no_show';
+              default: return appt.status;
+            }
+          })();
+          const chipVariant =
+            appt.status === 'completed' ? 'chip-success' :
+            appt.status === 'in-chair' ? 'chip-warn' :
+            appt.status === 'no-show' ? 'chip-danger' :
+            appt.status === 'cancelled' ? 'chip-plum' : '';
+
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div><span className={`chip ${chipVariant}`}>{String(t(`schedule.status.${statusKey}`, appt.status))}</span></div>
+              <Row label={t('schedule.service', 'Service')} value={`${svc?.name || '–'} · ${dur} min · $${svc?.price ?? '–'}`} />
+              <Row label={t('schedule.barber', 'Barber')} value={brb?.fullname || brb?.name || '–'} />
+              <Row label={t('schedule.date_time', 'Date & time')} value={`${fmtDate(start)} · ${fmtTime(start)}–${fmtTime(end)}`} />
+              {appt.notes && <Row label={t('schedule.notes', 'Notes')} value={appt.notes} />}
+            </div>
+          );
+        })()}
       </Modal>
     </>
   );
