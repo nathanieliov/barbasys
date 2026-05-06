@@ -964,6 +964,19 @@ input:focus, select:focus, textarea:focus {
 .appt-amber  { background: var(--butter-soft);  color: #75510e; }
 .appt-ink    { background: var(--surface-2);    color: var(--ink); }
 .appt-done   { opacity: 0.55; }
+.appt.appt-in-chair {
+  background: var(--butter-soft);
+  color: var(--ink);
+  border: 2px solid var(--butter);
+}
+.appt.appt-no-show {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+.appt.appt-cancelled {
+  opacity: 0.4;
+  text-decoration: line-through;
+}
 
 /* ─── POS Design System ───────────────────────────────────── */
 .pos-tabs {
