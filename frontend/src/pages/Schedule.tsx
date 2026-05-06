@@ -196,17 +196,21 @@ export default function Schedule() {
                     <div key={`s-${h}-${b.id}`} className={`slot ${isNow ? 'now' : ''}`}>
                       {hourAppts.map((a) => {
                         const svc = services.find(s => s.id === a.service_id);
-                        const isDone = a.status === 'completed' || a.status === 'cancelled';
+                        const statusClass =
+                          a.status === 'completed' ? 'appt-done' :
+                          a.status === 'in-chair' ? 'appt-in-chair' :
+                          a.status === 'no-show' ? 'appt-no-show' :
+                          a.status === 'cancelled' ? 'appt-cancelled' : '';
                         return (
                           <div
                             key={a.id}
-                            className={`appt ${APPT_CLASSES[bi % APPT_CLASSES.length]} ${isDone ? 'appt-done' : ''}`}
+                            className={`appt ${APPT_CLASSES[bi % APPT_CLASSES.length]} ${statusClass}`}
                             style={{
                               top: apptTop(a.start_time) % HOUR_HEIGHT,
                               height: apptHeight(svc?.duration_minutes || 30),
                             }}
                             onClick={() => {
-                              if (!isDone) updateStatus(a.id, 'in-chair');
+                              if (a.status === 'scheduled') updateStatus(a.id, 'in-chair');
                             }}
                             title={`${a.customer_name || 'Walk-in'} — ${svc?.name || 'Service'}`}
                           >
