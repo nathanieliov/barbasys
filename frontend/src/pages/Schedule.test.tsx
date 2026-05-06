@@ -129,4 +129,27 @@ describe('Schedule appointment detail modal', () => {
       expect(screen.queryByRole('button', { name: 'Mark in chair' })).not.toBeInTheDocument();
     });
   });
+
+  it('Mark complete on in-chair appointment calls PATCH and navigates to POS', async () => {
+    vi.mocked(apiClient.get).mockImplementation((url: string) => {
+      if (url.startsWith('/barbers')) return Promise.resolve({ data: mockBarbers });
+      if (url.startsWith('/services')) return Promise.resolve({ data: mockServices });
+      if (url.startsWith('/appointments')) {
+        return Promise.resolve({ data: [{ ...mockAppointments[0], status: 'in-chair' }] });
+      }
+      return Promise.resolve({ data: [] });
+    });
+    vi.mocked(apiClient.patch).mockResolvedValue({ data: { success: true } });
+
+    renderSchedule();
+    const chip = await screen.findByText('Alice Smith');
+    fireEvent.click(chip);
+
+    const button = await screen.findByRole('button', { name: 'Mark complete' });
+    fireEvent.click(button);
+
+    await waitFor(() => {
+      expect(apiClient.patch).toHaveBeenCalledWith('/appointments/100', { status: 'completed' });
+    });
+  });
 });

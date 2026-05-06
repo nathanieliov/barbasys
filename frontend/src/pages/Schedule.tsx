@@ -122,7 +122,15 @@ export default function Schedule() {
       alert(err.response?.data?.error || 'Failed to update status');
     }
   };
-  const handleMarkComplete = (_id: number) => {};
+  const handleMarkComplete = async (id: number) => {
+    try {
+      await apiClient.patch(`/appointments/${id}`, { status: 'completed' });
+      setSelectedAppointment(null);
+      navigate(`/pos?appointmentId=${id}`);
+    } catch (err: any) {
+      alert(err.response?.data?.error || 'Failed to update status');
+    }
+  };
   const handleMarkNoShow = (_id: number) => {};
   const handleCancel = (_id: number) => {};
 
