@@ -1,4 +1,6 @@
 import 'dotenv/config';
+import { validateEnv } from './env-check.js';
+validateEnv();
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
