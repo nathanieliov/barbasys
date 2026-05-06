@@ -78,4 +78,37 @@ describe('Schedule appointment detail modal', () => {
       expect(screen.getAllByText('Alice Smith').length).toBeGreaterThan(1); // chip + modal title
     });
   });
+
+  it('shows in-chair, no-show, and cancel buttons for a scheduled appointment', async () => {
+    renderSchedule();
+    const chip = await screen.findByText('Alice Smith');
+    fireEvent.click(chip);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Mark in chair' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Mark no-show' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /cancel/i })).toBeInTheDocument();
+    });
+  });
+
+  it('shows only Open in POS + Close for a completed appointment', async () => {
+    vi.mocked(apiClient.get).mockImplementation((url: string) => {
+      if (url.startsWith('/barbers')) return Promise.resolve({ data: mockBarbers });
+      if (url.startsWith('/services')) return Promise.resolve({ data: mockServices });
+      if (url.startsWith('/appointments')) {
+        return Promise.resolve({ data: [{ ...mockAppointments[0], status: 'completed' }] });
+      }
+      return Promise.resolve({ data: [] });
+    });
+
+    renderSchedule();
+    const chip = await screen.findByText('Alice Smith');
+    fireEvent.click(chip);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Open in POS' })).toBeInTheDocument();
+    });
+    expect(screen.queryByRole('button', { name: 'Mark in chair' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Mark no-show' })).not.toBeInTheDocument();
+  });
 });

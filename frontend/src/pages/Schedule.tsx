@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import apiClient from '../api/apiClient';
 import { useAuth } from '../hooks/useAuth';
 import { useTranslation } from 'react-i18next';
@@ -38,6 +39,7 @@ export default function Schedule() {
   const { t } = useTranslation();
   const { settings } = useSettings();
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [appointments, setAppointments] = useState<any[]>([]);
@@ -110,6 +112,11 @@ export default function Schedule() {
   }
 
   const resetForm = () => { setShowBook(false); setBookingError(''); setBookingSuccess(false); setRecurRule(''); setOccurrences(1); setSendConf(true); };
+
+  const handleMarkInChair = (_id: number) => {};
+  const handleMarkComplete = (_id: number) => {};
+  const handleMarkNoShow = (_id: number) => {};
+  const handleCancel = (_id: number) => {};
 
   return (
     <>
@@ -309,6 +316,37 @@ export default function Schedule() {
         onClose={() => setSelectedAppointment(null)}
         title={selectedAppointment?.customer_name || t('schedule.walk_in', 'Walk-in')}
         size="md"
+        footer={selectedAppointment && (() => {
+          const status = selectedAppointment.status;
+          const id = selectedAppointment.id;
+          return (
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              {status === 'scheduled' && (
+                <>
+                  <button className="btn btn-ghost btn-sm" style={{ color: 'var(--primary-deep)' }} onClick={() => handleCancel(id)}>{t('common.cancel', 'Cancel')}</button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => handleMarkNoShow(id)}>{t('schedule.mark_no_show', 'Mark no-show')}</button>
+                  <button className="btn btn-primary btn-sm" onClick={() => handleMarkInChair(id)}>{t('schedule.mark_in_chair', 'Mark in chair')}</button>
+                </>
+              )}
+              {status === 'in-chair' && (
+                <>
+                  <button className="btn btn-ghost btn-sm" style={{ color: 'var(--primary-deep)' }} onClick={() => handleCancel(id)}>{t('common.cancel', 'Cancel')}</button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => handleMarkNoShow(id)}>{t('schedule.mark_no_show', 'Mark no-show')}</button>
+                  <button className="btn btn-accent btn-sm" onClick={() => handleMarkComplete(id)}>{t('schedule.mark_complete', 'Mark complete')}</button>
+                </>
+              )}
+              {status === 'completed' && (
+                <>
+                  <button className="btn btn-soft btn-sm" onClick={() => setSelectedAppointment(null)}>{t('common.close', 'Close')}</button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => { setSelectedAppointment(null); navigate(`/pos?appointmentId=${id}`); }}>{t('schedule.open_in_pos', 'Open in POS')}</button>
+                </>
+              )}
+              {(status === 'no-show' || status === 'cancelled') && (
+                <button className="btn btn-soft btn-sm" onClick={() => setSelectedAppointment(null)}>{t('common.close', 'Close')}</button>
+              )}
+            </div>
+          );
+        })()}
       >
         {selectedAppointment && (() => {
           const appt = selectedAppointment;
