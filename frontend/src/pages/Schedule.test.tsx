@@ -152,4 +152,19 @@ describe('Schedule appointment detail modal', () => {
       expect(apiClient.patch).toHaveBeenCalledWith('/appointments/100', { status: 'completed' });
     });
   });
+
+  it('Mark no-show calls PATCH with no-show status', async () => {
+    vi.mocked(apiClient.patch).mockResolvedValue({ data: { success: true } });
+
+    renderSchedule();
+    const chip = await screen.findByText('Alice Smith');
+    fireEvent.click(chip);
+
+    const button = await screen.findByRole('button', { name: 'Mark no-show' });
+    fireEvent.click(button);
+
+    await waitFor(() => {
+      expect(apiClient.patch).toHaveBeenCalledWith('/appointments/100', { status: 'no-show' });
+    });
+  });
 });

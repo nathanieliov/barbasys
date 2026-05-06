@@ -131,7 +131,15 @@ export default function Schedule() {
       alert(err.response?.data?.error || 'Failed to update status');
     }
   };
-  const handleMarkNoShow = (_id: number) => {};
+  const handleMarkNoShow = async (id: number) => {
+    try {
+      await apiClient.patch(`/appointments/${id}`, { status: 'no-show' });
+      setSelectedAppointment(null);
+      fetchData();
+    } catch (err: any) {
+      alert(err.response?.data?.error || 'Failed to update status');
+    }
+  };
   const handleCancel = (_id: number) => {};
 
   return (
