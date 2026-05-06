@@ -72,7 +72,7 @@ export interface Appointment {
   service_id: number; // Primary service for legacy
   start_time: string;
   total_duration_minutes: number;
-  status: 'scheduled' | 'completed' | 'cancelled';
+  status: 'scheduled' | 'in-chair' | 'completed' | 'no-show' | 'cancelled';
   reminder_sent: number;
   recurring_id: string | null;
   recurring_rule: string | null;

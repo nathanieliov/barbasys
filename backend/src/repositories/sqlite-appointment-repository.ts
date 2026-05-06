@@ -30,7 +30,7 @@ export class SQLiteAppointmentRepository implements IAppointmentRepository {
     ).run(item.appointment_id, item.service_id, item.quantity, item.price_at_booking);
   }
 
-  async updateStatus(id: number, status: 'scheduled' | 'completed' | 'cancelled'): Promise<void> {
+  async updateStatus(id: number, status: 'scheduled' | 'in-chair' | 'completed' | 'no-show' | 'cancelled'): Promise<void> {
     this.db.prepare('UPDATE appointments SET status = ? WHERE id = ?').run(status, id);
   }
 
