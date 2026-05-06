@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import apiClient from '../api/apiClient';
 import { useAuth } from '../hooks/useAuth';
-import { Scissors, Loader2, User, Building2 } from 'lucide-react';
+import { Loader2, User, Building2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { PasswordInput } from '../components/index';
 
@@ -40,9 +40,9 @@ export default function Signup() {
     <div className="login-two-col">
       {/* Hero */}
       <div className="login-hero">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '3rem' }}>
-          <Scissors size={32} color="white" />
-          <span style={{ fontSize: '1.4rem', fontWeight: '900', letterSpacing: '-0.025em' }}>BarbaSys</span>
+        <div className="brand" style={{ marginBottom: '3rem', color: 'white' }}>
+          <div className="brand-mark" style={{ background: 'rgba(255,255,255,0.2)', color: 'white' }} aria-hidden="true" />
+          <span>BarbaSys</span>
         </div>
         <p className="login-hero-tagline">{t('login.hero_tagline')}</p>
         <p className="login-hero-sub">{t('login.hero_sub')}</p>
@@ -52,9 +52,7 @@ export default function Signup() {
       <div className="login-form-col">
         <div className="login-card">
           <div className="login-header">
-            <div style={{ display: 'inline-flex', padding: '0.875rem', background: 'rgba(79, 70, 229, 0.07)', borderRadius: '1.25rem', marginBottom: '0.75rem' }}>
-              <Scissors size={36} color="var(--primary)" />
-            </div>
+            <div className="brand-mark" style={{ width: 48, height: 48, borderRadius: 14, fontSize: 22, margin: '0 auto 0.75rem' }} aria-hidden="true" />
             <h1>{t('signup.title', 'Create your barbershop')}</h1>
             <p>{t('signup.subtitle', 'Up and running in 2 minutes.')}</p>
           </div>

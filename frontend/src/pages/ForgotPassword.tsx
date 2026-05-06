@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import apiClient from '../api/apiClient';
-import { Scissors, ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 export default function ForgotPassword() {
@@ -26,9 +26,9 @@ export default function ForgotPassword() {
   return (
     <div className="login-page">
       <div className="login-card">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem', color: 'var(--primary)' }}>
-          <Scissors size={28} />
-          <span style={{ fontSize: '1.2rem', fontWeight: '900' }}>BarbaSys</span>
+        <div className="brand" style={{ marginBottom: '2rem' }}>
+          <div className="brand-mark" aria-hidden="true" />
+          <span>BarbaSys</span>
         </div>
 
         <h2 style={{ marginBottom: '0.5rem' }}>{t('forgotPassword.title', 'Forgot password?')}</h2>

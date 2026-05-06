@@ -34,7 +34,10 @@
     "weekly": "Semanal",
     "biweekly": "Quincenal",
     "close": "Cerrar",
-    "confirm": "Confirmar"
+    "confirm": "Confirmar",
+    "back": "Atrás",
+    "continue": "Continuar",
+    "total": "Total"
   },
   "auth": {
     "signingIn": "Iniciando sesión...",
@@ -57,6 +60,7 @@
     "shifts": "Turnos",
     "inventory": "Inventario",
     "services": "Servicios",
+    "catalog": "Productos y Servicios",
     "suppliers": "Suplidores",
     "analytics": "Analíticas",
     "expenses": "Gastos",
@@ -66,6 +70,31 @@
     "customers": "Clientes",
     "my_profile": "Mi Perfil",
     "settings": "Configuración"
+  },
+  "catalog": {
+    "title": "Productos y Servicios",
+    "sub": "{{services}} servicios · {{products}} productos",
+    "categories": "Categorías",
+    "newService": "Nuevo servicio",
+    "newProduct": "Nuevo producto",
+    "tabServices": "Servicios",
+    "tabProducts": "Productos",
+    "colService": "Servicio",
+    "colDuration": "Duración",
+    "colPrice": "Precio",
+    "colBookedWk": "Reservas / sem",
+    "colProduct": "Producto",
+    "colSku": "SKU",
+    "colStock": "Stock",
+    "colSoldWk": "Vendido / sem",
+    "inactive": "Inactivo",
+    "outOfStock": "Sin stock",
+    "lowStock": "Bajo",
+    "editService": "Editar servicio",
+    "editProduct": "Editar producto"
+  },
+  "a11y": {
+    "skipToContent": "Saltar al contenido"
   },
   "pos": {
     "title": "Punto de Venta",
@@ -310,8 +339,7 @@
     "save_all": "Guardar Toda la Configuración"
   },
   "landing": {
-    "team_access": "Acceso Equipo",
-    "hero_title": "Nueva Imagen, <br/> Reservas sin Esfuerzo.",
+    "hero_title": "Nueva Imagen, Reservas sin Esfuerzo.",
     "hero_subtitle": "Elija su barbero favorito, seleccione sus servicios y reserve un espacio en segundos.",
     "book_appointment": "Reservar Nueva Cita",
     "manage_bookings": "Gestionar Mis Reservas",
@@ -369,10 +397,34 @@
     "review_confirm": "Revisar y Confirmar",
     "services": "Servicios",
     "barber": "Barbero",
+    "service": "Servicio",
     "time": "Hora",
+    "when": "Cuándo",
+    "where": "Dónde",
     "additional_notes": "Notas Adicionales",
     "notes_placeholder": "Notas opcionales para su barbero...",
-    "confirm_booking": "Confirmar Reserva"
+    "confirm_booking": "Confirmar Reserva",
+    "date_time": "Fecha y Hora",
+    "confirm": "Confirmar",
+    "location": "Ubicación",
+    "barber_hint": "O continúe — le asignaremos el próximo disponible.",
+    "any_available": "Cualquier barbero",
+    "fastest_match": "Asignación rápida",
+    "soonest_opening": "Primer espacio libre del equipo",
+    "service_hint": "Elija un servicio para comenzar.",
+    "where_to": "¿Dónde?",
+    "location_hint": "Elija una ubicación cerca de usted.",
+    "datetime_hint": "Horarios disponibles para su barbero y ubicación seleccionados.",
+    "choose_day": "Elija un día",
+    "morning": "Mañana",
+    "afternoon": "Tarde",
+    "evening": "Noche",
+    "confirm_hint": "Una última revisión antes de confirmar.",
+    "calendar_invite": "Invitación de calendario por correo",
+    "your_details": "Sus datos",
+    "phone": "Teléfono",
+    "confirmed": "Confirmado",
+    "pay_at_shop": "Sin cargo ahora. Pague en la barbería. Cancelación gratuita hasta 2 horas antes."
   },
   "portal": {
     "welcome": "Hola, {{name}}",
@@ -393,6 +445,14 @@
     "verify_signin": "Verificar e Iniciar Sesión",
     "back_to_email": "Volver al correo",
     "back_to_home": "← Volver al Inicio"
+  },
+  "topbar": {
+    "sign_in": "Iniciar Sesión",
+    "admin": "Administrar",
+    "book": "Reservar",
+    "mode_switch": "Vista",
+    "search": "Buscar",
+    "notifications": "Notificaciones"
   },
   "suppliers": {
     "title": "Gestión de Suplidores",

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import apiClient from '../api/apiClient';
-import { User as UserIcon, Loader2, Scissors } from 'lucide-react';
+import { User as UserIcon, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { PasswordInput } from '../components/index';
 
@@ -47,9 +47,9 @@ const Login: React.FC = () => {
     <div className="login-two-col">
       {/* Hero column — visible on desktop */}
       <div className="login-hero">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '3rem' }}>
-          <Scissors size={32} color="white" />
-          <span style={{ fontSize: '1.4rem', fontWeight: '900', letterSpacing: '-0.025em' }}>BarbaSys</span>
+        <div className="brand" style={{ marginBottom: '3rem', color: 'white' }}>
+          <div className="brand-mark" style={{ background: 'rgba(255,255,255,0.2)', color: 'white' }} aria-hidden="true" />
+          <span>BarbaSys</span>
         </div>
         <p className="login-hero-tagline">{t('login.hero_tagline', 'Gestiona tu barbería desde un solo lugar')}</p>
         <p className="login-hero-sub">{t('login.hero_sub', 'Agenda, pagos, inventario y más — todo integrado.')}</p>
@@ -59,9 +59,7 @@ const Login: React.FC = () => {
       <div className="login-form-col">
         <div className="login-card">
           <div className="login-header">
-            <div style={{ display: 'inline-flex', padding: '0.875rem', background: 'rgba(79, 70, 229, 0.07)', borderRadius: '1.25rem', marginBottom: '0.75rem' }}>
-              <Scissors size={36} color="var(--primary)" />
-            </div>
+            <div className="brand-mark" style={{ width: 48, height: 48, borderRadius: 14, fontSize: 22, margin: '0 auto 0.75rem' }} aria-hidden="true" />
             <h1>{t('login.title')}</h1>
             <p>{t('login.professional_management')}</p>
           </div>

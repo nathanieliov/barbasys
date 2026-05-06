@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../api/apiClient';
-import { Calendar, Clock, Scissors, FileText, LogOut, Mail, Key, Loader2 } from 'lucide-react';
+import { Calendar, Clock, FileText, LogOut, Mail, Key, Loader2 } from 'lucide-react';
+import { Button } from '../components';
 import { useAuth } from '../hooks/useAuth';
 import { useSettings } from '../hooks/useSettings';
 import { formatCurrency } from '../utils/format';
@@ -172,14 +173,14 @@ export default function CustomerPortal() {
           <h1 style={{ fontSize: '1.5rem', marginBottom: 0 }}>{t('portal.welcome', { name: user.fullname || user.username })}</h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{t('portal.subtitle')}</p>
         </div>
-        <button className="secondary" onClick={() => { logout(); navigate('/'); }} style={{ padding: '0.5rem', borderRadius: '0.75rem' }}>
+        <Button variant="ghost" size="sm" onClick={() => { logout(); navigate('/'); }} aria-label="Cerrar sesión">
           <LogOut size={20} />
-        </button>
+        </Button>
       </header>
 
-      <button className="primary" onClick={() => navigate('/discovery')} style={{ width: '100%', padding: '1.25rem', borderRadius: '1rem', fontSize: '1.1rem', fontWeight: '800', gap: '0.75rem', marginBottom: '2.5rem' }}>
-        <Scissors size={20} /> {t('portal.book_new')}
-      </button>
+      <Button variant="primary" size="lg" onClick={() => navigate('/discovery')} style={{ width: '100%', marginBottom: '2.5rem', gap: '0.75rem' }}>
+        <Calendar size={20} /> {t('portal.book_new')}
+      </Button>
 
       <div style={{ display: 'grid', gap: '2.5rem' }}>
         <section>
@@ -209,9 +210,9 @@ export default function CustomerPortal() {
                   
                   {appt.status === 'scheduled' && (
                     <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-                      <button 
-                        className="secondary" 
-                        style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', borderColor: 'var(--border)' }}
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => {
                           const newNotes = window.prompt(t('portal.update_notes'), appt.notes || '');
                           if (newNotes !== null) {
@@ -222,30 +223,22 @@ export default function CustomerPortal() {
                         }}
                       >
                         {t('portal.notes')}
-                      </button>
-                      <button 
-                        className="secondary" 
-                        style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', borderColor: 'var(--border)' }}
-                        onClick={() => {
-                          // Pass appointment info to BookingFlow for rescheduling
-                          navigate(`/book/${appt.shop_id}`, { 
-                            state: { 
-                              rescheduleId: appt.id, 
-                              barberId: appt.barber_id,
-                              notes: appt.notes 
-                            } 
-                          });
-                        }}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => navigate(`/book/${appt.shop_id}`, { state: { rescheduleId: appt.id, barberId: appt.barber_id, notes: appt.notes } })}
                       >
                         {t('portal.reschedule')}
-                      </button>
-                      <button 
-                        className="secondary" 
-                        style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', color: 'var(--danger)', borderColor: 'rgba(239, 68, 68, 0.2)' }}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        style={{ color: 'var(--danger)' }}
                         onClick={() => handleCancel(appt.id)}
                       >
                         {t('portal.cancel_appointment')}
-                      </button>
+                      </Button>
                     </div>
                   )}
                 </div>

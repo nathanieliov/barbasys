@@ -34,7 +34,10 @@
     "weekly": "Weekly",
     "biweekly": "Bi-weekly",
     "close": "Close",
-    "confirm": "Confirm"
+    "confirm": "Confirm",
+    "back": "Back",
+    "continue": "Continue",
+    "total": "Total"
   },
   "auth": {
     "signingIn": "Signing in...",
@@ -57,6 +60,7 @@
     "shifts": "Shifts",
     "inventory": "Inventory",
     "services": "Services",
+    "catalog": "Products & Services",
     "suppliers": "Suppliers",
     "analytics": "Analytics",
     "expenses": "Expenses",
@@ -66,6 +70,31 @@
     "customers": "Customers",
     "my_profile": "My Profile",
     "settings": "Settings"
+  },
+  "catalog": {
+    "title": "Products & Services",
+    "sub": "{{services}} services · {{products}} products",
+    "categories": "Categories",
+    "newService": "New service",
+    "newProduct": "New product",
+    "tabServices": "Services",
+    "tabProducts": "Products",
+    "colService": "Service",
+    "colDuration": "Duration",
+    "colPrice": "Price",
+    "colBookedWk": "Booked / wk",
+    "colProduct": "Product",
+    "colSku": "SKU",
+    "colStock": "Stock",
+    "colSoldWk": "Sold / wk",
+    "inactive": "Inactive",
+    "outOfStock": "Out of stock",
+    "lowStock": "Low",
+    "editService": "Edit service",
+    "editProduct": "Edit product"
+  },
+  "a11y": {
+    "skipToContent": "Skip to content"
   },
   "pos": {
     "title": "Point of Sale",
@@ -310,8 +339,7 @@
     "save_all": "Save All Settings"
   },
   "landing": {
-    "team_access": "Team Access",
-    "hero_title": "Fresh Look, <br/> Effortless Booking.",
+    "hero_title": "Fresh Look, Effortless Booking.",
     "hero_subtitle": "Choose your favorite barber, select your services, and grab a slot in seconds.",
     "book_appointment": "Book New Appointment",
     "manage_bookings": "Manage My Bookings",
@@ -369,10 +397,42 @@
     "review_confirm": "Review & Confirm",
     "services": "Services",
     "barber": "Barber",
+    "service": "Service",
     "time": "Time",
+    "when": "When",
+    "where": "Where",
     "additional_notes": "Additional Notes",
     "notes_placeholder": "Optional notes for your barber...",
-    "confirm_booking": "Confirm Booking"
+    "confirm_booking": "Confirm Booking",
+    "date_time": "Date & Time",
+    "confirm": "Confirm",
+    "location": "Location",
+    "barber_hint": "Or skip — we'll match you with the next available.",
+    "any_available": "Any available",
+    "fastest_match": "Fastest match",
+    "soonest_opening": "Soonest opening across the team",
+    "service_hint": "Pick one service to start.",
+    "where_to": "Where to?",
+    "location_hint": "Choose a location near you.",
+    "datetime_hint": "Times shown for your selected barber & location.",
+    "choose_day": "Choose a day",
+    "morning": "Morning",
+    "afternoon": "Afternoon",
+    "evening": "Evening",
+    "confirm_hint": "One last check before we lock it in.",
+    "calendar_invite": "Calendar invite by email",
+    "your_details": "Your details",
+    "phone": "Phone",
+    "confirmed": "Confirmed",
+    "pay_at_shop": "No charge now. You'll pay at the shop. Cancel free up to 2 hours before."
+  },
+  "topbar": {
+    "sign_in": "Sign in",
+    "admin": "Admin",
+    "book": "Book a cut",
+    "mode_switch": "View",
+    "search": "Search",
+    "notifications": "Notifications"
   },
   "portal": {
     "welcome": "Hi, {{name}}",

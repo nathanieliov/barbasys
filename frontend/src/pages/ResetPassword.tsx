@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import apiClient from '../api/apiClient';
-import { Scissors, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { PasswordInput } from '../components/index';
 
@@ -40,9 +40,9 @@ export default function ResetPassword() {
   return (
     <div className="login-page">
       <div className="login-card">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem', color: 'var(--primary)' }}>
-          <Scissors size={28} />
-          <span style={{ fontSize: '1.2rem', fontWeight: '900' }}>BarbaSys</span>
+        <div className="brand" style={{ marginBottom: '2rem' }}>
+          <div className="brand-mark" aria-hidden="true" />
+          <span>BarbaSys</span>
         </div>
 
         <h2 style={{ marginBottom: '0.5rem' }}>{t('resetPassword.title', 'Reset your password')}</h2>
