@@ -3,6 +3,7 @@ import db from '../db.js';
 import { SQLiteCustomerRepository } from '../repositories/sqlite-customer-repository.js';
 import { SqliteConversationRepository } from '../repositories/sqlite-conversation-repository.js';
 import { SqliteWaMessageRepository } from '../repositories/sqlite-wa-message-repository.js';
+import twilio from 'twilio';
 import { TwilioWhatsAppClient } from '../adapters/whatsapp/twilio-whatsapp-client.js';
 import { OpenAILLMClient } from '../adapters/llm/openai-llm-client.js';
 import { PhoneRateLimiter } from '../adapters/rate-limiter/phone-rate-limiter.js';
@@ -16,7 +17,10 @@ const router = Router();
 const customerRepo = new SQLiteCustomerRepository(db);
 const convRepo = new SqliteConversationRepository(db);
 const msgRepo = new SqliteWaMessageRepository(db);
-const whatsAppClient = new TwilioWhatsAppClient();
+const whatsAppClient = new TwilioWhatsAppClient(
+  twilio(process.env.TWILIO_ACCOUNT_SID || '', process.env.TWILIO_AUTH_TOKEN || ''),
+  process.env.TWILIO_FROM_NUMBER || 'whatsapp:+14155238886',
+);
 const llmClient = new OpenAILLMClient(process.env.OPENAI_API_KEY || '');
 const rateLimiter = new PhoneRateLimiter({
   maxRequests: 10,

@@ -3,7 +3,7 @@ import db from '../../../db.js';
 import { SQLiteAppointmentRepository } from '../../../repositories/sqlite-appointment-repository.js';
 import { SqliteConversationRepository } from '../../../repositories/sqlite-conversation-repository.js';
 import { CancelFlow } from './cancel-flow.js';
-import type { Conversation } from '../../../domain/entities.js';
+import type { Conversation, ConversationState } from '../../../domain/entities.js';
 
 describe('CancelFlow', () => {
   let shopId: number;
@@ -63,7 +63,7 @@ describe('CancelFlow', () => {
 
   it('cancels selected appointment', async () => {
     const context = { step: 2, appointmentId };
-    const conv = { ...conversation, context_json: JSON.stringify(context), state: 'cancelling' };
+    const conv = { ...conversation, context_json: JSON.stringify(context), state: 'cancelling' as ConversationState };
 
     const result = await flow.handle({ conversation: conv, body: '1' });
 

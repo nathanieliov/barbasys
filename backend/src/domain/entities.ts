@@ -74,6 +74,8 @@ export interface Customer {
   last_visit: string | null;
   notes: string | null;
   created_at: string;
+  wa_opt_in?: number;
+  wa_opt_in_at?: string | null;
 }
 
 export interface Sale {
