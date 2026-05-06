@@ -111,4 +111,22 @@ describe('Schedule appointment detail modal', () => {
     expect(screen.queryByRole('button', { name: 'Mark in chair' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Mark no-show' })).not.toBeInTheDocument();
   });
+
+  it('Mark in chair calls PATCH and closes the modal', async () => {
+    vi.mocked(apiClient.patch).mockResolvedValue({ data: { success: true } });
+
+    renderSchedule();
+    const chip = await screen.findByText('Alice Smith');
+    fireEvent.click(chip);
+
+    const button = await screen.findByRole('button', { name: 'Mark in chair' });
+    fireEvent.click(button);
+
+    await waitFor(() => {
+      expect(apiClient.patch).toHaveBeenCalledWith('/appointments/100', { status: 'in-chair' });
+    });
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'Mark in chair' })).not.toBeInTheDocument();
+    });
+  });
 });

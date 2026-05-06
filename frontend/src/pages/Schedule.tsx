@@ -113,7 +113,15 @@ export default function Schedule() {
 
   const resetForm = () => { setShowBook(false); setBookingError(''); setBookingSuccess(false); setRecurRule(''); setOccurrences(1); setSendConf(true); };
 
-  const handleMarkInChair = (_id: number) => {};
+  const handleMarkInChair = async (id: number) => {
+    try {
+      await apiClient.patch(`/appointments/${id}`, { status: 'in-chair' });
+      setSelectedAppointment(null);
+      fetchData();
+    } catch (err: any) {
+      alert(err.response?.data?.error || 'Failed to update status');
+    }
+  };
   const handleMarkComplete = (_id: number) => {};
   const handleMarkNoShow = (_id: number) => {};
   const handleCancel = (_id: number) => {};
