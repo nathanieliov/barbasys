@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import apiClient from '../api/apiClient';
 import { useAuth } from '../hooks/useAuth';
@@ -39,7 +38,6 @@ export default function Schedule() {
   const { t } = useTranslation();
   const { settings } = useSettings();
   const { user } = useAuth();
-  const navigate = useNavigate();
 
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [appointments, setAppointments] = useState<any[]>([]);
@@ -92,28 +90,6 @@ export default function Schedule() {
     }
   };
 
-  const updateStatus = async (id: number, status: string) => {
-    try {
-      if (status === 'cancelled') {
-        const reason = window.prompt(t('schedule.cancel_reason_prompt', 'Reason for cancellation?'));
-        if (reason === null) return;
-        await apiClient.post(`/appointments/${id}/cancel`, { reason });
-      } else {
-        await apiClient.patch(`/appointments/${id}`, { status });
-      }
-      if (status === 'completed') {
-        if (window.confirm(t('schedule.mark_completed_confirm', 'Go to POS to complete this sale?'))) {
-          navigate(`/pos?appointmentId=${id}`);
-          return;
-        }
-      }
-      fetchData();
-    } catch (err: any) {
-      alert(err.response?.data?.error || t('schedule.failed_update_status', 'Failed to update'));
-    }
-  };
-  // Retained for upcoming action-button handlers (Tasks 8–11)
-  void updateStatus;
 
   const changeDate = (days: number) => {
     const d = new Date(date);
