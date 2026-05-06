@@ -32,3 +32,10 @@ backend/backend_dev.log
 
 # Vite
 *.local
+
+# Local-only artifacts (design handoffs, MCP caches, dev screenshots, ad-hoc logs)
+.superpowers/
+.playwright-mcp/
+/*.png
+/*.log
+NEXT_SESSION.md
