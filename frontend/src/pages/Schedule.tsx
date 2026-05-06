@@ -140,7 +140,17 @@ export default function Schedule() {
       alert(err.response?.data?.error || 'Failed to update status');
     }
   };
-  const handleCancel = (_id: number) => {};
+  const handleCancel = async (id: number) => {
+    const reason = window.prompt(t('schedule.cancel_reason_prompt', 'Optional: reason for cancellation?'));
+    if (reason === null) return;
+    try {
+      await apiClient.post(`/appointments/${id}/cancel`, { reason });
+      setSelectedAppointment(null);
+      fetchData();
+    } catch (err: any) {
+      alert(err.response?.data?.error || 'Failed to cancel appointment');
+    }
+  };
 
   return (
     <>

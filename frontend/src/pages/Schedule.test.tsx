@@ -167,4 +167,40 @@ describe('Schedule appointment detail modal', () => {
       expect(apiClient.patch).toHaveBeenCalledWith('/appointments/100', { status: 'no-show' });
     });
   });
+
+  it('Cancel prompts for reason and POSTs to /cancel', async () => {
+    const promptSpy = vi.spyOn(window, 'prompt').mockReturnValue('No-show after 15 min');
+    vi.mocked(apiClient.post).mockResolvedValue({ data: { success: true } });
+
+    renderSchedule();
+    const chip = await screen.findByText('Alice Smith');
+    fireEvent.click(chip);
+
+    const button = await screen.findByRole('button', { name: /cancel/i });
+    fireEvent.click(button);
+
+    await waitFor(() => {
+      expect(promptSpy).toHaveBeenCalled();
+      expect(apiClient.post).toHaveBeenCalledWith('/appointments/100/cancel', { reason: 'No-show after 15 min' });
+    });
+
+    promptSpy.mockRestore();
+  });
+
+  it('Cancel does not call API if user dismisses the prompt', async () => {
+    const promptSpy = vi.spyOn(window, 'prompt').mockReturnValue(null);
+    vi.mocked(apiClient.post).mockClear();
+
+    renderSchedule();
+    const chip = await screen.findByText('Alice Smith');
+    fireEvent.click(chip);
+
+    const button = await screen.findByRole('button', { name: /cancel/i });
+    fireEvent.click(button);
+
+    await waitFor(() => expect(promptSpy).toHaveBeenCalled());
+    expect(apiClient.post).not.toHaveBeenCalled();
+
+    promptSpy.mockRestore();
+  });
 });
