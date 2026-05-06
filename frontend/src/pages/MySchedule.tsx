@@ -47,7 +47,7 @@ export default function MySchedule() {
   };
 
   return (
-    <div className="my-schedule-container">
+    <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
         <div>
           <h1 style={{ marginBottom: '0.25rem' }}>My Schedule</h1>
@@ -93,10 +93,10 @@ export default function MySchedule() {
 
                 {appt.status === 'scheduled' && (
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button className="secondary" style={{ padding: '0.5rem', color: 'var(--success)', border: 'none' }} onClick={() => updateStatus(appt.id, 'completed')} title="Complete">
+                    <button className="btn btn-ghost btn-sm" style={{ color: 'var(--sage)', border: 'none' }} onClick={() => updateStatus(appt.id, 'completed')} title="Complete" aria-label="Mark complete">
                       <CheckCircle size={20} />
                     </button>
-                    <button className="secondary" style={{ padding: '0.5rem', color: 'var(--danger)', border: 'none' }} onClick={() => updateStatus(appt.id, 'cancelled')} title="Cancel">
+                    <button className="btn btn-ghost btn-sm" style={{ color: 'var(--primary-deep)', border: 'none' }} onClick={() => updateStatus(appt.id, 'cancelled')} title="Cancel" aria-label="Cancel">
                       <XCircle size={20} />
                     </button>
                   </div>
@@ -104,16 +104,17 @@ export default function MySchedule() {
               </div>
 
               <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--border)', display: 'flex', gap: '0.75rem' }}>
-                <button className="secondary" style={{ flex: 1, fontSize: '0.8rem', padding: '0.5rem', gap: '0.4rem' }}>
+                <button className="btn btn-ghost btn-sm" style={{ flex: 1, gap: '0.4rem' }}>
                   <Phone size={14} /> Call
                 </button>
-                <button className="secondary" style={{ flex: 1, fontSize: '0.8rem', padding: '0.5rem', gap: '0.4rem' }}>
+                <button className="btn btn-ghost btn-sm" style={{ flex: 1, gap: '0.4rem' }}>
                   <MessageSquare size={14} /> SMS
                 </button>
-                <button 
+                <button
+                  className="btn btn-accent btn-sm"
                   onClick={() => navigate(`/pos?appointmentId=${appt.id}`)}
                   disabled={appt.status !== 'scheduled'}
-                  style={{ flex: 2, fontSize: '0.8rem', padding: '0.5rem', gap: '0.4rem' }}
+                  style={{ flex: 2, gap: '0.4rem' }}
                 >
                   Checkout <ChevronRight size={14} />
                 </button>
