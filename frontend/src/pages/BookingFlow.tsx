@@ -15,7 +15,9 @@ interface BookingFlowProps {
 }
 
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const DAY_NAMES_FULL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTH_FULL = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
 function buildDays(n = 14) {
   const today = new Date();
@@ -79,8 +81,9 @@ function OtpModal({ isOpen, onClose, onVerified }: { isOpen: boolean; onClose: (
     setSubmitting(true);
     setError('');
     try {
-      await apiClient.post('/auth/otp/send', { email });
+      const res = await apiClient.post('/auth/otp/send', { email });
       setOtpStep('OTP');
+      if (res.data.devCode) setOtp(res.data.devCode);
     } catch (err: any) {
       setError(err.response?.data?.error || t('booking.otp_send_error', 'Failed to send code.'));
     } finally { setSubmitting(false); }
@@ -117,8 +120,9 @@ function OtpModal({ isOpen, onClose, onVerified }: { isOpen: boolean; onClose: (
   const handleResend = async () => {
     setSubmitting(true);
     try {
-      await apiClient.post('/auth/otp/send', { email });
+      const res = await apiClient.post('/auth/otp/send', { email });
       setResendSent(true);
+      if (res.data.devCode) setOtp(res.data.devCode);
     } catch (err: any) {
       setError(err.response?.data?.error || '');
     } finally { setSubmitting(false); }
@@ -259,15 +263,16 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
   }, [shopId, initialBarberId, rescheduleId]);
 
   useEffect(() => {
-    if (selectedBarber && selectedDate && selectedService) {
+    const barberId = selectedBarber?.id === 'any' ? barbers[0]?.id : selectedBarber?.id;
+    if (barberId && selectedDate && selectedService) {
       setLoadingSlots(true);
-      apiClient.get(`/public/barbers/${selectedBarber.id}/availability`, {
+      apiClient.get(`/public/barbers/${barberId}/availability`, {
         params: { date: selectedDate, duration: selectedService.duration_minutes }
       }).then(res => setAvailableSlots(res.data))
         .catch(() => setAvailableSlots([]))
         .finally(() => setLoadingSlots(false));
     }
-  }, [selectedBarber, selectedDate, selectedService]);
+  }, [selectedBarber, selectedDate, selectedService, barbers]);
 
   const advance = (nextStep: number) => {
     setStep(nextStep);
@@ -287,7 +292,7 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
     setError('');
     try {
       const body = {
-        barber_id: selectedBarber.id,
+        barber_id: selectedBarber.id === 'any' ? (barbers[0]?.id ?? null) : selectedBarber.id,
         services: [{ id: selectedService.id, quantity: 1 }],
         customer_id: user?.customer_id || null,
         start_time: `${selectedDate}T${selectedTime}:00`,
@@ -532,6 +537,7 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
                       cursor: 'pointer', position: 'relative',
                     }}
                     aria-pressed={sel}
+                    aria-label={`${DAY_NAMES_FULL[d.getDay()]}, ${MONTH_FULL[d.getMonth()]} ${d.getDate()}`}
                   >
                     <div style={{ fontSize: 11, fontWeight: 500, opacity: 0.7, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{DAY_NAMES[d.getDay()]}</div>
                     <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 22, letterSpacing: '-0.02em' }}>{d.getDate()}</div>

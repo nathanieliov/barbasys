@@ -52,16 +52,24 @@ describe('OTP Use Cases', () => {
     });
 
     it('should throw error if rate limit exceeded', async () => {
-      const mockUser = { 
-        id: 1, 
-        email: 'test@example.com', 
-        role: 'CUSTOMER', 
+      const mockUser = {
+        id: 1,
+        email: 'test@example.com',
+        role: 'CUSTOMER',
         otp_requests_count: 3,
         last_otp_request_at: new Date().toISOString()
       };
       vi.mocked(mockUserRepo.findByEmail).mockResolvedValue(mockUser as any);
 
-      await expect(sendOTP.execute('test@example.com')).rejects.toThrow(/Too many OTP requests|Demasiados intentos de OTP/);
+      // Simulate production mode so rate limiting is enforced
+      const prev = process.env.EMAIL_USER;
+      process.env.EMAIL_USER = 'test@example.com';
+      try {
+        await expect(sendOTP.execute('test@example.com')).rejects.toThrow(/Too many OTP requests|Demasiados intentos de OTP/);
+      } finally {
+        if (prev == null) delete process.env.EMAIL_USER;
+        else process.env.EMAIL_USER = prev;
+      }
     });
 
     it('should reset count after 15 minutes', async () => {

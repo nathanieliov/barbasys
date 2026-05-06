@@ -3,7 +3,7 @@ import apiClient from './api/apiClient';
 import { BrowserRouter as Router, Routes, Route, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
-  LayoutDashboard, Scissors, Package, BarChart3, Users as UsersIcon,
+  LayoutDashboard, Package, BarChart3, Users as UsersIcon,
   ShoppingCart, Calendar as CalendarIcon, LogOut, Settings as SettingsIcon,
   Clock, Truck, BarChart, Receipt, Menu, User, Shield,
 } from 'lucide-react';
@@ -11,6 +11,7 @@ import Dashboard from './pages/Dashboard';
 import POS from './pages/POS';
 import Inventory from './pages/Inventory';
 import Services from './pages/Services';
+import Catalog from './pages/Catalog';
 import Reports from './pages/Reports';
 import SalesHistory from './pages/SalesHistory';
 import Barbers from './pages/Barbers';
@@ -86,9 +87,8 @@ function AdminSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
     { to: '/schedule',   icon: <CalendarIcon size={17} />,    label: t('nav.shop_calendar'), admin: true },
     { to: '/pos',        icon: <ShoppingCart size={17} />,    label: t('nav.pos') },
     { to: '/barbers',    icon: <UsersIcon size={17} />,       label: t('nav.barbers'), admin: true },
-    { to: '/services',   icon: <Scissors size={17} />,        label: t('nav.services'), admin: true },
+    { to: '/catalog',    icon: <Package size={17} />,         label: t('nav.catalog', 'Products & Services'), admin: true },
     { to: '/my-schedule',icon: <CalendarIcon size={17} />,    label: t('nav.my_schedule'), roles: ['BARBER'] },
-    { to: '/inventory',  icon: <Package size={17} />,         label: t('nav.inventory') },
     { to: '/sales',      icon: <Receipt size={17} />,         label: t('nav.sales_log') },
     { to: '/customers',  icon: <UsersIcon size={17} />,       label: t('nav.customers') },
   ];
@@ -215,6 +215,7 @@ function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <a href="#main-content" className="skip-link">{t('a11y.skipToContent', 'Skip to content')}</a>
       <AppTopBar
         shopName={shopName}
         isStaff={isStaff}
@@ -249,7 +250,7 @@ function Layout({ children }: { children: React.ReactNode }) {
           </div>
         </>
       ) : (
-        <main style={{ flex: 1 }}>
+        <main id="main-content" style={{ flex: 1 }}>
           {children}
         </main>
       )}
@@ -302,6 +303,7 @@ function App() {
                 <Route path="/expenses" element={<Expenses />} />
                 <Route path="/barbers" element={<Barbers />} />
                 <Route path="/users" element={<Users />} />
+                <Route path="/catalog" element={<Catalog />} />
                 <Route path="/services" element={<Services />} />
                 <Route path="/suppliers" element={<Suppliers />} />
                 <Route path="/settings" element={<Settings />} />

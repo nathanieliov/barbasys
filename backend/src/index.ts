@@ -1,6 +1,6 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import db from './db.js';
@@ -48,8 +48,6 @@ import { VerifyOTP } from './use-cases/VerifyOTP.js';
 import { protect, authorize } from './middleware/auth-middleware.js';
 import { loginRateLimiter, recordFailedLogin, clearLoginAttempts } from './middleware/login-rate-limiter.js';
 import chatbotRouter from './routes/chatbot.js';
-
-dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

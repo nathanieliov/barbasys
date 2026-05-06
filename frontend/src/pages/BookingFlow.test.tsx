@@ -92,7 +92,7 @@ vi.mock('react-i18next', () => ({
       return map[key] || key;
     },
   }),
-  Trans: ({ i18nKey, values }: any) => <span>{i18nKey}</span>,
+  Trans: ({ i18nKey }: any) => <span>{i18nKey}</span>,
 }));
 
 vi.mock('../api/apiClient', () => ({

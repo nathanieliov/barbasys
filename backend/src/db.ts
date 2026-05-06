@@ -6,8 +6,9 @@ import bcrypt from 'bcryptjs';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const dbPath = process.env.DATABASE_URL || (process.env.NODE_ENV === 'test' 
-  ? ':memory:' 
+const rawDbUrl = process.env.DATABASE_URL?.replace(/^sqlite:\/\//, '');
+const dbPath = rawDbUrl || (process.env.NODE_ENV === 'test'
+  ? ':memory:'
   : process.env.NODE_ENV === 'production'
     ? path.join(__dirname, '../../data/barbasys.db')
     : path.join(__dirname, '../barbasys.db'));
