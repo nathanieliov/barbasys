@@ -122,7 +122,12 @@
     "discount_amount": "DESCUENTO (RD$)",
     "amount_due": "Monto a Pagar",
     "complete_payment": "Completar Pago",
-    "error_processing_sale": "Error al procesar la venta. Por favor revise los valores."
+    "error_processing_sale": "Error al procesar la venta. Por favor revise los valores.",
+    "receipt_sent_to": "Recibo enviado a {{recipients}}",
+    "no_contact_info": "Sin información de contacto — no se envió recibo.",
+    "send_receipt": "Enviar recibo",
+    "email_or_phone_required": "Ingrese al menos un correo o teléfono.",
+    "send": "Enviar"
   },
   "schedule": {
     "title": "Agenda",

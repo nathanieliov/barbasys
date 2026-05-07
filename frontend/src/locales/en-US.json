@@ -122,7 +122,12 @@
     "discount_amount": "DISCOUNT ($)",
     "amount_due": "Amount Due",
     "complete_payment": "Complete Payment",
-    "error_processing_sale": "Error processing sale. Please check inputs."
+    "error_processing_sale": "Error processing sale. Please check inputs.",
+    "receipt_sent_to": "Receipt sent to {{recipients}}",
+    "no_contact_info": "No contact info captured — no receipt sent.",
+    "send_receipt": "Send receipt",
+    "email_or_phone_required": "Enter at least an email or a phone number.",
+    "send": "Send"
   },
   "schedule": {
     "title": "Schedule",
