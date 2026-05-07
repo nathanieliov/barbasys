@@ -85,4 +85,14 @@ export class SQLiteSaleRepository implements ISaleRepository {
 
     return salesWithItems;
   }
+
+  async updateContactInfo(saleId: number, email: string | null, phone: string | null): Promise<void> {
+    const sets: string[] = [];
+    const args: (string | number)[] = [];
+    if (email !== null) { sets.push('customer_email = ?'); args.push(email); }
+    if (phone !== null) { sets.push('customer_phone = ?'); args.push(phone); }
+    if (sets.length === 0) return;
+    args.push(saleId);
+    this.db.prepare(`UPDATE sales SET ${sets.join(', ')} WHERE id = ?`).run(...args);
+  }
 }
