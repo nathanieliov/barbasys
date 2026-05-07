@@ -7,6 +7,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useSettings } from '../hooks/useSettings';
 import { formatCurrency } from '../utils/format';
 import { useTranslation } from 'react-i18next';
+import Modal from '../components/Modal';
 
 export default function POS() {
   const { t } = useTranslation();
@@ -29,7 +30,11 @@ export default function POS() {
   const [showCheckout, setShowCheckout] = useState(false);
   type SuccessInfo = { id: number; email: string; phone: string };
   const [successInfo, setSuccessInfo] = useState<SuccessInfo | null>(null);
-  const [_showResend, setShowResend] = useState(false);
+  const [showResend, setShowResend] = useState(false);
+  const [resendEmail, setResendEmail] = useState('');
+  const [resendPhone, setResendPhone] = useState('');
+  const [resending, setResending] = useState(false);
+  const [resendError, setResendError] = useState('');
   const [taxRate, setTaxRate] = useState(0);
 
   useEffect(() => {
@@ -112,6 +117,30 @@ export default function POS() {
     }
   };
 
+  const handleResend = async () => {
+    if (!successInfo) return;
+    if (!resendEmail.trim() && !resendPhone.trim()) {
+      setResendError(t('pos.email_or_phone_required', 'Enter at least an email or a phone number.'));
+      return;
+    }
+    setResending(true);
+    setResendError('');
+    try {
+      await apiClient.post(`/sales/${successInfo.id}/resend-receipt`, {
+        email: resendEmail.trim() || null,
+        phone: resendPhone.trim() || null,
+      });
+      setSuccessInfo({ ...successInfo, email: resendEmail.trim(), phone: resendPhone.trim() });
+      setShowResend(false);
+      setResendEmail('');
+      setResendPhone('');
+    } catch (err: any) {
+      setResendError(err.response?.data?.error || 'Failed to send receipt');
+    } finally {
+      setResending(false);
+    }
+  };
+
   const resetPOS = () => {
     setCart([]);
     setCustomerEmail('');
@@ -129,25 +158,60 @@ export default function POS() {
     const hasContact = sentTo.length > 0;
 
     return (
-      <div className="card" style={{ maxWidth: 480, margin: '40px auto', padding: 36, textAlign: 'center' }}>
-        <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'var(--sage-soft)', display: 'grid', placeItems: 'center', margin: '0 auto 18px', color: '#4d6648' }}>
-          <CheckCircle size={32} />
-        </div>
-        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 600, margin: '0 0 6px' }}>{t('pos.payment_successful')}</h2>
-        <p className="muted" style={{ margin: '0 0 22px' }}>
-          {hasContact
-            ? t('pos.receipt_sent_to', 'Receipt sent to {{recipients}}', { recipients: sentTo.join(' & ') })
-            : t('pos.no_contact_info', 'No contact info captured — no receipt sent.')}
-        </p>
-        {!hasContact && (
-          <button className="btn btn-soft btn-sm" style={{ marginBottom: 12 }} onClick={() => setShowResend(true)}>
-            {t('pos.send_receipt', 'Send receipt')}
+      <>
+        <div className="card" style={{ maxWidth: 480, margin: '40px auto', padding: 36, textAlign: 'center' }}>
+          <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'var(--sage-soft)', display: 'grid', placeItems: 'center', margin: '0 auto 18px', color: '#4d6648' }}>
+            <CheckCircle size={32} />
+          </div>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 600, margin: '0 0 6px' }}>{t('pos.payment_successful')}</h2>
+          <p className="muted" style={{ margin: '0 0 22px' }}>
+            {hasContact
+              ? t('pos.receipt_sent_to', 'Receipt sent to {{recipients}}', { recipients: sentTo.join(' & ') })
+              : t('pos.no_contact_info', 'No contact info captured — no receipt sent.')}
+          </p>
+          {!hasContact && (
+            <button className="btn btn-soft btn-sm" style={{ marginBottom: 12 }} onClick={() => setShowResend(true)}>
+              {t('pos.send_receipt', 'Send receipt')}
+            </button>
+          )}
+          <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={resetPOS}>
+            {t('pos.new_transaction')}
           </button>
-        )}
-        <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={resetPOS}>
-          {t('pos.new_transaction')}
-        </button>
-      </div>
+        </div>
+
+        <Modal
+          isOpen={showResend}
+          onClose={() => { setShowResend(false); setResendError(''); }}
+          title={t('pos.send_receipt', 'Send receipt')}
+          size="sm"
+          footer={
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button className="btn btn-soft btn-sm" onClick={() => { setShowResend(false); setResendError(''); }}>
+                {t('common.cancel', 'Cancel')}
+              </button>
+              <button className="btn btn-accent btn-sm" disabled={resending} onClick={handleResend}>
+                {t('pos.send', 'Send')}
+              </button>
+            </div>
+          }
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div className="field">
+              <label className="field-label">{t('common.email', 'Email')}</label>
+              <input className="input" type="email" value={resendEmail} onChange={e => setResendEmail(e.target.value)} placeholder="alice@example.com" />
+            </div>
+            <div className="field">
+              <label className="field-label">{t('common.phone', 'Phone')}</label>
+              <input className="input" type="tel" value={resendPhone} onChange={e => setResendPhone(e.target.value)} placeholder="+1 555 123 4567" />
+            </div>
+            {resendError && (
+              <div style={{ background: 'var(--primary-soft)', color: 'var(--primary-deep)', padding: '10px 14px', borderRadius: 'var(--r)', fontSize: 13 }}>
+                {resendError}
+              </div>
+            )}
+          </div>
+        </Modal>
+      </>
     );
   }
 
