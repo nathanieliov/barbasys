@@ -134,7 +134,12 @@ app.get('/api/public/shops/:id', (req, res) => {
     const shop = db.prepare('SELECT * FROM shops WHERE id = ?').get(req.params.id);
     const services = db.prepare('SELECT * FROM services WHERE shop_id = ? AND is_active = 1').all(req.params.id);
     const barbers = db.prepare('SELECT * FROM barbers WHERE shop_id = ? AND is_active = 1').all(req.params.id);
-    res.json({ shop, services, barbers });
+    const settingRows = db.prepare("SELECT key, value FROM shop_settings WHERE shop_id = ? AND key IN ('open_time', 'close_time')").all(req.params.id) as { key: string; value: string }[];
+    const settings = {
+      open_time: settingRows.find(r => r.key === 'open_time')?.value ?? null,
+      close_time: settingRows.find(r => r.key === 'close_time')?.value ?? null,
+    };
+    res.json({ shop, services, barbers, settings });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
