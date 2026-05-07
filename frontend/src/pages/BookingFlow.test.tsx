@@ -28,6 +28,8 @@ vi.mock('lucide-react', () => ({
   Sparkles: () => <div data-testid="icon-sparkles" />,
   Settings: () => <div data-testid="icon-settings" />,
   X: () => <div data-testid="icon-x" />,
+  Phone: () => <div data-testid="icon-phone" />,
+  Navigation: () => <div data-testid="icon-navigation" />,
 }));
 
 vi.mock('react-i18next', () => ({
@@ -173,6 +175,10 @@ describe('BookingFlow Component', () => {
     fireEvent.click(screen.getByText('Service One'));
     fireEvent.click(screen.getByText('Continue'));
 
+    // Wait for Location step, then advance past it
+    await waitFor(() => expect(screen.getByText(/Where to/i)).toBeInTheDocument());
+    fireEvent.click(screen.getByText('Continue'));
+
     expect(screen.getByText('Date & Time')).toBeInTheDocument();
   });
 
@@ -185,6 +191,10 @@ describe('BookingFlow Component', () => {
     fireEvent.click(screen.getByText('Continue'));
     await waitFor(() => screen.getByText('Service One'));
     fireEvent.click(screen.getByText('Service One'));
+    fireEvent.click(screen.getByText('Continue'));
+
+    // Wait for Location step, then advance past it
+    await waitFor(() => expect(screen.getByText(/Where to/i)).toBeInTheDocument());
     fireEvent.click(screen.getByText('Continue'));
 
     // Select today's date chip (first button in the day strip)
@@ -216,6 +226,10 @@ describe('BookingFlow Component', () => {
     fireEvent.click(screen.getByText('Continue'));
     await waitFor(() => screen.getByText('Service One'));
     fireEvent.click(screen.getByText('Service One'));
+    fireEvent.click(screen.getByText('Continue'));
+
+    // Wait for Location step, then advance past it
+    await waitFor(() => expect(screen.getByText(/Where to/i)).toBeInTheDocument());
     fireEvent.click(screen.getByText('Continue'));
 
     await waitFor(() => screen.getByTestId('day-strip'));
@@ -251,6 +265,10 @@ describe('BookingFlow Component', () => {
     fireEvent.click(screen.getByText('Service One'));
     fireEvent.click(screen.getByText('Continue'));
 
+    // Wait for Location step, then advance past it
+    await waitFor(() => expect(screen.getByText(/Where to/i)).toBeInTheDocument());
+    fireEvent.click(screen.getByText('Continue'));
+
     await waitFor(() => screen.getByTestId('day-strip'));
     fireEvent.click(screen.getByTestId('day-strip').querySelectorAll('button')[0]);
     await waitFor(() => screen.getByText('09:00'));
@@ -277,6 +295,10 @@ describe('BookingFlow Component', () => {
     fireEvent.click(screen.getByText('Continue'));
     await waitFor(() => screen.getByText('Service One'));
     fireEvent.click(screen.getByText('Service One'));
+    fireEvent.click(screen.getByText('Continue'));
+
+    // Wait for Location step, then advance past it
+    await waitFor(() => expect(screen.getByText(/Where to/i)).toBeInTheDocument());
     fireEvent.click(screen.getByText('Continue'));
 
     await waitFor(() => screen.getByTestId('day-strip'));
