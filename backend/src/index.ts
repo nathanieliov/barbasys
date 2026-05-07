@@ -3,6 +3,10 @@ import { validateEnv } from './env-check.js';
 validateEnv();
 import express from 'express';
 import cors from 'cors';
+import twilio from 'twilio';
+import { TwilioWhatsAppClient } from './adapters/whatsapp/twilio-whatsapp-client.js';
+import { SqliteConversationRepository } from './repositories/sqlite-conversation-repository.js';
+import { ResendReceipt } from './use-cases/pos/ResendReceipt.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import db from './db.js';
@@ -68,6 +72,11 @@ const customerRepo = new SQLiteCustomerRepository(db);
 const productRepo = new SQLiteProductRepository(db);
 const expenseRepo = new SQLiteExpenseRepository(db);
 const supplierRepo = new SQLiteSupplierRepository(db);
+const conversationRepo = new SqliteConversationRepository(db);
+const whatsAppClient = new TwilioWhatsAppClient(
+  twilio(process.env.TWILIO_ACCOUNT_SID || '', process.env.TWILIO_AUTH_TOKEN || ''),
+  process.env.TWILIO_FROM_NUMBER || 'whatsapp:+14155238886',
+);
 
 const listBarbers = new ListBarbers(barberRepo);
 const loginUseCase = new LoginUseCase(userRepo);
@@ -81,7 +90,8 @@ const createAppointment = new CreateAppointment(appointmentRepo, shiftRepo, serv
 const cancelAppointment = new CancelAppointment(appointmentRepo, customerRepo, barberRepo, serviceRepo);
 const getAvailableSlots = new GetAvailableSlots(appointmentRepo, shiftRepo, db);
 const updateAppointment = new UpdateAppointment(appointmentRepo, serviceRepo, shiftRepo);
-const processSale = new ProcessSale(saleRepo, customerRepo, barberRepo, productRepo, db);
+const processSale = new ProcessSale(saleRepo, customerRepo, barberRepo, productRepo, db, conversationRepo, whatsAppClient);
+const resendReceiptUseCase = new ResendReceipt(saleRepo, customerRepo, conversationRepo, whatsAppClient);
 const getCommissionsReport = new GetCommissionsReport(saleRepo, barberRepo, expenseRepo);
 const exportSalesCSV = new ExportSalesCSV(saleRepo);
 const getInventoryIntelligence = new GetInventoryIntelligence(productRepo);
@@ -1052,6 +1062,27 @@ app.post('/api/sales', protect, async (req, res) => {
     res.json(result);
   } catch (err: any) {
     res.status(400).json({ error: err.message });
+  }
+});
+
+app.post('/api/sales/:id/resend-receipt', protect, async (req, res) => {
+  const shopId = req.user?.shop_id;
+  if (!shopId) return res.status(400).json({ error: 'Missing shop context' });
+  const saleId = parseInt(req.params.id as string);
+  if (isNaN(saleId)) return res.status(400).json({ error: 'Invalid sale id' });
+
+  const { email, phone } = req.body || {};
+  try {
+    const result = await resendReceiptUseCase.execute({
+      saleId,
+      shopId,
+      email: email ?? null,
+      phone: phone ?? null,
+    });
+    res.json({ success: true, channels: result.channels });
+  } catch (err: any) {
+    const status = /not found/i.test(err.message) ? 404 : 400;
+    res.status(status).json({ error: err.message });
   }
 });
 
