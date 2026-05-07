@@ -444,7 +444,9 @@
     "your_details": "Your details",
     "phone": "Phone",
     "confirmed": "Confirmed",
-    "pay_at_shop": "No charge now. You'll pay at the shop. Cancel free up to 2 hours before."
+    "pay_at_shop": "No charge now. You'll pay at the shop. Cancel free up to 2 hours before.",
+    "location_confirm_hint": "Here's where your appointment will be.",
+    "get_directions": "Get directions"
   },
   "topbar": {
     "sign_in": "Sign in",

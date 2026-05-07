@@ -444,7 +444,9 @@
     "your_details": "Sus datos",
     "phone": "Teléfono",
     "confirmed": "Confirmado",
-    "pay_at_shop": "Sin cargo ahora. Pague en la barbería. Cancelación gratuita hasta 2 horas antes."
+    "pay_at_shop": "Sin cargo ahora. Pague en la barbería. Cancelación gratuita hasta 2 horas antes.",
+    "location_confirm_hint": "Aquí es donde será tu cita.",
+    "get_directions": "Cómo llegar"
   },
   "portal": {
     "welcome": "Hola, {{name}}",
