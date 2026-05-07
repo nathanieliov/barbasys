@@ -2,6 +2,8 @@ import { ISaleRepository } from '../../repositories/sale-repository.interface.js
 import { ICustomerRepository } from '../../repositories/customer-repository.interface.js';
 import { IBarberRepository } from '../../repositories/barber-repository.interface.js';
 import { IProductRepository } from '../../repositories/product-repository.interface.js';
+import type { IConversationRepository } from '../../repositories/conversation-repository.interface.js';
+import type { IWhatsAppClient } from '../../adapters/whatsapp/whatsapp-client.interface.js';
 import { sendReceipt, alertLowStock } from '../../communication.js';
 import { Database } from 'better-sqlite3';
 
@@ -28,7 +30,9 @@ export class ProcessSale {
     private customerRepo: ICustomerRepository,
     private barberRepo: IBarberRepository,
     private productRepo: IProductRepository,
-    private db: Database
+    private db: Database,
+    private convRepo?: IConversationRepository,
+    private whatsAppClient?: IWhatsAppClient,
   ) {}
 
   async execute(request: ProcessSaleRequest) {
@@ -112,6 +116,16 @@ export class ProcessSale {
       }
     }
 
+    // Look up customer wa_opt_in and conversation last_inbound_at for WhatsApp routing
+    let waOptIn = false;
+    let lastInboundAt: string | null = null;
+    if (customer_phone && this.convRepo) {
+      const customer = await this.customerRepo.findByEmailOrPhone(customer_email, customer_phone, shop_id);
+      waOptIn = customer?.wa_opt_in === 1;
+      const conversation = await this.convRepo.findByPhone(customer_phone);
+      lastInboundAt = conversation?.last_inbound_at ?? null;
+    }
+
     // Send receipt asynchronously
     sendReceipt({
       id: saleId,
@@ -121,8 +135,10 @@ export class ProcessSale {
       tip_amount,
       discount_amount,
       items,
-      barber_name: barber.fullname || barber.name || 'Professional'
-    });
+      barber_name: barber.fullname || barber.name || 'Professional',
+      wa_opt_in: waOptIn,
+      last_inbound_at: lastInboundAt,
+    }, this.whatsAppClient);
 
     return { success: true, saleId };
   }
