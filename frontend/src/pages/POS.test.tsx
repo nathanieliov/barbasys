@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import POS from './POS';
 import apiClient from '../api/apiClient';
 import { MemoryRouter } from 'react-router-dom';
@@ -65,6 +65,78 @@ describe('POS receipt feedback', () => {
     renderPOS();
     await waitFor(() => {
       expect(screen.getByText('Cut')).toBeInTheDocument();
+    });
+  });
+
+  // Helper: drive a sale from cart to success state with no contact info.
+  // The i18n mock returns the key when no fallback string is supplied to t(),
+  // so review/checkout buttons appear with their literal key names. Buttons
+  // that pass a fallback render as the fallback (e.g. "Send receipt").
+  async function ringUpSaleWithoutContact() {
+    renderPOS();
+    const tile = await screen.findByText('Cut');
+    fireEvent.click(tile);
+    // "Review & Checkout" — t('pos.review_checkout') has no fallback => key text
+    const reviewButton = await screen.findByRole('button', {
+      name: /review_checkout|review & checkout|review.*checkout/i,
+    });
+    fireEvent.click(reviewButton);
+    // "Complete Payment" — t('pos.complete_payment') has no fallback => key text
+    const completeButton = await screen.findByRole('button', {
+      name: /complete_payment|complete payment|completar pago/i,
+    });
+    fireEvent.click(completeButton);
+    // Success heading — t('pos.payment_successful') has no fallback => key text
+    await screen.findByText(/payment_successful|payment successful|pago exitoso/i);
+  }
+
+  it('shows "no contact info" + Send receipt button when contact was empty', async () => {
+    await ringUpSaleWithoutContact();
+    expect(screen.getByText(/no contact info captured/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Send receipt' })).toBeInTheDocument();
+  });
+
+  it('opens the resend modal when Send receipt is clicked', async () => {
+    await ringUpSaleWithoutContact();
+    fireEvent.click(screen.getByRole('button', { name: 'Send receipt' }));
+
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText(/alice@example/i)).toBeInTheDocument();
+      expect(screen.getByPlaceholderText(/\+1 555/)).toBeInTheDocument();
+    });
+  });
+
+  it('blocks submit when both fields are empty', async () => {
+    await ringUpSaleWithoutContact();
+    fireEvent.click(screen.getByRole('button', { name: 'Send receipt' }));
+    const sendBtn = await screen.findByRole('button', { name: 'Send' });
+    fireEvent.click(sendBtn);
+
+    await screen.findByText(/at least|al menos/i);
+    expect(apiClient.post).not.toHaveBeenCalledWith(
+      expect.stringContaining('/resend-receipt'),
+      expect.anything()
+    );
+  });
+
+  it('POSTs to resend-receipt with email and updates the card', async () => {
+    vi.mocked(apiClient.post).mockImplementation((url: string) => {
+      if (url.includes('/resend-receipt')) return Promise.resolve({ data: { success: true, channels: ['email'] } });
+      return Promise.resolve({ data: { success: true, saleId: 42 } });
+    });
+
+    await ringUpSaleWithoutContact();
+    fireEvent.click(screen.getByRole('button', { name: 'Send receipt' }));
+
+    const emailInput = await screen.findByPlaceholderText(/alice@example/i);
+    fireEvent.change(emailInput, { target: { value: 'alice@example.com' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+    await waitFor(() => {
+      expect(apiClient.post).toHaveBeenCalledWith('/sales/42/resend-receipt', { email: 'alice@example.com', phone: null });
+    });
+    await waitFor(() => {
+      expect(screen.getByText(/receipt sent to alice@example\.com/i)).toBeInTheDocument();
     });
   });
 });
