@@ -39,3 +39,9 @@ backend/backend_dev.log
 /*.png
 /*.log
 NEXT_SESSION.md
+
+# E2E test artifacts
+e2e/.auth/
+e2e/test-results/
+data/test.db
+playwright-report/
