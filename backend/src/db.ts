@@ -7,7 +7,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const rawDbUrl = process.env.DATABASE_URL?.replace(/^sqlite:\/\//, '');
-const dbPath = rawDbUrl || (process.env.NODE_ENV === 'test'
+const envDbPath = process.env.DB_PATH;
+const dbPath = envDbPath || rawDbUrl || (process.env.NODE_ENV === 'test'
   ? ':memory:'
   : process.env.NODE_ENV === 'production'
     ? path.join(__dirname, '../../data/barbasys.db')
