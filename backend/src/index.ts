@@ -5,6 +5,11 @@ import express from 'express';
 import cors from 'cors';
 import twilio from 'twilio';
 import { TwilioWhatsAppClient } from './adapters/whatsapp/twilio-whatsapp-client.js';
+import { FakeTwilioClient } from './adapters/whatsapp/fake-twilio-client.js';
+import { IWhatsAppClient } from './adapters/whatsapp/whatsapp-client.interface.js';
+import { OpenAILLMClient } from './adapters/llm/openai-llm-client.js';
+import { FakeLLMClient } from './adapters/llm/fake-llm-client.js';
+import { ILLMClient } from './adapters/llm/llm-client.interface.js';
 import { SqliteConversationRepository } from './repositories/sqlite-conversation-repository.js';
 import { ResendReceipt } from './use-cases/pos/ResendReceipt.js';
 import path from 'path';
@@ -53,7 +58,7 @@ import { VerifyOTP } from './use-cases/VerifyOTP.js';
 
 import { protect, authorize } from './middleware/auth-middleware.js';
 import { loginRateLimiter, recordFailedLogin, clearLoginAttempts } from './middleware/login-rate-limiter.js';
-import chatbotRouter from './routes/chatbot.js';
+import { buildChatbotRouter } from './routes/chatbot.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -73,10 +78,16 @@ const productRepo = new SQLiteProductRepository(db);
 const expenseRepo = new SQLiteExpenseRepository(db);
 const supplierRepo = new SQLiteSupplierRepository(db);
 const conversationRepo = new SqliteConversationRepository(db);
-const whatsAppClient = new TwilioWhatsAppClient(
-  twilio(process.env.TWILIO_ACCOUNT_SID || '', process.env.TWILIO_AUTH_TOKEN || ''),
-  process.env.TWILIO_FROM_NUMBER || 'whatsapp:+14155238886',
-);
+const whatsAppClient: IWhatsAppClient = process.env.FAKE_TWILIO === '1'
+  ? new FakeTwilioClient()
+  : new TwilioWhatsAppClient(
+      twilio(process.env.TWILIO_ACCOUNT_SID || '', process.env.TWILIO_AUTH_TOKEN || ''),
+      process.env.TWILIO_FROM_NUMBER || 'whatsapp:+14155238886',
+    );
+const llmClient: ILLMClient = process.env.FAKE_LLM === '1'
+  ? new FakeLLMClient()
+  : new OpenAILLMClient(process.env.OPENAI_API_KEY || '');
+const chatbotRouter = buildChatbotRouter({ whatsAppClient, llmClient });
 
 const listBarbers = new ListBarbers(barberRepo);
 const loginUseCase = new LoginUseCase(userRepo);
