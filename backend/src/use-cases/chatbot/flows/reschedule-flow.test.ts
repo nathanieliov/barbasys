@@ -4,7 +4,7 @@ import { SQLiteAppointmentRepository } from '../../../repositories/sqlite-appoin
 import { SqliteConversationRepository } from '../../../repositories/sqlite-conversation-repository.js';
 import { RescheduleFlow } from './reschedule-flow.js';
 import { GetAvailableSlots } from '../../booking/GetAvailableSlots.js';
-import type { Conversation } from '../../../domain/entities.js';
+import type { Conversation, ConversationState } from '../../../domain/entities.js';
 
 function makeSlotsMock(slots: string[]) {
   return { execute: vi.fn().mockResolvedValue(slots) } as unknown as GetAvailableSlots;
@@ -74,7 +74,7 @@ describe('RescheduleFlow', () => {
   it('transitions to barber selection after selecting appointment', async () => {
     const flow = new RescheduleFlow(appointmentRepo, convRepo, shopId, makeSlotsMock([]));
     const context = { step: 1, appointmentId };
-    const conv = { ...conversation, context_json: JSON.stringify(context), state: 'rescheduling' };
+    const conv = { ...conversation, context_json: JSON.stringify(context), state: 'rescheduling' as ConversationState };
 
     const result = await flow.handle({ conversation: conv, body: '1' });
 
@@ -85,7 +85,7 @@ describe('RescheduleFlow', () => {
   it('transitions from barber to service selection', async () => {
     const flow = new RescheduleFlow(appointmentRepo, convRepo, shopId, makeSlotsMock([]));
     const context = { step: 2, appointmentId, barberId };
-    const conv = { ...conversation, context_json: JSON.stringify(context), state: 'rescheduling' };
+    const conv = { ...conversation, context_json: JSON.stringify(context), state: 'rescheduling' as ConversationState };
 
     const result = await flow.handle({ conversation: conv, body: '1' });
 
@@ -96,7 +96,7 @@ describe('RescheduleFlow', () => {
   it('transitions from service to date selection', async () => {
     const flow = new RescheduleFlow(appointmentRepo, convRepo, shopId, makeSlotsMock([]));
     const context = { step: 3, appointmentId, barberId, serviceId };
-    const conv = { ...conversation, context_json: JSON.stringify(context), state: 'rescheduling' };
+    const conv = { ...conversation, context_json: JSON.stringify(context), state: 'rescheduling' as ConversationState };
 
     const result = await flow.handle({ conversation: conv, body: '1' });
 
@@ -108,7 +108,7 @@ describe('RescheduleFlow', () => {
     const mockSlots = makeSlotsMock(['10:00', '13:00', '16:00']);
     const flow = new RescheduleFlow(appointmentRepo, convRepo, shopId, mockSlots);
     const context = { step: 4, appointmentId, barberId, serviceId };
-    const conv = { ...conversation, context_json: JSON.stringify(context), state: 'rescheduling' };
+    const conv = { ...conversation, context_json: JSON.stringify(context), state: 'rescheduling' as ConversationState };
 
     const result = await flow.handle({ conversation: conv, body: '1' });
 
@@ -123,7 +123,7 @@ describe('RescheduleFlow', () => {
   it('stays on date step when no slots available', async () => {
     const flow = new RescheduleFlow(appointmentRepo, convRepo, shopId, makeSlotsMock([]));
     const context = { step: 4, appointmentId, barberId, serviceId };
-    const conv = { ...conversation, context_json: JSON.stringify(context), state: 'rescheduling' };
+    const conv = { ...conversation, context_json: JSON.stringify(context), state: 'rescheduling' as ConversationState };
 
     const result = await flow.handle({ conversation: conv, body: '1' });
 
@@ -136,7 +136,7 @@ describe('RescheduleFlow', () => {
     const storedSlots = ['10:00', '13:00', '16:00'];
     const flow = new RescheduleFlow(appointmentRepo, convRepo, shopId, makeSlotsMock([]));
     const context = { step: 5, appointmentId, barberId, serviceId, date: '2099-01-15', availableSlots: storedSlots };
-    const conv = { ...conversation, context_json: JSON.stringify(context), state: 'rescheduling' };
+    const conv = { ...conversation, context_json: JSON.stringify(context), state: 'rescheduling' as ConversationState };
 
     const result = await flow.handle({ conversation: conv, body: '2' }); // select 13:00
 

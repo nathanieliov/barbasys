@@ -124,4 +124,11 @@ export class GoogleCalendarClient implements IGCalClient {
       expiresAt: parseInt(response.data.expiration || '0') || Date.now() + 86400000,
     };
   }
+
+  async stopWatch(barberId: number, channelId: string, resourceId: string): Promise<void> {
+    const refreshTokenEnc = this.getBarberToken(barberId);
+    const oauth2Client = this.getOAuth2Client(refreshTokenEnc);
+    const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+    await calendar.channels.stop({ requestBody: { id: channelId, resourceId } });
+  }
 }

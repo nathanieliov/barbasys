@@ -204,12 +204,11 @@ export const alertLowStock = async (product: { name: string; stock: number; thre
   // Implementation for email/SMS would go here
 };
 
-export const sendOTP = async (email: string, otp: string) => {
+export const sendOTP = async (email: string, otp: string): Promise<{ simulated: boolean }> => {
   const t = i18n.t.bind(i18n);
   const subject = t('notifications.otp_subject');
   const body = t('notifications.otp_body', { code: otp });
 
-  // 1. Send Email
   if (transporter) {
     try {
       await transporter.sendMail({
@@ -229,15 +228,16 @@ export const sendOTP = async (email: string, otp: string) => {
         `
       });
       console.log(`OTP Email sent to ${email}`);
+      return { simulated: false };
     } catch (err) {
       console.error('Failed to send OTP email:', err);
       throw new Error('Failed to send OTP email');
     }
   } else {
-    console.log('--------------------------------------------------');
-    console.log(`🔑 [OTP SIMULATION]`);
-    console.log(`📧 Email: ${email}`);
-    console.log(`🔢 Code:  ${otp}`);
-    console.log('--------------------------------------------------');
+    console.log('\n════════════════════════════════════════');
+    console.log(`  📧  OTP para: ${email}`);
+    console.log(`  🔑  CÓDIGO:   ${otp}`);
+    console.log('════════════════════════════════════════\n');
+    return { simulated: true };
   }
 };

@@ -16,11 +16,17 @@
     "start": "npm run start --prefix backend",
     "dev": "npx concurrently \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
     "test": "npm test --prefix backend && npm test --prefix frontend",
+    "test:integration": "npm run test:integration --prefix backend",
+    "test:e2e": "playwright test --config=e2e/playwright.config.ts",
+    "test:e2e:ui": "playwright test --config=e2e/playwright.config.ts --ui",
+    "verify": "bash scripts/ai-verify.sh",
+    "verify:quick": "bash scripts/ai-verify.sh --quick",
     "phase": "bash scripts/phase.sh",
     "doctor": "bash scripts/doctor.sh",
     "re-index": "jcodemunch index-folder --path ."
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "concurrently": "^8.2.2"
   }
 }

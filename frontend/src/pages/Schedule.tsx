@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import apiClient from '../api/apiClient';
 import { useAuth } from '../hooks/useAuth';
 import { useTranslation } from 'react-i18next';
@@ -26,6 +26,15 @@ function apptHeight(durationMin: number) {
   return Math.max((durationMin / 60) * HOUR_HEIGHT - 4, 20);
 }
 
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <span style={{ fontSize: 12, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</span>
+      <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--ink)' }}>{value}</span>
+    </div>
+  );
+}
+
 export default function Schedule() {
   const { t } = useTranslation();
   const { settings } = useSettings();
@@ -40,6 +49,7 @@ export default function Schedule() {
   const [showBook, setShowBook] = useState(false);
   const [bookingError, setBookingError] = useState('');
   const [bookingSuccess, setBookingSuccess] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState<any | null>(null);
 
   // Booking form state
   const [selBarber, setSelBarber]   = useState('');
@@ -82,26 +92,6 @@ export default function Schedule() {
     }
   };
 
-  const updateStatus = async (id: number, status: string) => {
-    try {
-      if (status === 'cancelled') {
-        const reason = window.prompt(t('schedule.cancel_reason_prompt', 'Reason for cancellation?'));
-        if (reason === null) return;
-        await apiClient.post(`/appointments/${id}/cancel`, { reason });
-      } else {
-        await apiClient.patch(`/appointments/${id}`, { status });
-      }
-      if (status === 'completed') {
-        if (window.confirm(t('schedule.mark_completed_confirm', 'Go to POS to complete this sale?'))) {
-          navigate(`/pos?appointmentId=${id}`);
-          return;
-        }
-      }
-      fetchData();
-    } catch (err: any) {
-      alert(err.response?.data?.error || t('schedule.failed_update_status', 'Failed to update'));
-    }
-  };
 
   const changeDate = (days: number) => {
     const d = new Date(date);
@@ -122,6 +112,45 @@ export default function Schedule() {
   }
 
   const resetForm = () => { setShowBook(false); setBookingError(''); setBookingSuccess(false); setRecurRule(''); setOccurrences(1); setSendConf(true); };
+
+  const handleMarkInChair = async (id: number) => {
+    try {
+      await apiClient.patch(`/appointments/${id}`, { status: 'in-chair' });
+      setSelectedAppointment(null);
+      fetchData();
+    } catch (err: any) {
+      alert(err.response?.data?.error || 'Failed to update status');
+    }
+  };
+  const handleMarkComplete = async (id: number) => {
+    try {
+      await apiClient.patch(`/appointments/${id}`, { status: 'completed' });
+      setSelectedAppointment(null);
+      navigate(`/pos?appointmentId=${id}`);
+    } catch (err: any) {
+      alert(err.response?.data?.error || 'Failed to update status');
+    }
+  };
+  const handleMarkNoShow = async (id: number) => {
+    try {
+      await apiClient.patch(`/appointments/${id}`, { status: 'no-show' });
+      setSelectedAppointment(null);
+      fetchData();
+    } catch (err: any) {
+      alert(err.response?.data?.error || 'Failed to update status');
+    }
+  };
+  const handleCancel = async (id: number) => {
+    const reason = window.prompt(t('schedule.cancel_reason_prompt', 'Optional: reason for cancellation?'));
+    if (reason === null) return;
+    try {
+      await apiClient.post(`/appointments/${id}/cancel`, { reason });
+      setSelectedAppointment(null);
+      fetchData();
+    } catch (err: any) {
+      alert(err.response?.data?.error || 'Failed to cancel appointment');
+    }
+  };
 
   return (
     <>
@@ -196,18 +225,20 @@ export default function Schedule() {
                     <div key={`s-${h}-${b.id}`} className={`slot ${isNow ? 'now' : ''}`}>
                       {hourAppts.map((a) => {
                         const svc = services.find(s => s.id === a.service_id);
-                        const isDone = a.status === 'completed' || a.status === 'cancelled';
+                        const statusClass =
+                          a.status === 'completed' ? 'appt-done' :
+                          a.status === 'in-chair' ? 'appt-in-chair' :
+                          a.status === 'no-show' ? 'appt-no-show' :
+                          a.status === 'cancelled' ? 'appt-cancelled' : '';
                         return (
                           <div
                             key={a.id}
-                            className={`appt ${APPT_CLASSES[bi % APPT_CLASSES.length]} ${isDone ? 'appt-done' : ''}`}
+                            className={`appt ${APPT_CLASSES[bi % APPT_CLASSES.length]} ${statusClass}`}
                             style={{
                               top: apptTop(a.start_time) % HOUR_HEIGHT,
                               height: apptHeight(svc?.duration_minutes || 30),
                             }}
-                            onClick={() => {
-                              if (!isDone) updateStatus(a.id, 'in-chair');
-                            }}
+                            onClick={() => setSelectedAppointment(a)}
                             title={`${a.customer_name || 'Walk-in'} — ${svc?.name || 'Service'}`}
                           >
                             <div className="appt-name">{a.customer_name || t('schedule.walk_in', 'Walk-in')}</div>
@@ -311,6 +342,79 @@ export default function Schedule() {
             </button>
           </form>
         )}
+      </Modal>
+
+      {/* Appointment Detail Modal */}
+      <Modal
+        isOpen={selectedAppointment != null}
+        onClose={() => setSelectedAppointment(null)}
+        title={selectedAppointment?.customer_name || t('schedule.walk_in', 'Walk-in')}
+        size="md"
+        footer={selectedAppointment && (() => {
+          const status = selectedAppointment.status;
+          const id = selectedAppointment.id;
+          return (
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              {status === 'scheduled' && (
+                <>
+                  <button className="btn btn-ghost btn-sm" style={{ color: 'var(--primary-deep)' }} onClick={() => handleCancel(id)}>{t('common.cancel', 'Cancel')}</button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => handleMarkNoShow(id)}>{t('schedule.mark_no_show', 'Mark no-show')}</button>
+                  <button className="btn btn-primary btn-sm" onClick={() => handleMarkInChair(id)}>{t('schedule.mark_in_chair', 'Mark in chair')}</button>
+                </>
+              )}
+              {status === 'in-chair' && (
+                <>
+                  <button className="btn btn-ghost btn-sm" style={{ color: 'var(--primary-deep)' }} onClick={() => handleCancel(id)}>{t('common.cancel', 'Cancel')}</button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => handleMarkNoShow(id)}>{t('schedule.mark_no_show', 'Mark no-show')}</button>
+                  <button className="btn btn-accent btn-sm" onClick={() => handleMarkComplete(id)}>{t('schedule.mark_complete', 'Mark complete')}</button>
+                </>
+              )}
+              {status === 'completed' && (
+                <>
+                  <button className="btn btn-soft btn-sm" onClick={() => setSelectedAppointment(null)}>{t('common.close', 'Close')}</button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => { setSelectedAppointment(null); navigate(`/pos?appointmentId=${id}`); }}>{t('schedule.open_in_pos', 'Open in POS')}</button>
+                </>
+              )}
+              {(status === 'no-show' || status === 'cancelled') && (
+                <button className="btn btn-soft btn-sm" onClick={() => setSelectedAppointment(null)}>{t('common.close', 'Close')}</button>
+              )}
+            </div>
+          );
+        })()}
+      >
+        {selectedAppointment && (() => {
+          const appt = selectedAppointment;
+          const svc = services.find((s: any) => s.id === appt.service_id);
+          const brb = barbers.find((b: any) => b.id === appt.barber_id);
+          const start = new Date(appt.start_time);
+          const dur = svc?.duration_minutes || 30;
+          const end = new Date(start.getTime() + dur * 60000);
+          const fmtTime = (d: Date) => d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+          const fmtDate = (d: Date) => d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+
+          const statusKey = (() => {
+            switch (appt.status) {
+              case 'in-chair': return 'in_chair';
+              case 'no-show': return 'no_show';
+              default: return appt.status;
+            }
+          })();
+          const chipVariant =
+            appt.status === 'completed' ? 'chip-success' :
+            appt.status === 'in-chair' ? 'chip-warn' :
+            appt.status === 'no-show' ? 'chip-danger' :
+            appt.status === 'cancelled' ? 'chip-plum' : '';
+
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div><span className={`chip ${chipVariant}`}>{String(t(`schedule.status.${statusKey}`, appt.status))}</span></div>
+              <Row label={t('schedule.service', 'Service')} value={`${svc?.name || '–'} · ${dur} min · $${svc?.price ?? '–'}`} />
+              <Row label={t('schedule.barber', 'Barber')} value={brb?.fullname || brb?.name || '–'} />
+              <Row label={t('schedule.date_time', 'Date & time')} value={`${fmtDate(start)} · ${fmtTime(start)}–${fmtTime(end)}`} />
+              {appt.notes && <Row label={t('schedule.notes', 'Notes')} value={appt.notes} />}
+            </div>
+          );
+        })()}
       </Modal>
     </>
   );

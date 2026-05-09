@@ -16,7 +16,7 @@ describe('routeIntent', () => {
       { id: 2, name: 'Beard Trim', price: 20, duration_minutes: 20, description: 'Beard trim', shop_id: 1, is_active: 1 },
     ],
     activeBarbers: [
-      { id: 1, name: 'Carlos', fullname: 'Carlos Mendez', shop_id: 1, is_active: 1, payment_model: 'COMMISSION', service_commission_rate: 0.2, product_commission_rate: 0.15 },
+      { id: 1, name: 'Carlos', fullname: 'Carlos Mendez', shop_id: 1, is_active: 1, payment_model: 'COMMISSION', service_commission_rate: 0.2, product_commission_rate: 0.15, fixed_amount: null, fixed_period: null },
     ],
   };
 

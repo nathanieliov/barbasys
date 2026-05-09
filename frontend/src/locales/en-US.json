@@ -122,7 +122,12 @@
     "discount_amount": "DISCOUNT ($)",
     "amount_due": "Amount Due",
     "complete_payment": "Complete Payment",
-    "error_processing_sale": "Error processing sale. Please check inputs."
+    "error_processing_sale": "Error processing sale. Please check inputs.",
+    "receipt_sent_to": "Receipt sent to {{recipients}}",
+    "no_contact_info": "No contact info captured — no receipt sent.",
+    "send_receipt": "Send receipt",
+    "email_or_phone_required": "Enter at least an email or a phone number.",
+    "send": "Send"
   },
   "schedule": {
     "title": "Schedule",
@@ -150,7 +155,22 @@
     "biweekly": "Bi-weekly",
     "monthly": "Monthly",
     "send_confirmation": "Send booking confirmation (Email/SMS)",
-    "confirm_booking": "Confirm Booking"
+    "confirm_booking": "Confirm Booking",
+    "mark_in_chair": "Mark in chair",
+    "mark_complete": "Mark complete",
+    "mark_no_show": "Mark no-show",
+    "open_in_pos": "Open in POS",
+    "notes": "Notes",
+    "barber": "Barber",
+    "service": "Service",
+    "date_time": "Date & time",
+    "status": {
+      "scheduled": "Scheduled",
+      "in_chair": "In chair",
+      "completed": "Completed",
+      "no_show": "No-show",
+      "cancelled": "Cancelled"
+    }
   },
   "login": {
     "title": "BarbaSys Pro",
@@ -424,7 +444,9 @@
     "your_details": "Your details",
     "phone": "Phone",
     "confirmed": "Confirmed",
-    "pay_at_shop": "No charge now. You'll pay at the shop. Cancel free up to 2 hours before."
+    "pay_at_shop": "No charge now. You'll pay at the shop. Cancel free up to 2 hours before.",
+    "location_confirm_hint": "Here's where your appointment will be.",
+    "get_directions": "Get directions"
   },
   "topbar": {
     "sign_in": "Sign in",

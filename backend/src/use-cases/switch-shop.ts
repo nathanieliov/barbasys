@@ -1,5 +1,6 @@
 import jwt, { SignOptions } from 'jsonwebtoken';
 import { UserRepository } from '../repositories/user-repository.interface.js';
+import { JWT_SECRET } from '../auth/jwt-secret.js';
 
 export interface SwitchShopRequest {
   userId: number;
@@ -27,7 +28,7 @@ export class SwitchShop {
 
     const token = jwt.sign(
       { id: user.id, username: user.username, role: user.role, barber_id: user.barber_id, shop_id: shopId },
-      process.env.JWT_SECRET || 'secret',
+      JWT_SECRET,
       options
     );
 

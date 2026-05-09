@@ -28,6 +28,8 @@ vi.mock('lucide-react', () => ({
   Sparkles: () => <div data-testid="icon-sparkles" />,
   Settings: () => <div data-testid="icon-settings" />,
   X: () => <div data-testid="icon-x" />,
+  Phone: () => <div data-testid="icon-phone" />,
+  Navigation: () => <div data-testid="icon-navigation" />,
 }));
 
 vi.mock('react-i18next', () => ({
@@ -92,7 +94,7 @@ vi.mock('react-i18next', () => ({
       return map[key] || key;
     },
   }),
-  Trans: ({ i18nKey, values }: any) => <span>{i18nKey}</span>,
+  Trans: ({ i18nKey }: any) => <span>{i18nKey}</span>,
 }));
 
 vi.mock('../api/apiClient', () => ({
@@ -173,6 +175,10 @@ describe('BookingFlow Component', () => {
     fireEvent.click(screen.getByText('Service One'));
     fireEvent.click(screen.getByText('Continue'));
 
+    // Wait for Location step, then advance past it
+    await waitFor(() => expect(screen.getByText(/Where to/i)).toBeInTheDocument());
+    fireEvent.click(screen.getByText('Continue'));
+
     expect(screen.getByText('Date & Time')).toBeInTheDocument();
   });
 
@@ -185,6 +191,10 @@ describe('BookingFlow Component', () => {
     fireEvent.click(screen.getByText('Continue'));
     await waitFor(() => screen.getByText('Service One'));
     fireEvent.click(screen.getByText('Service One'));
+    fireEvent.click(screen.getByText('Continue'));
+
+    // Wait for Location step, then advance past it
+    await waitFor(() => expect(screen.getByText(/Where to/i)).toBeInTheDocument());
     fireEvent.click(screen.getByText('Continue'));
 
     // Select today's date chip (first button in the day strip)
@@ -216,6 +226,10 @@ describe('BookingFlow Component', () => {
     fireEvent.click(screen.getByText('Continue'));
     await waitFor(() => screen.getByText('Service One'));
     fireEvent.click(screen.getByText('Service One'));
+    fireEvent.click(screen.getByText('Continue'));
+
+    // Wait for Location step, then advance past it
+    await waitFor(() => expect(screen.getByText(/Where to/i)).toBeInTheDocument());
     fireEvent.click(screen.getByText('Continue'));
 
     await waitFor(() => screen.getByTestId('day-strip'));
@@ -251,6 +265,10 @@ describe('BookingFlow Component', () => {
     fireEvent.click(screen.getByText('Service One'));
     fireEvent.click(screen.getByText('Continue'));
 
+    // Wait for Location step, then advance past it
+    await waitFor(() => expect(screen.getByText(/Where to/i)).toBeInTheDocument());
+    fireEvent.click(screen.getByText('Continue'));
+
     await waitFor(() => screen.getByTestId('day-strip'));
     fireEvent.click(screen.getByTestId('day-strip').querySelectorAll('button')[0]);
     await waitFor(() => screen.getByText('09:00'));
@@ -279,6 +297,10 @@ describe('BookingFlow Component', () => {
     fireEvent.click(screen.getByText('Service One'));
     fireEvent.click(screen.getByText('Continue'));
 
+    // Wait for Location step, then advance past it
+    await waitFor(() => expect(screen.getByText(/Where to/i)).toBeInTheDocument());
+    fireEvent.click(screen.getByText('Continue'));
+
     await waitFor(() => screen.getByTestId('day-strip'));
     fireEvent.click(screen.getByTestId('day-strip').querySelectorAll('button')[0]);
     await waitFor(() => screen.getByText('09:00'));
@@ -289,5 +311,99 @@ describe('BookingFlow Component', () => {
     fireEvent.click(screen.getByText(/Confirm booking/));
 
     await waitFor(() => expect(screen.getByText("You're booked.")).toBeInTheDocument());
+  });
+
+  it('Location step shows shop name, address, phone, and hours', async () => {
+    vi.mocked(apiClient.get).mockImplementation((url: string) => {
+      if (url.includes('/public/shops/')) {
+        return Promise.resolve({
+          data: {
+            shop: { id: 1, name: 'Loc Test Shop', address: '500 Maple Ave', phone: '+1-555-0150' },
+            services: [{ id: 1, name: 'Cut', price: 25, duration_minutes: 30 }],
+            barbers: [{ id: 1, name: 'Sam', fullname: 'Sam Q' }],
+            settings: { open_time: '09:00', close_time: '19:00' },
+          }
+        });
+      }
+      return Promise.resolve({ data: [] });
+    });
+
+    renderWithProviders();
+
+    // Walk to Location step: pick barber, Continue, pick service, Continue
+    await waitFor(() => screen.getByText('Sam Q'));
+    fireEvent.click(screen.getByText('Sam Q'));
+    fireEvent.click(screen.getByText('Continue'));
+    await waitFor(() => screen.getByText('Cut'));
+    fireEvent.click(screen.getByText('Cut'));
+    fireEvent.click(screen.getByText('Continue'));
+
+    // Now on Location step
+    await waitFor(() => expect(screen.getByText(/Where to/i)).toBeInTheDocument());
+    expect(screen.getByText('Loc Test Shop')).toBeInTheDocument();
+    expect(screen.getByText('500 Maple Ave')).toBeInTheDocument();
+    expect(screen.getByText('+1-555-0150')).toBeInTheDocument();
+    expect(screen.getByText(/09:00.*19:00/)).toBeInTheDocument();
+  });
+
+  it('Location step shows Get directions link with the shop address', async () => {
+    vi.mocked(apiClient.get).mockImplementation((url: string) => {
+      if (url.includes('/public/shops/')) {
+        return Promise.resolve({
+          data: {
+            shop: { id: 1, name: 'L Shop', address: '500 Maple Ave', phone: null },
+            services: [{ id: 1, name: 'Cut', price: 25, duration_minutes: 30 }],
+            barbers: [{ id: 1, name: 'Sam', fullname: 'Sam Q' }],
+            settings: { open_time: null, close_time: null },
+          }
+        });
+      }
+      return Promise.resolve({ data: [] });
+    });
+
+    renderWithProviders();
+
+    await waitFor(() => screen.getByText('Sam Q'));
+    fireEvent.click(screen.getByText('Sam Q'));
+    fireEvent.click(screen.getByText('Continue'));
+    await waitFor(() => screen.getByText('Cut'));
+    fireEvent.click(screen.getByText('Cut'));
+    fireEvent.click(screen.getByText('Continue'));
+
+    await waitFor(() => expect(screen.getByText(/Where to/i)).toBeInTheDocument());
+    const link = screen.getByText(/get directions/i).closest('a');
+    expect(link).toBeTruthy();
+    expect(link?.getAttribute('href')).toContain('maps.google.com');
+    expect(link?.getAttribute('href')).toContain(encodeURIComponent('500 Maple Ave'));
+    expect(link?.getAttribute('target')).toBe('_blank');
+  });
+
+  it('Location step hides hours row when both open_time and close_time are null', async () => {
+    vi.mocked(apiClient.get).mockImplementation((url: string) => {
+      if (url.includes('/public/shops/')) {
+        return Promise.resolve({
+          data: {
+            shop: { id: 1, name: 'L Shop', address: '500 Maple Ave', phone: null },
+            services: [{ id: 1, name: 'Cut', price: 25, duration_minutes: 30 }],
+            barbers: [{ id: 1, name: 'Sam', fullname: 'Sam Q' }],
+            settings: { open_time: null, close_time: null },
+          }
+        });
+      }
+      return Promise.resolve({ data: [] });
+    });
+
+    renderWithProviders();
+
+    await waitFor(() => screen.getByText('Sam Q'));
+    fireEvent.click(screen.getByText('Sam Q'));
+    fireEvent.click(screen.getByText('Continue'));
+    await waitFor(() => screen.getByText('Cut'));
+    fireEvent.click(screen.getByText('Cut'));
+    fireEvent.click(screen.getByText('Continue'));
+
+    await waitFor(() => expect(screen.getByText(/Where to/i)).toBeInTheDocument());
+    // No hours separator should appear
+    expect(screen.queryByText(/—/)).not.toBeInTheDocument();
   });
 });

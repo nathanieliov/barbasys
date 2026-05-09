@@ -276,12 +276,6 @@ input:focus, select:focus, textarea:focus {
   }
 }
 
-.item-list-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 0.75rem;
-}
-
 /* Modal */
 .modal-overlay {
   position: fixed;
@@ -471,7 +465,7 @@ input:focus, select:focus, textarea:focus {
 .login-hero {
   flex: 1;
   display: none;
-  background: linear-gradient(135deg, var(--primary) 0%, #7c3aed 100%);
+  background: var(--ink);
   color: white;
   padding: 3rem;
   flex-direction: column;
@@ -510,184 +504,6 @@ input:focus, select:focus, textarea:focus {
   .login-hero { display: flex; flex: 0 0 40%; }
   .login-form-col { flex: 0 0 60%; }
   .login-two-col { background: none; }
-}
-
-/* Booking Flow Revamp Styling */
-.booking-container {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #f3f4f6 0%, #e0e7ff 100%);
-  padding: 2rem 1rem;
-}
-
-.glass-panel {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08);
-  border-radius: 1.5rem;
-  width: 100%;
-  max-width: 600px;
-  margin: 0 auto;
-  overflow: hidden;
-  position: relative;
-}
-
-.stepper-container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.5rem 2rem;
-  background: rgba(255, 255, 255, 0.5);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.4);
-  position: relative;
-}
-
-.stepper-progress-bg {
-  position: absolute;
-  top: 50%;
-  left: 2rem;
-  right: 2rem;
-  height: 2px;
-  background: var(--border);
-  z-index: 0;
-  transform: translateY(-50%);
-}
-
-.stepper-progress-fill {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 100%;
-  background: var(--primary);
-  transition: width 0.3s ease;
-}
-
-.step-indicator {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  position: relative;
-  z-index: 10;
-}
-
-.step-circle {
-  width: 2rem;
-  height: 2rem;
-  border-radius: 50%;
-  background: #fff;
-  border: 2px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 0.875rem;
-  color: var(--text-muted);
-  transition: all 0.3s ease;
-}
-
-.step-indicator.active .step-circle {
-  background: var(--primary);
-  border-color: var(--primary);
-  color: #fff;
-  box-shadow: 0 0 15px rgba(79, 70, 229, 0.4);
-}
-
-.step-indicator.completed .step-circle {
-  background: var(--success);
-  border-color: var(--success);
-  color: #fff;
-}
-
-.step-label {
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  position: absolute;
-  bottom: -1.25rem;
-  white-space: nowrap;
-}
-
-.step-indicator.active .step-label {
-  color: var(--primary);
-}
-
-.glass-item {
-  background: rgba(255, 255, 255, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  border-radius: 1rem;
-  padding: 1.25rem;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  cursor: pointer;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-}
-
-.glass-item:hover {
-  transform: translateY(-2px) scale(1.01);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  border-color: var(--primary);
-  background: #fff;
-}
-
-.glass-item.selected {
-  background: rgba(79, 70, 229, 0.05);
-  border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
-}
-
-.glass-time-slot {
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid var(--border);
-  border-radius: 0.75rem;
-  padding: 0.875rem 0;
-  font-weight: 700;
-  color: var(--text-main);
-  transition: all 0.2s ease;
-  cursor: pointer;
-  text-align: center;
-}
-
-.glass-time-slot:hover {
-  background: #fff;
-  border-color: var(--primary);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-}
-
-.glass-time-slot.selected {
-  background: var(--primary);
-  color: #fff;
-  border-color: var(--primary);
-  box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
-}
-
-.animate-fade-in-up {
-  animation: fadeInUp 0.4s ease-out forwards;
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(15px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.glass-cart {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-top: 1px solid rgba(255, 255, 255, 0.5);
-  padding: 1.5rem;
-  box-shadow: 0 -10px 25px -5px rgba(0, 0, 0, 0.05);
-  position: sticky;
-  bottom: 0;
-  z-index: 20;
 }
 
 /* ─── Design System Components ───────────────────────────── */
@@ -759,6 +575,7 @@ input:focus, select:focus, textarea:focus {
 .chip-warn    { background: var(--butter-soft);  color: #8a6210; }
 .chip-primary { background: var(--primary-soft); color: var(--primary-deep); }
 .chip-plum    { background: var(--plum-soft);    color: #6f4861; }
+.chip-danger  { background: #fbe5db;             color: #b85a3c; }
 
 /* KPI Cards */
 .kpi {
@@ -1147,6 +964,19 @@ input:focus, select:focus, textarea:focus {
 .appt-amber  { background: var(--butter-soft);  color: #75510e; }
 .appt-ink    { background: var(--surface-2);    color: var(--ink); }
 .appt-done   { opacity: 0.55; }
+.appt.appt-in-chair {
+  background: var(--butter-soft);
+  color: var(--ink);
+  border: 2px solid var(--butter);
+}
+.appt.appt-no-show {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+.appt.appt-cancelled {
+  opacity: 0.4;
+  text-decoration: line-through;
+}
 
 /* ─── POS Design System ───────────────────────────────────── */
 .pos-tabs {
@@ -1242,3 +1072,29 @@ input:focus, select:focus, textarea:focus {
   transition: background .1s, border-color .1s;
 }
 .tip-row button.active { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+/* ─── Catalog Table ───────────────────────────────────────── */
+.tbl {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 14px;
+}
+.tbl th {
+  text-align: left;
+  font-weight: 500;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-3);
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+}
+.tbl td {
+  padding: 14px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+.tbl tr:last-child td { border-bottom: 0; }
+.tbl tr:hover td { background: var(--surface-2); }

@@ -122,7 +122,12 @@
     "discount_amount": "DESCUENTO (RD$)",
     "amount_due": "Monto a Pagar",
     "complete_payment": "Completar Pago",
-    "error_processing_sale": "Error al procesar la venta. Por favor revise los valores."
+    "error_processing_sale": "Error al procesar la venta. Por favor revise los valores.",
+    "receipt_sent_to": "Recibo enviado a {{recipients}}",
+    "no_contact_info": "Sin información de contacto — no se envió recibo.",
+    "send_receipt": "Enviar recibo",
+    "email_or_phone_required": "Ingrese al menos un correo o teléfono.",
+    "send": "Enviar"
   },
   "schedule": {
     "title": "Agenda",
@@ -150,7 +155,22 @@
     "biweekly": "Quincenal",
     "monthly": "Mensual",
     "send_confirmation": "Enviar confirmación de reserva (Email/SMS)",
-    "confirm_booking": "Confirmar Reserva"
+    "confirm_booking": "Confirmar Reserva",
+    "mark_in_chair": "Marcar en silla",
+    "mark_complete": "Marcar completada",
+    "mark_no_show": "Marcar como ausente",
+    "open_in_pos": "Abrir en POS",
+    "notes": "Notas",
+    "barber": "Barbero",
+    "service": "Servicio",
+    "date_time": "Fecha y hora",
+    "status": {
+      "scheduled": "Agendada",
+      "in_chair": "En silla",
+      "completed": "Completada",
+      "no_show": "Ausente",
+      "cancelled": "Cancelada"
+    }
   },
   "login": {
     "title": "BarbaSys Pro",
@@ -424,7 +444,9 @@
     "your_details": "Sus datos",
     "phone": "Teléfono",
     "confirmed": "Confirmado",
-    "pay_at_shop": "Sin cargo ahora. Pague en la barbería. Cancelación gratuita hasta 2 horas antes."
+    "pay_at_shop": "Sin cargo ahora. Pague en la barbería. Cancelación gratuita hasta 2 horas antes.",
+    "location_confirm_hint": "Aquí es donde será tu cita.",
+    "get_directions": "Cómo llegar"
   },
   "portal": {
     "welcome": "Hola, {{name}}",

@@ -170,7 +170,7 @@ export default function Settings() {
                   onChange={e => setNewHoliday(e.target.value)} 
                   style={{ marginBottom: 0 }}
                 />
-                <button type="button" onClick={addHoliday} className="secondary" style={{ padding: '0.5rem 1rem' }}>
+                <button type="button" onClick={addHoliday} className="btn btn-ghost">
                   <Plus size={18} />
                 </button>
               </div>
@@ -178,7 +178,7 @@ export default function Settings() {
                 {holidays.map(h => (
                   <div key={h} style={{ background: '#f3f4f6', padding: '0.4rem 0.75rem', borderRadius: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', fontWeight: '700' }}>
                     <Calendar size={14} /> {new Date(h).toLocaleDateString()}
-                    <button type="button" onClick={() => removeHoliday(h)} style={{ background: 'none', color: 'var(--danger)', padding: 0, height: 'auto', minHeight: 0 }}>
+                    <button type="button" onClick={() => removeHoliday(h)} className="btn btn-sm" style={{ background: 'none', color: 'var(--danger)', height: 'auto', minHeight: 0 }}>
                       <Trash2 size={14} />
                     </button>
                   </div>
@@ -250,7 +250,7 @@ export default function Settings() {
 
         </div>
 
-        <button type="submit" disabled={saving} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1rem 2.5rem', marginTop: '2.5rem', borderRadius: '1rem', fontSize: '1.1rem', boxShadow: '0 4px 6px -1px rgba(79, 70, 229, 0.2)' }}>
+        <button type="submit" disabled={saving} className="btn btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '2.5rem', borderRadius: '1rem', boxShadow: '0 4px 6px -1px rgba(79, 70, 229, 0.2)' }}>
           <Save size={20} />
           {saving ? t('settings.saving') : t('settings.save_all')}
         </button>

@@ -1,6 +1,17 @@
+import 'dotenv/config';
+import { validateEnv } from './env-check.js';
+validateEnv();
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
+import twilio from 'twilio';
+import { TwilioWhatsAppClient } from './adapters/whatsapp/twilio-whatsapp-client.js';
+import { FakeTwilioClient } from './adapters/whatsapp/fake-twilio-client.js';
+import { IWhatsAppClient } from './adapters/whatsapp/whatsapp-client.interface.js';
+import { OpenAILLMClient } from './adapters/llm/openai-llm-client.js';
+import { FakeLLMClient } from './adapters/llm/fake-llm-client.js';
+import { ILLMClient } from './adapters/llm/llm-client.interface.js';
+import { SqliteConversationRepository } from './repositories/sqlite-conversation-repository.js';
+import { ResendReceipt } from './use-cases/pos/ResendReceipt.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import db from './db.js';
@@ -47,9 +58,7 @@ import { VerifyOTP } from './use-cases/VerifyOTP.js';
 
 import { protect, authorize } from './middleware/auth-middleware.js';
 import { loginRateLimiter, recordFailedLogin, clearLoginAttempts } from './middleware/login-rate-limiter.js';
-import chatbotRouter from './routes/chatbot.js';
-
-dotenv.config();
+import { buildChatbotRouter } from './routes/chatbot.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -68,6 +77,17 @@ const customerRepo = new SQLiteCustomerRepository(db);
 const productRepo = new SQLiteProductRepository(db);
 const expenseRepo = new SQLiteExpenseRepository(db);
 const supplierRepo = new SQLiteSupplierRepository(db);
+const conversationRepo = new SqliteConversationRepository(db);
+const whatsAppClient: IWhatsAppClient = process.env.FAKE_TWILIO === '1'
+  ? new FakeTwilioClient()
+  : new TwilioWhatsAppClient(
+      twilio(process.env.TWILIO_ACCOUNT_SID || '', process.env.TWILIO_AUTH_TOKEN || ''),
+      process.env.TWILIO_FROM_NUMBER || 'whatsapp:+14155238886',
+    );
+const llmClient: ILLMClient = process.env.FAKE_LLM === '1'
+  ? new FakeLLMClient()
+  : new OpenAILLMClient(process.env.OPENAI_API_KEY || '');
+const chatbotRouter = buildChatbotRouter({ whatsAppClient, llmClient });
 
 const listBarbers = new ListBarbers(barberRepo);
 const loginUseCase = new LoginUseCase(userRepo);
@@ -81,7 +101,8 @@ const createAppointment = new CreateAppointment(appointmentRepo, shiftRepo, serv
 const cancelAppointment = new CancelAppointment(appointmentRepo, customerRepo, barberRepo, serviceRepo);
 const getAvailableSlots = new GetAvailableSlots(appointmentRepo, shiftRepo, db);
 const updateAppointment = new UpdateAppointment(appointmentRepo, serviceRepo, shiftRepo);
-const processSale = new ProcessSale(saleRepo, customerRepo, barberRepo, productRepo, db);
+const processSale = new ProcessSale(saleRepo, customerRepo, barberRepo, productRepo, db, conversationRepo, whatsAppClient);
+const resendReceiptUseCase = new ResendReceipt(saleRepo, customerRepo, conversationRepo, whatsAppClient);
 const getCommissionsReport = new GetCommissionsReport(saleRepo, barberRepo, expenseRepo);
 const exportSalesCSV = new ExportSalesCSV(saleRepo);
 const getInventoryIntelligence = new GetInventoryIntelligence(productRepo);
@@ -124,7 +145,12 @@ app.get('/api/public/shops/:id', (req, res) => {
     const shop = db.prepare('SELECT * FROM shops WHERE id = ?').get(req.params.id);
     const services = db.prepare('SELECT * FROM services WHERE shop_id = ? AND is_active = 1').all(req.params.id);
     const barbers = db.prepare('SELECT * FROM barbers WHERE shop_id = ? AND is_active = 1').all(req.params.id);
-    res.json({ shop, services, barbers });
+    const settingRows = db.prepare("SELECT key, value FROM shop_settings WHERE shop_id = ? AND key IN ('open_time', 'close_time')").all(req.params.id) as { key: string; value: string }[];
+    const settings = {
+      open_time: settingRows.find(r => r.key === 'open_time')?.value ?? null,
+      close_time: settingRows.find(r => r.key === 'close_time')?.value ?? null,
+    };
+    res.json({ shop, services, barbers, settings });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -1052,6 +1078,27 @@ app.post('/api/sales', protect, async (req, res) => {
     res.json(result);
   } catch (err: any) {
     res.status(400).json({ error: err.message });
+  }
+});
+
+app.post('/api/sales/:id/resend-receipt', protect, async (req, res) => {
+  const shopId = req.user?.shop_id;
+  if (!shopId) return res.status(400).json({ error: 'Missing shop context' });
+  const saleId = parseInt(req.params.id as string);
+  if (isNaN(saleId)) return res.status(400).json({ error: 'Invalid sale id' });
+
+  const { email, phone } = req.body || {};
+  try {
+    const result = await resendReceiptUseCase.execute({
+      saleId,
+      shopId,
+      email: email ?? null,
+      phone: phone ?? null,
+    });
+    res.json({ success: true, channels: result.channels });
+  } catch (err: any) {
+    const status = /not found/i.test(err.message) ? 404 : 400;
+    res.status(status).json({ error: err.message });
   }
 });
 

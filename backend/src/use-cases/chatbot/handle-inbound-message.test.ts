@@ -22,6 +22,7 @@ describe('handleInboundMessage', () => {
 
   const mockWhatsAppClient = {
     sendText: vi.fn(),
+    sendList: vi.fn().mockResolvedValue({ sid: null, status: 'queued' }),
   };
 
   const mockLLMClient: ILLMClient = {

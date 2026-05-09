@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { MapPin, Star, Clock, ChevronLeft, ChevronRight, Sparkles, CheckCircle, Calendar, Loader2, AlertCircle, User } from 'lucide-react';
+import { MapPin, Star, Clock, ChevronLeft, ChevronRight, Sparkles, CheckCircle, Calendar, Loader2, AlertCircle, User, Phone, Navigation } from 'lucide-react';
 import apiClient from '../api/apiClient';
 import { useAuth } from '../hooks/useAuth';
 import { useSettings } from '../hooks/useSettings';
@@ -15,7 +15,9 @@ interface BookingFlowProps {
 }
 
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const DAY_NAMES_FULL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTH_FULL = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
 function buildDays(n = 14) {
   const today = new Date();
@@ -79,8 +81,9 @@ function OtpModal({ isOpen, onClose, onVerified }: { isOpen: boolean; onClose: (
     setSubmitting(true);
     setError('');
     try {
-      await apiClient.post('/auth/otp/send', { email });
+      const res = await apiClient.post('/auth/otp/send', { email });
       setOtpStep('OTP');
+      if (res.data.devCode) setOtp(res.data.devCode);
     } catch (err: any) {
       setError(err.response?.data?.error || t('booking.otp_send_error', 'Failed to send code.'));
     } finally { setSubmitting(false); }
@@ -117,8 +120,9 @@ function OtpModal({ isOpen, onClose, onVerified }: { isOpen: boolean; onClose: (
   const handleResend = async () => {
     setSubmitting(true);
     try {
-      await apiClient.post('/auth/otp/send', { email });
+      const res = await apiClient.post('/auth/otp/send', { email });
       setResendSent(true);
+      if (res.data.devCode) setOtp(res.data.devCode);
     } catch (err: any) {
       setError(err.response?.data?.error || '');
     } finally { setSubmitting(false); }
@@ -194,23 +198,27 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
 
   const rescheduleId = location.state?.rescheduleId;
   const initialBarberId = location.state?.barberId;
-  const hasShopId = !!(preSelectedBarber?.shop_id || routeShopId);
 
-  const STEPS = hasShopId
-    ? [t('nav.barbers', 'Barber'), t('nav.services', 'Service'), t('booking.date_time', 'Date & Time'), t('booking.confirm', 'Confirm')]
-    : [t('nav.barbers', 'Barber'), t('nav.services', 'Service'), t('booking.location', 'Location'), t('booking.date_time', 'Date & Time'), t('booking.confirm', 'Confirm')];
+  const STEPS = [
+    t('nav.barbers', 'Barber'),
+    t('nav.services', 'Service'),
+    t('booking.location', 'Location'),
+    t('booking.date_time', 'Date & Time'),
+    t('booking.confirm', 'Confirm'),
+  ];
 
   const STEP = {
     BARBER:   0,
     SERVICE:  1,
-    LOCATION: hasShopId ? -1 : 2,
-    DATETIME: hasShopId ? 2 : 3,
-    CONFIRM:  hasShopId ? 3 : 4,
+    LOCATION: 2,
+    DATETIME: 3,
+    CONFIRM:  4,
   };
 
   const [step, setStep] = useState(preSelectedBarber || initialBarberId ? STEP.SERVICE : STEP.BARBER);
   const [maxStep, setMaxStep] = useState(preSelectedBarber || initialBarberId ? STEP.SERVICE : STEP.BARBER);
   const [shop, setShop] = useState<any>(null);
+  const [shopSettings, setShopSettings] = useState<{ open_time: string | null; close_time: string | null } | null>(null);
   const [barbers, setBarbers] = useState<any[]>([]);
   const [services, setServices] = useState<any[]>([]);
   const [serviceCategory, setServiceCategory] = useState('All');
@@ -226,7 +234,7 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
 
-  const [loading, setLoading] = useState(hasShopId);
+  const [loading, setLoading] = useState(!!(preSelectedBarber?.shop_id || routeShopId));
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -239,6 +247,7 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
     if (shopId) {
       apiClient.get(`/public/shops/${shopId}`).then(res => {
         setShop(res.data.shop);
+        setShopSettings(res.data.settings ?? null);
         setBarbers(res.data.barbers);
         setServices(res.data.services);
         if (initialBarberId && res.data.barbers) {
@@ -259,15 +268,16 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
   }, [shopId, initialBarberId, rescheduleId]);
 
   useEffect(() => {
-    if (selectedBarber && selectedDate && selectedService) {
+    const barberId = selectedBarber?.id === 'any' ? barbers[0]?.id : selectedBarber?.id;
+    if (barberId && selectedDate && selectedService) {
       setLoadingSlots(true);
-      apiClient.get(`/public/barbers/${selectedBarber.id}/availability`, {
+      apiClient.get(`/public/barbers/${barberId}/availability`, {
         params: { date: selectedDate, duration: selectedService.duration_minutes }
       }).then(res => setAvailableSlots(res.data))
         .catch(() => setAvailableSlots([]))
         .finally(() => setLoadingSlots(false));
     }
-  }, [selectedBarber, selectedDate, selectedService]);
+  }, [selectedBarber, selectedDate, selectedService, barbers]);
 
   const advance = (nextStep: number) => {
     setStep(nextStep);
@@ -277,7 +287,7 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
   const canContinue = (() => {
     if (step === STEP.BARBER) return selectedBarber != null;
     if (step === STEP.SERVICE) return selectedService != null;
-    if (STEP.LOCATION >= 0 && step === STEP.LOCATION) return !!shopId;
+    if (step === STEP.LOCATION) return !!shop;
     if (step === STEP.DATETIME) return !!selectedDate && !!selectedTime;
     return true;
   })();
@@ -287,7 +297,7 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
     setError('');
     try {
       const body = {
-        barber_id: selectedBarber.id,
+        barber_id: selectedBarber.id === 'any' ? (barbers[0]?.id ?? null) : selectedBarber.id,
         services: [{ id: selectedService.id, quantity: 1 }],
         customer_id: user?.customer_id || null,
         start_time: `${selectedDate}T${selectedTime}:00`,
@@ -485,22 +495,52 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
         </>
       )}
 
-      {/* Step 2 — Location (only when no shopId in route) */}
-      {STEP.LOCATION >= 0 && step === STEP.LOCATION && (
+      {step === STEP.LOCATION && shop && (
         <>
           <h2 className="section-title" style={{ fontSize: 28, margin: '0 0 6px' }}>{t('booking.where_to', 'Where to?')}</h2>
-          <p className="muted" style={{ margin: '0 0 22px', fontSize: 15 }}>{t('booking.location_hint', 'Choose a location near you.')}</p>
-          <div className="option-grid">
-            <OptionCard selected={!!shop} onClick={() => {}} style={{ padding: 0, overflow: 'hidden' }}>
-              <div style={{ height: 130, background: 'repeating-linear-gradient(45deg,var(--surface-2),var(--surface-2) 8px,var(--surface-3) 8px,var(--surface-3) 16px)', borderRadius: 0, display: 'grid', placeItems: 'center', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)' }}>map placeholder</div>
-              <div style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                  <MapPin size={15} />
-                  <div style={{ fontWeight: 600, fontSize: 16 }}>{shop?.name}</div>
-                </div>
-                <div className="muted" style={{ fontSize: 13 }}>{shop?.address}</div>
+          <p className="muted" style={{ margin: '0 0 22px', fontSize: 15 }}>{t('booking.location_confirm_hint', "Here's where your appointment will be.")}</p>
+
+          <div className="card" style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 600, margin: 0 }}>
+              {shop.name}
+            </h3>
+
+            {shop.address && (
+              <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                <MapPin size={18} style={{ color: 'var(--ink-3)', flexShrink: 0, marginTop: 2 }} />
+                <span style={{ fontSize: 15 }}>{shop.address}</span>
               </div>
-            </OptionCard>
+            )}
+
+            {shop.phone && (
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                <Phone size={18} style={{ color: 'var(--ink-3)', flexShrink: 0 }} />
+                <a href={`tel:${shop.phone}`} style={{ fontSize: 15, color: 'var(--ink)', textDecoration: 'none' }}>
+                  {shop.phone}
+                </a>
+              </div>
+            )}
+
+            {(shopSettings?.open_time || shopSettings?.close_time) && (
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                <Clock size={18} style={{ color: 'var(--ink-3)', flexShrink: 0 }} />
+                <span style={{ fontSize: 15 }}>
+                  {shopSettings.open_time ?? '—'} – {shopSettings.close_time ?? '—'}
+                </span>
+              </div>
+            )}
+
+            {shop.address && (
+              <a
+                className="btn btn-ghost btn-sm"
+                href={`https://maps.google.com/?q=${encodeURIComponent(shop.address)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ alignSelf: 'flex-start', marginTop: 4, textDecoration: 'none', display: 'inline-flex', gap: 6, alignItems: 'center' }}
+              >
+                <Navigation size={14} /> {t('booking.get_directions', 'Get directions')}
+              </a>
+            )}
           </div>
         </>
       )}
@@ -532,6 +572,7 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
                       cursor: 'pointer', position: 'relative',
                     }}
                     aria-pressed={sel}
+                    aria-label={`${DAY_NAMES_FULL[d.getDay()]}, ${MONTH_FULL[d.getMonth()]} ${d.getDate()}`}
                   >
                     <div style={{ fontSize: 11, fontWeight: 500, opacity: 0.7, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{DAY_NAMES[d.getDay()]}</div>
                     <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 22, letterSpacing: '-0.02em' }}>{d.getDate()}</div>

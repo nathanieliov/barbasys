@@ -4,7 +4,7 @@ import { SQLiteAppointmentRepository } from '../../../repositories/sqlite-appoin
 import { SqliteConversationRepository } from '../../../repositories/sqlite-conversation-repository.js';
 import { BookAppointmentFlow } from './book-appointment.js';
 import { GetAvailableSlots } from '../../booking/GetAvailableSlots.js';
-import type { Conversation } from '../../../domain/entities.js';
+import type { Conversation, ConversationState } from '../../../domain/entities.js';
 
 function makeSlotsMock(slots: string[]) {
   return { execute: vi.fn().mockResolvedValue(slots) } as unknown as GetAvailableSlots;
@@ -57,7 +57,7 @@ describe('BookAppointmentFlow', () => {
   it('transitions from barber to service selection', async () => {
     const flow = new BookAppointmentFlow(appointmentRepo, convRepo, shopId, makeSlotsMock([]));
     const context = { step: 1, barberId };
-    const conv = { ...baseConversation, context_json: JSON.stringify(context), state: 'booking' };
+    const conv = { ...baseConversation, context_json: JSON.stringify(context), state: 'booking' as ConversationState };
 
     const result = await flow.handle({ conversation: conv, body: '1' });
 
@@ -68,7 +68,7 @@ describe('BookAppointmentFlow', () => {
   it('transitions from service to date selection', async () => {
     const flow = new BookAppointmentFlow(appointmentRepo, convRepo, shopId, makeSlotsMock([]));
     const context = { step: 2, barberId, serviceId };
-    const conv = { ...baseConversation, context_json: JSON.stringify(context), state: 'booking' };
+    const conv = { ...baseConversation, context_json: JSON.stringify(context), state: 'booking' as ConversationState };
 
     const result = await flow.handle({ conversation: conv, body: '1' });
 
@@ -80,7 +80,7 @@ describe('BookAppointmentFlow', () => {
     const mockSlots = makeSlotsMock(['09:00', '11:00', '14:30']);
     const flow = new BookAppointmentFlow(appointmentRepo, convRepo, shopId, mockSlots);
     const context = { step: 3, barberId, serviceId };
-    const conv = { ...baseConversation, context_json: JSON.stringify(context), state: 'booking' };
+    const conv = { ...baseConversation, context_json: JSON.stringify(context), state: 'booking' as ConversationState };
 
     const result = await flow.handle({ conversation: conv, body: '1' });
 
@@ -97,7 +97,7 @@ describe('BookAppointmentFlow', () => {
     const mockSlots = makeSlotsMock([]);
     const flow = new BookAppointmentFlow(appointmentRepo, convRepo, shopId, mockSlots);
     const context = { step: 3, barberId, serviceId };
-    const conv = { ...baseConversation, context_json: JSON.stringify(context), state: 'booking' };
+    const conv = { ...baseConversation, context_json: JSON.stringify(context), state: 'booking' as ConversationState };
 
     const result = await flow.handle({ conversation: conv, body: '1' });
 
@@ -111,7 +111,7 @@ describe('BookAppointmentFlow', () => {
     const storedSlots = ['09:00', '11:00', '14:30'];
     const flow = new BookAppointmentFlow(appointmentRepo, convRepo, shopId, makeSlotsMock([]));
     const context = { step: 4, barberId, serviceId, date: '2099-01-15', availableSlots: storedSlots };
-    const conv = { ...baseConversation, context_json: JSON.stringify(context), state: 'booking' };
+    const conv = { ...baseConversation, context_json: JSON.stringify(context), state: 'booking' as ConversationState };
 
     const result = await flow.handle({ conversation: conv, body: '2' }); // select 11:00
 
@@ -124,7 +124,7 @@ describe('BookAppointmentFlow', () => {
     const storedSlots = ['09:00', '11:00'];
     const flow = new BookAppointmentFlow(appointmentRepo, convRepo, shopId, makeSlotsMock([]));
     const context = { step: 4, barberId, serviceId, date: '2099-01-15', availableSlots: storedSlots };
-    const conv = { ...baseConversation, context_json: JSON.stringify(context), state: 'booking' };
+    const conv = { ...baseConversation, context_json: JSON.stringify(context), state: 'booking' as ConversationState };
 
     const result = await flow.handle({ conversation: conv, body: '5' }); // out of range
 

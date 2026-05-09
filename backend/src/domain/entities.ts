@@ -74,6 +74,8 @@ export interface Customer {
   last_visit: string | null;
   notes: string | null;
   created_at: string;
+  wa_opt_in?: number;
+  wa_opt_in_at?: string | null;
 }
 
 export interface Sale {
@@ -107,7 +109,7 @@ export interface Appointment {
   service_id: number;
   start_time: string;
   total_duration_minutes: number;
-  status: 'scheduled' | 'completed' | 'cancelled';
+  status: 'scheduled' | 'in-chair' | 'completed' | 'no-show' | 'cancelled';
   reminder_sent: number;
   recurring_id: string | null;
   recurring_rule: string | null;

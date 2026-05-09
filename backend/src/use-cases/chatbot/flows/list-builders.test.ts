@@ -1,12 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { buildBarberList, buildServiceList, buildDateList, buildSlotList } from './list-builders.js';
+import type { Barber } from '../../../domain/entities.js';
 
 describe('List Builders', () => {
   describe('buildBarberList', () => {
     it('formats barbers into WA list format', () => {
-      const barbers = [
-        { id: 1, name: 'Carlos', fullname: 'Carlos Mendez', shop_id: 1, is_active: 1, payment_model: 'COMMISSION', service_commission_rate: 0.2, product_commission_rate: 0.15 },
-        { id: 2, name: 'Juan', fullname: 'Juan Garcia', shop_id: 1, is_active: 1, payment_model: 'COMMISSION', service_commission_rate: 0.2, product_commission_rate: 0.15 },
+      const barbers: Barber[] = [
+        { id: 1, name: 'Carlos', fullname: 'Carlos Mendez', shop_id: 1, is_active: 1, payment_model: 'COMMISSION', service_commission_rate: 0.2, product_commission_rate: 0.15, fixed_amount: null, fixed_period: null },
+        { id: 2, name: 'Juan', fullname: 'Juan Garcia', shop_id: 1, is_active: 1, payment_model: 'COMMISSION', service_commission_rate: 0.2, product_commission_rate: 0.15, fixed_amount: null, fixed_period: null },
       ];
 
       const result = buildBarberList(barbers);

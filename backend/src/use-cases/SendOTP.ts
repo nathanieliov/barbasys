@@ -43,20 +43,25 @@ export class SendOTP {
       });
     }
 
-    // Check rate limit (max 3 times in 15 minutes)
+    // In dev/test mode (no real email configured), skip rate limiting so
+    // developers can resend freely without waiting 15 minutes.
+    const isDevMode = process.env.NODE_ENV !== 'production' && process.env.EMAIL_USER == null;
+
     const now = new Date();
-    const fifteenMinutesAgo = new Date(now.getTime() - 15 * 60 * 1000);
-    
-    let otpRequestsCount = user.otp_requests_count || 0;
-    let lastRequestAt = user.last_otp_request_at ? new Date(user.last_otp_request_at) : null;
+    let otpRequestsCount = 0;
 
-    if (lastRequestAt && lastRequestAt < fifteenMinutesAgo) {
-      // Reset count if last request was more than 15 minutes ago
-      otpRequestsCount = 0;
-    }
+    if (!isDevMode) {
+      const fifteenMinutesAgo = new Date(now.getTime() - 15 * 60 * 1000);
+      otpRequestsCount = user.otp_requests_count || 0;
+      const lastRequestAt = user.last_otp_request_at ? new Date(user.last_otp_request_at) : null;
 
-    if (otpRequestsCount >= 3) {
-      throw new Error(i18n.t('errors.too_many_otp_requests'));
+      if (lastRequestAt && lastRequestAt < fifteenMinutesAgo) {
+        otpRequestsCount = 0;
+      }
+
+      if (otpRequestsCount >= 3) {
+        throw new Error(i18n.t('errors.too_many_otp_requests'));
+      }
     }
 
     // Generate 6-digit OTP for any user (Customer, Barber, or Admin)
@@ -72,8 +77,12 @@ export class SendOTP {
       last_otp_request_at: now.toISOString()
     });
 
-    await sendOTP(email, otp);
-    
-    return { success: true, message: 'OTP sent successfully' };
+    const result = await sendOTP(email, otp);
+
+    return {
+      success: true,
+      message: 'OTP sent successfully',
+      ...(result.simulated && process.env.NODE_ENV !== 'production' ? { devCode: otp } : {})
+    };
   }
 }
