@@ -116,7 +116,8 @@
     "serving_professional": "Profesional que Atiende",
     "select_professional": "Seleccione un profesional...",
     "current_cart": "Carrito Actual",
-    "review_checkout": "Review & Pagar",
+    "review_checkout": "Revisar y Pagar",
+    "select_barber_required": "Seleccione un profesional antes de continuar.",
     "customer_contact_optional": "CONTACTO DEL CLIENTE (OPCIONAL)",
     "tips_amount": "PROPINA (RD$)",
     "discount_amount": "DESCUENTO (RD$)",
@@ -211,7 +212,15 @@
     "start_sale": "Nueva Venta",
     "search_customer": "Buscar Cliente",
     "view_schedule": "Ver Agenda",
-    "check_inventory": "Ver Inventario"
+    "check_inventory": "Ver Inventario",
+    "good_morning": "Buenos días",
+    "good_afternoon": "Buenas tardes",
+    "good_evening": "Buenas noches",
+    "today": "Hoy",
+    "new_booking": "Nueva Reserva",
+    "this_week": "Esta Semana",
+    "week_total": "Total de la Semana",
+    "vs_last_week": "vs semana pasada"
   },
   "inventory": {
     "title": "Inventario",

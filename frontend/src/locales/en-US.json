@@ -127,6 +127,7 @@
     "no_contact_info": "No contact info captured — no receipt sent.",
     "send_receipt": "Send receipt",
     "email_or_phone_required": "Enter at least an email or a phone number.",
+    "select_barber_required": "Please select a professional before continuing.",
     "send": "Send"
   },
   "schedule": {
@@ -211,7 +212,15 @@
     "start_sale": "Start New Sale",
     "search_customer": "Search Customer",
     "view_schedule": "View Schedule",
-    "check_inventory": "Check Inventory"
+    "check_inventory": "Check Inventory",
+    "good_morning": "Good morning",
+    "good_afternoon": "Good afternoon",
+    "good_evening": "Good evening",
+    "today": "Today",
+    "new_booking": "New booking",
+    "this_week": "This week",
+    "week_total": "Week total",
+    "vs_last_week": "vs last week"
   },
   "inventory": {
     "title": "Inventory",

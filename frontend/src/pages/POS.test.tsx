@@ -76,6 +76,11 @@ describe('POS receipt feedback', () => {
     renderPOS();
     const tile = await screen.findByText('Cut');
     fireEvent.click(tile);
+
+    // Select a barber — required before checkout can open
+    const barberSelect = await screen.findByDisplayValue(/select_professional/i);
+    fireEvent.change(barberSelect, { target: { value: '1' } });
+
     // "Review & Checkout" — t('pos.review_checkout') has no fallback => key text
     const reviewButton = await screen.findByRole('button', {
       name: /review_checkout|review & checkout|review.*checkout/i,
@@ -89,6 +94,20 @@ describe('POS receipt feedback', () => {
     // Success heading — t('pos.payment_successful') has no fallback => key text
     await screen.findByText(/payment_successful|payment successful|pago exitoso/i);
   }
+
+  it('blocks checkout and shows error when no barber is selected', async () => {
+    renderPOS();
+    const tile = await screen.findByText('Cut');
+    fireEvent.click(tile);
+
+    const reviewButton = await screen.findByRole('button', {
+      name: /review_checkout|review & checkout|review.*checkout/i,
+    });
+    fireEvent.click(reviewButton);
+
+    await screen.findByText(/select_barber_required|select a professional|seleccione un profesional/i);
+    expect(screen.queryByText(/complete_payment|complete payment/i)).not.toBeInTheDocument();
+  });
 
   it('shows "no contact info" + Send receipt button when contact was empty', async () => {
     await ringUpSaleWithoutContact();
