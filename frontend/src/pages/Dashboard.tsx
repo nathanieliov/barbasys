@@ -1,18 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Calendar, ShoppingCart, Package, Users, TrendingUp } from 'lucide-react';
 import apiClient from '../api/apiClient';
 import { useAuth } from '../hooks/useAuth';
 import { useSettings } from '../hooks/useSettings';
-import { formatCurrency } from '../utils/format';
+import { formatCompactCurrency } from '../utils/format';
 import { useTranslation } from 'react-i18next';
 import KpiCard from '../components/KpiCard';
 import Avatar from '../components/Avatar';
 
-const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
 export default function Dashboard() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { settings } = useSettings();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -46,7 +44,7 @@ export default function Dashboard() {
   }, [user]);
 
   const isBarber = user?.role === 'BARBER';
-  const fmt = (n: number) => formatCurrency(n, settings.currency_symbol);
+  const fmt = (n: number) => formatCompactCurrency(n, settings.currency_symbol);
 
   const todayRevenue = isBarber
     ? (stats?.commissions?.find((c: any) => c.barber_id === user?.barber_id || c.name === user?.username)
@@ -65,7 +63,15 @@ export default function Dashboard() {
 
   const firstName = user?.fullname?.split(' ')[0] || user?.username || '';
 
-  const todayStr = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+  const todayStr = new Date().toLocaleDateString(i18n.language, { weekday: 'long', month: 'long', day: 'numeric' });
+  const weekdayStr = new Date().toLocaleDateString(i18n.language, { weekday: 'long' });
+
+  const dayLabels = useMemo(() => {
+    // Jan 1, 2024 was a Monday — use as anchor to generate Mon–Sun labels
+    return Array.from({ length: 7 }, (_, i) =>
+      new Intl.DateTimeFormat(i18n.language, { weekday: 'short' }).format(new Date(2024, 0, 1 + i))
+    );
+  }, [i18n.language]);
 
   return (
     <>
@@ -91,7 +97,7 @@ export default function Dashboard() {
         <KpiCard
           label={isBarber ? t('dashboard.daily_earnings', 'Earnings today') : t('dashboard.today_revenue', 'Revenue today')}
           value={fmt(todayRevenue)}
-          delta={weekRevenue > 0 ? { direction: 'up', text: `vs last week` } : undefined}
+          delta={weekRevenue > 0 ? { direction: 'up', text: t('dashboard.vs_last_week', 'vs last week') } : undefined}
         />
         <KpiCard
           label={isBarber ? t('dashboard.weekly_earnings', 'Weekly earnings') : t('dashboard.weekly_revenue', 'Weekly revenue')}
@@ -120,7 +126,7 @@ export default function Dashboard() {
               {isBarber ? t('dashboard.your_performance', 'Your performance') : t('dashboard.team_performance', 'Team today')}
             </div>
             <div className="spacer" />
-            <span className="chip">{todayStr.split(',')[0]}</span>
+            <span className="chip">{weekdayStr}</span>
           </div>
 
           {stats?.commissions?.length > 0 ? (
@@ -186,7 +192,7 @@ export default function Dashboard() {
               <div style={{ fontWeight: 600, fontSize: 16 }}>{t('dashboard.this_week', 'This week')}</div>
             </div>
             <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 100 }}>
-              {DAY_LABELS.map((day, i) => {
+              {dayLabels.map((day, i) => {
                 const isToday = i === (new Date().getDay() + 6) % 7;
                 return (
                   <div key={day} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>

@@ -97,6 +97,7 @@ export default function POS() {
   };
 
   const [saleError, setSaleError] = useState('');
+  const [barberError, setBarberError] = useState('');
 
   const submitSale = async () => {
     setSaleError('');
@@ -267,8 +268,8 @@ export default function POS() {
               <div style={{ position: 'relative' }}>
                 <User size={18} style={{ position: 'absolute', left: '0.75rem', top: '0.75rem', color: 'var(--text-muted)' }} />
                 <select 
-                  value={selectedBarber} 
-                  onChange={e => setSelectedBarber(e.target.value)}
+                  value={selectedBarber}
+                  onChange={e => { setSelectedBarber(e.target.value); setBarberError(''); }}
                   style={{ paddingLeft: '2.5rem', fontWeight: '700' }}
                 >
                   <option value="">{t('pos.select_professional')}</option>
@@ -330,9 +331,21 @@ export default function POS() {
               </div>
             </div>
 
-            <button 
+            {barberError && (
+              <div style={{ marginTop: '0.75rem', padding: '0.6rem 0.9rem', background: 'var(--primary-soft)', color: 'var(--primary-deep)', borderRadius: 'var(--r)', fontSize: 13 }}>
+                {barberError}
+              </div>
+            )}
+            <button
               disabled={cart.length === 0}
-              onClick={() => setShowCheckout(true)}
+              onClick={() => {
+                if (!selectedBarber) {
+                  setBarberError(t('pos.select_barber_required', 'Please select a professional before continuing.'));
+                  return;
+                }
+                setBarberError('');
+                setShowCheckout(true);
+              }}
               style={{ width: '100%', marginTop: '1.25rem', padding: '1rem', fontSize: '1.1rem' }}
             >
               {t('pos.review_checkout')}
