@@ -5,7 +5,7 @@ import express from 'express';
 import cors from 'cors';
 import twilio from 'twilio';
 import { TwilioWhatsAppClient } from './adapters/whatsapp/twilio-whatsapp-client.js';
-import { FakeTwilioClient } from './adapters/whatsapp/fake-twilio-client.js';
+import { FakeTwilioClient, fakeTwilioOutbox } from './adapters/whatsapp/fake-twilio-client.js';
 import { IWhatsAppClient } from './adapters/whatsapp/whatsapp-client.interface.js';
 import { OpenAILLMClient } from './adapters/llm/openai-llm-client.js';
 import { FakeLLMClient } from './adapters/llm/fake-llm-client.js';
@@ -1313,6 +1313,16 @@ app.get('/api/reports/analytics', protect, authorize('OWNER', 'MANAGER', 'BARBER
     barberPerformance
   });
 });
+
+// Test-only endpoints — gated on FAKE_TWILIO=1 so production never exposes
+// the in-memory outbox of the FakeTwilioClient.
+if (process.env.FAKE_TWILIO === '1') {
+  app.get('/api/test/twilio-outbox', (_req, res) => res.json(fakeTwilioOutbox.messages));
+  app.post('/api/test/twilio-outbox/clear', (_req, res) => {
+    fakeTwilioOutbox.clear();
+    res.status(204).end();
+  });
+}
 
 // Background Job: Check for reminders every hour
 setInterval(() => {

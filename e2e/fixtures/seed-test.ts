@@ -100,8 +100,13 @@ export default async function globalSetup() {
     // Customers — one per staff/customer user. /auth/me auto-creates a customer
     // record for any logged-in user that lacks one; pre-seeding linked customers
     // keeps that endpoint deterministic (no concurrent INSERT race) under E2E load.
-    const customerId = Number(db.prepare('INSERT INTO customers (name, email, phone, shop_id) VALUES (?, ?, ?, ?)')
-      .run('Test Customer', TEST_USERS.CUSTOMER.email, TEST_USERS.CUSTOMER.phone, shopA).lastInsertRowid);
+    // The CUSTOMER row also opts-in to WhatsApp and has a recent inbound
+    // conversation (within the 24h session window) so receipt sends route
+    // through the WhatsApp client (E2E-10 asserts on the FakeTwilio outbox).
+    const customerId = Number(db.prepare('INSERT INTO customers (name, email, phone, shop_id, wa_opt_in, wa_opt_in_at) VALUES (?, ?, ?, ?, 1, ?)')
+      .run('Test Customer', TEST_USERS.CUSTOMER.email, TEST_USERS.CUSTOMER.phone, shopA, new Date().toISOString()).lastInsertRowid);
+    db.prepare('INSERT INTO conversations (customer_id, wa_phone, language, state, last_inbound_at) VALUES (?, ?, ?, ?, ?)')
+      .run(customerId, TEST_USERS.CUSTOMER.phone, 'es', 'idle', new Date().toISOString());
     const ownerCustomerId = Number(db.prepare('INSERT INTO customers (name, email, shop_id) VALUES (?, ?, ?)')
       .run('Test Owner', TEST_USERS.OWNER.email, shopA).lastInsertRowid);
     const managerCustomerId = Number(db.prepare('INSERT INTO customers (name, email, shop_id) VALUES (?, ?, ?)')
