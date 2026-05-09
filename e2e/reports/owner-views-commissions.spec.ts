@@ -29,6 +29,12 @@ test('E2E-12 · OWNER views commissions; numbers match seeded sales', async ({ a
   const haircut = db.prepare('SELECT id FROM services WHERE name = ?').get('Haircut') as { id: number };
   const shopRow = db.prepare('SELECT shop_id FROM barbers WHERE id = ?').get(ramonId) as { shop_id: number };
 
+  // Clear any sales other tests created for this shop so the commission math
+  // is deterministic regardless of E2E run order. (E2E-09 / E2E-10 create
+  // POS sales for Ramón when they run before this test.)
+  db.prepare('DELETE FROM sale_items WHERE sale_id IN (SELECT id FROM sales WHERE shop_id = ?)').run(shopRow.shop_id);
+  db.prepare('DELETE FROM sales WHERE shop_id = ?').run(shopRow.shop_id);
+
   const insertSale = (barberId: number, name: string) => {
     const sale = db.prepare(
       'INSERT INTO sales (barber_id, total_amount, shop_id, barber_name) VALUES (?, ?, ?, ?)'
