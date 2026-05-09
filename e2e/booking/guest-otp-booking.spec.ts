@@ -12,23 +12,13 @@ import { countAppointments, getBarberIdBySlug } from '../fixtures/db.js';
  * The OTP modal auto-fills the verification code from the `devCode` field on the
  * /auth/otp/send response when EMAIL_USER is empty (Playwright env sets it to '').
  *
- * STATUS: BLOCKED on a harness-level SQLite bug.
- *   When the backend is launched via Playwright's `webServer` (`npm run start --prefix backend`,
- *   stdio piped), its long-lived `db` connection refuses INSERTs with
- *   "attempt to write a readonly database" — even though:
- *     - the file is `rw-r--r--` and W_OK access succeeds,
- *     - `db.readonly === false`, `db.open === true`, `query_only === 0`,
- *     - `journal_mode === 'delete'`, `inTransaction === false`,
- *     - UPDATE statements (that actually modify rows) succeed,
- *     - `BEGIN IMMEDIATE; COMMIT` succeeds,
- *     - a brand-new `new Database(path)` connection from the same process *can* INSERT,
- *     - running `npm run start --prefix backend` directly from a shell with the same env
- *       does NOT exhibit the bug — only Playwright's spawn does.
- *   The exact mechanism is unclear; close+reopen of the shared connection in db.ts didn't fix it.
- *   Skipped via `test.skip` so the suite stays green; once the harness bug is resolved this should
- *   flip to `test()`.
+ * Harness note: Playwright's `webServer`-spawned backend hit a SQLite "attempt to write a
+ * readonly database" error that we couldn't root-cause — direct shell invocation worked fine
+ * with the same env. To work around it, the harness now starts the backend out-of-band via
+ * `scripts/e2e-run.sh` (invoked through `npm run test:e2e`) and only the frontend is managed
+ * by Playwright's webServer.
  *
- * Selectors that worked once we got past the bug:
+ * Selectors used below:
  *   - "Reservar Ahora" button on each shop card on /discovery (es-DO label).
  *   - Step heading "Elija un Profesional" → button "Ramón Pérez".
  *   - Service card button "Haircut".
@@ -39,7 +29,7 @@ import { countAppointments, getBarberIdBySlug } from '../fixtures/db.js';
  *   - Confirm step heading "Revisar y Confirmar" → button "Confirmar Reserva".
  *   - OTP modal: input[type="email"], "Enviar Código", "Verificar y Continuar".
  */
-test.skip('E2E-05 · Guest books appointment via OTP for specific barber', async ({ page }) => {
+test('E2E-05 · Guest books appointment via OTP for specific barber', async ({ page }) => {
   // Capture browser console errors for diagnostics in CI logs.
   page.on('console', msg => {
     if (msg.type() === 'error') console.log('[browser-console-error]', msg.text());
@@ -149,7 +139,21 @@ test.skip('E2E-05 · Guest books appointment via OTP for specific barber', async
   const v = await verifyResp;
   expect(v.status(), 'OTP verify should return 200').toBe(200);
 
-  // After verification the app calls POST /appointments. Wait for it before asserting.
+  // ── Profile completion (guests have no name/birthday) ─────
+  // VerifyOTP returns `requires_profile_completion: true` for new guest users.
+  // The UI swaps the OTP modal contents to a fullname + birthday form. Fill it.
+  // The fullname input has placeholder "Alex Morgan" (no associated label), so we
+  // locate it via the dialog scope + input[type="text"]. The birthday input is
+  // input[type="date"] in the same dialog.
+  const completeBtn = page.getByRole('button', { name: /completar perfil|complete profile/i });
+  if (await completeBtn.isVisible({ timeout: 3_000 }).catch(() => false)) {
+    const dialog = page.getByRole('dialog');
+    await dialog.locator('input[type="text"]').fill('E2E Guest');
+    await dialog.locator('input[type="date"]').fill('1995-01-15');
+    await completeBtn.click();
+  }
+
+  // After verification (and optional profile completion) the app calls POST /appointments.
   await page.waitForResponse(
     res => res.url().includes('/api/appointments') && res.request().method() === 'POST' && res.status() < 300,
     { timeout: 10_000 }
