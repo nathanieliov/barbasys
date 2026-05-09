@@ -97,23 +97,33 @@ export default async function globalSetup() {
     db.prepare('INSERT INTO products (name, description, price, stock, min_stock_threshold, shop_id, is_active) VALUES (?, ?, ?, ?, ?, ?, 1)')
       .run('Shampoo', 'Cleansing', 18, 2, 3, shopA);
 
-    // Customer
+    // Customers — one per staff/customer user. /auth/me auto-creates a customer
+    // record for any logged-in user that lacks one; pre-seeding linked customers
+    // keeps that endpoint deterministic (no concurrent INSERT race) under E2E load.
     const customerId = Number(db.prepare('INSERT INTO customers (name, email, phone, shop_id) VALUES (?, ?, ?, ?)')
       .run('Test Customer', TEST_USERS.CUSTOMER.email, TEST_USERS.CUSTOMER.phone, shopA).lastInsertRowid);
+    const ownerCustomerId = Number(db.prepare('INSERT INTO customers (name, email, shop_id) VALUES (?, ?, ?)')
+      .run('Test Owner', TEST_USERS.OWNER.email, shopA).lastInsertRowid);
+    const managerCustomerId = Number(db.prepare('INSERT INTO customers (name, email, shop_id) VALUES (?, ?, ?)')
+      .run('Test Manager', TEST_USERS.MANAGER.email, shopA).lastInsertRowid);
+    const barberCustomerId = Number(db.prepare('INSERT INTO customers (name, email, shop_id) VALUES (?, ?, ?)')
+      .run('Ramón Pérez', TEST_USERS.BARBER.email, shopA).lastInsertRowid);
+    const ownerBCustomerId = Number(db.prepare('INSERT INTO customers (name, email, shop_id) VALUES (?, ?, ?)')
+      .run('Test Owner B', 'owner-b@test.local', shopB).lastInsertRowid);
 
     // Users
-    db.prepare('INSERT INTO users (username, email, password_hash, role, shop_id, fullname) VALUES (?, ?, ?, ?, ?, ?)')
-      .run(TEST_USERS.OWNER.username, TEST_USERS.OWNER.email, passwordHash, 'OWNER', shopA, 'Test Owner');
-    db.prepare('INSERT INTO users (username, email, password_hash, role, shop_id, fullname) VALUES (?, ?, ?, ?, ?, ?)')
-      .run(TEST_USERS.MANAGER.username, TEST_USERS.MANAGER.email, passwordHash, 'MANAGER', shopA, 'Test Manager');
-    db.prepare('INSERT INTO users (username, email, password_hash, role, barber_id, shop_id, fullname) VALUES (?, ?, ?, ?, ?, ?, ?)')
-      .run(TEST_USERS.BARBER.username, TEST_USERS.BARBER.email, passwordHash, 'BARBER', ramonId, shopA, 'Ramón Pérez');
+    db.prepare('INSERT INTO users (username, email, password_hash, role, customer_id, shop_id, fullname) VALUES (?, ?, ?, ?, ?, ?, ?)')
+      .run(TEST_USERS.OWNER.username, TEST_USERS.OWNER.email, passwordHash, 'OWNER', ownerCustomerId, shopA, 'Test Owner');
+    db.prepare('INSERT INTO users (username, email, password_hash, role, customer_id, shop_id, fullname) VALUES (?, ?, ?, ?, ?, ?, ?)')
+      .run(TEST_USERS.MANAGER.username, TEST_USERS.MANAGER.email, passwordHash, 'MANAGER', managerCustomerId, shopA, 'Test Manager');
+    db.prepare('INSERT INTO users (username, email, password_hash, role, barber_id, customer_id, shop_id, fullname) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+      .run(TEST_USERS.BARBER.username, TEST_USERS.BARBER.email, passwordHash, 'BARBER', ramonId, barberCustomerId, shopA, 'Ramón Pérez');
     db.prepare('INSERT INTO users (username, email, password_hash, role, customer_id, shop_id, fullname) VALUES (?, ?, ?, ?, ?, ?, ?)')
       .run(TEST_USERS.CUSTOMER.username, TEST_USERS.CUSTOMER.email, passwordHash, 'CUSTOMER', customerId, shopA, 'Test Customer');
 
     // OWNER for Shop B
-    db.prepare('INSERT INTO users (username, email, password_hash, role, shop_id, fullname) VALUES (?, ?, ?, ?, ?, ?)')
-      .run('owner_b', 'owner-b@test.local', passwordHash, 'OWNER', shopB, 'Test Owner B');
+    db.prepare('INSERT INTO users (username, email, password_hash, role, customer_id, shop_id, fullname) VALUES (?, ?, ?, ?, ?, ?, ?)')
+      .run('owner_b', 'owner-b@test.local', passwordHash, 'OWNER', ownerBCustomerId, shopB, 'Test Owner B');
   })();
 
   db.close();

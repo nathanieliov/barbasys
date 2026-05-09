@@ -16,28 +16,17 @@ export default defineConfig({
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },
-  globalSetup: require.resolve('./fixtures/seed-test.ts'),
+  // NOTE: seed-test runs BEFORE Playwright via scripts/e2e-run.sh (out-of-band
+  // to avoid the backend reading from an unlinked DB inode after the seed
+  // file unlinks/recreates the test DB). Don't add `globalSetup: seed-test`
+  // here — it would run again after the backend has connected, and the
+  // backend would then serve stale data from the old inode.
   webServer: [
-    {
-      command: 'npm run start --prefix backend',
-      cwd: repoRoot,
-      port: 3000,
-      reuseExistingServer: false,
-      stdout: 'pipe',
-      stderr: 'pipe',
-      env: {
-        // NB: do NOT set NODE_ENV=test — backend/src/index.ts:521 gates app.listen()
-        // on NODE_ENV !== 'test'. We need the server to listen for E2E.
-        // OTP devCode and other dev-mode behaviors trigger on NODE_ENV != 'production'.
-        DB_PATH: path.join(repoRoot, 'data/test.db'),
-        FAKE_TWILIO: '1',
-        FAKE_LLM: '1',
-        JWT_SECRET: 'e2e-secret-do-not-use-in-prod-this-is-32-chars',
-        PORT: '3000',
-        EMAIL_USER: '',  // ensure SendOTP simulates and returns devCode in response
-      },
-      timeout: 30_000,
-    },
+    // Backend is started out-of-band by scripts/e2e-run.sh.
+    // Playwright's webServer spawn semantics cause better-sqlite3 to
+    // see writes as "readonly database" — root cause unidentified, but
+    // direct shell invocation works fine. Frontend (Vite preview) works
+    // under webServer, so we keep it there.
     {
       command: 'npm run preview --prefix frontend -- --port 4173 --strictPort',
       cwd: repoRoot,
