@@ -249,7 +249,7 @@ export default function Reports() {
           .kpi-grid { display: flex !important; overflow-x: auto !important; padding-bottom: 1rem !important; margin: 0 -1rem 1.5rem !important; padding: 0 1rem !important; scroll-snap-type: x mandatory; }
           .kpi-grid .card { min-width: 280px !important; scroll-snap-align: start; }
           .report-controls { width: 100% !important; justify-content: space-between !important; position: sticky; top: 3.5rem; z-index: 40; background: var(--bg); padding: 0.75rem 0; }
-          .reports-container { padding-top: 0.5rem; }
+
         }
       `}} />
     </div>
