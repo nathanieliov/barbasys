@@ -78,7 +78,7 @@ export default function SalesHistory() {
               <select 
                 value={selectedBarberId}
                 onChange={e => setSelectedBarberId(e.target.value)}
-                style={{ marginBottom: 0, paddingLeft: '2.25rem', fontSize: '0.85rem', fontWeight: '600' }}
+                style={{ marginBottom: 0, paddingLeft: '2.25rem', fontSize: '1rem', fontWeight: '600' }}
               >
                 <option value="">All Professionals</option>
                 {barbers.map(b => <option key={b.id} value={b.id}>{b.fullname || b.name}</option>)}
@@ -91,17 +91,17 @@ export default function SalesHistory() {
               type="date" 
               value={dateRange.startDate} 
               onChange={e => setDateRange({...dateRange, startDate: e.target.value})}
-              style={{ marginBottom: 0, width: 'auto', paddingLeft: '2.25rem', fontSize: '0.85rem', fontWeight: '600' }}
+              style={{ marginBottom: 0, width: 'auto', paddingLeft: '2.25rem', fontSize: '1rem', fontWeight: '600' }}
             />
           </div>
           <span style={{ color: 'var(--text-muted)', fontWeight: 'bold' }}>to</span>
           <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
             <Calendar size={16} style={{ position: 'absolute', left: '0.75rem', color: 'var(--text-muted)', pointerEvents: 'none' }} />
-            <input 
-              type="date" 
-              value={dateRange.endDate} 
+            <input
+              type="date"
+              value={dateRange.endDate}
               onChange={e => setDateRange({...dateRange, endDate: e.target.value})}
-              style={{ marginBottom: 0, width: 'auto', paddingLeft: '2.25rem', fontSize: '0.85rem', fontWeight: '600' }}
+              style={{ marginBottom: 0, width: 'auto', paddingLeft: '2.25rem', fontSize: '1rem', fontWeight: '600' }}
             />
           </div>
         </div>

@@ -49,6 +49,17 @@
   --font:         "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-mono:    "JetBrains Mono", ui-monospace, monospace;
 
+  /* ── Layout / responsive ── */
+  --app-top-h:    62px;   /* keep in sync with .app-top height */
+  --sidebar-w:    240px;
+  --sidebar-w-mobile: 280px;
+
+  /* Touch targets */
+  --touch-target: 44px;
+
+  /* Input typography floor (prevents iOS auto-zoom) */
+  --input-font-min: 1rem;   /* 16px */
+
   /* ── Backward-compat aliases (legacy code keeps working) ── */
   --card:        var(--surface);
   --border:      var(--line);

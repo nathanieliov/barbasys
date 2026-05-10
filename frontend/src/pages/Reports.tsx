@@ -110,14 +110,15 @@ export default function Reports() {
               type={rangeType === 'month' ? 'month' : 'date'} 
               value={date} 
               onChange={e => setDate(e.target.value)}
-              style={{ marginBottom: 0, width: 'auto', paddingLeft: '2.25rem', fontSize: '0.85rem', fontWeight: '600' }}
+              style={{ marginBottom: 0, width: 'auto', paddingLeft: '2.25rem', fontSize: '1rem', fontWeight: '600' }}
             />
           </div>
         </div>
       </div>
 
       {/* KPI Cards */}
-      <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+      <div className="kpi-grid-wrap" style={{ marginBottom: '2rem' }}>
+      <div className="kpi-grid">
         <div className="card" style={{ padding: '1.5rem', marginBottom: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
             <div style={{ background: 'rgba(16, 185, 129, 0.1)', color: 'var(--success)', padding: '0.75rem', borderRadius: '0.75rem' }}>
@@ -162,6 +163,7 @@ export default function Reports() {
           </h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: '600' }}>Net take-home</p>
         </div>
+      </div>
       </div>
 
       <div className="pos-grid" style={{ marginBottom: '2rem' }}>
@@ -244,14 +246,6 @@ export default function Reports() {
         </div>
       </div>
 
-      <style dangerouslySetInnerHTML={{ __html: `
-        @media (max-width: 640px) {
-          .kpi-grid { display: flex !important; overflow-x: auto !important; padding-bottom: 1rem !important; margin: 0 -1rem 1.5rem !important; padding: 0 1rem !important; scroll-snap-type: x mandatory; }
-          .kpi-grid .card { min-width: 280px !important; scroll-snap-align: start; }
-          .report-controls { width: 100% !important; justify-content: space-between !important; position: sticky; top: 3.5rem; z-index: 40; background: var(--bg); padding: 0.75rem 0; }
-
-        }
-      `}} />
     </div>
   );
 }

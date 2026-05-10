@@ -1,18 +1,25 @@
 import { useNavigate } from 'react-router-dom';
-import { Search, Bell, Settings, Sparkles } from 'lucide-react';
+import { Search, Bell, Settings, Sparkles, Menu, X } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useTranslation } from 'react-i18next';
 
 interface AppTopBarProps {
   shopName?: string;
-  /** If provided, renders the Admin/Book a cut toggle for staff */
   isStaff?: boolean;
-  /** Current view when in staff mode */
   staffView?: 'admin' | 'booking';
+  isSidebarOpen?: boolean;
+  onMenuToggle?: () => void;
   onStaffViewChange?: (v: 'admin' | 'booking') => void;
 }
 
-export default function AppTopBar({ shopName = 'BarbaSys', isStaff, staffView = 'admin', onStaffViewChange }: AppTopBarProps) {
+export default function AppTopBar({
+  shopName = 'BarbaSys',
+  isStaff,
+  staffView = 'admin',
+  isSidebarOpen = false,
+  onMenuToggle,
+  onStaffViewChange,
+}: AppTopBarProps) {
   const { user } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -23,10 +30,23 @@ export default function AppTopBar({ shopName = 'BarbaSys', isStaff, staffView = 
   return (
     <div className="app-top">
       <div className="app-top-inner">
+        {/* Hamburger — mobile only, left of brand */}
+        {onMenuToggle && (
+          <button
+            className="icon-btn topbar-menu-btn"
+            onClick={onMenuToggle}
+            aria-label={isSidebarOpen ? t('common.close_menu', 'Close menu') : t('common.open_menu', 'Menu')}
+            aria-expanded={isSidebarOpen}
+            aria-controls="admin-sidebar"
+          >
+            {isSidebarOpen ? <X size={18} /> : <Menu size={18} />}
+          </button>
+        )}
+
         {/* Brand */}
         <div className="brand">
           <div className="brand-mark" aria-hidden="true" />
-          <span>{shopName}</span>
+          <span className="brand-name">{shopName}</span>
         </div>
 
         {/* Mode switch — staff only */}
@@ -38,7 +58,7 @@ export default function AppTopBar({ shopName = 'BarbaSys', isStaff, staffView = 
               aria-pressed={staffView === 'admin'}
             >
               <Settings size={14} aria-hidden="true" />
-              {t('topbar.admin', 'Admin')}
+              <span className="mode-label">{t('topbar.admin', 'Admin')}</span>
             </button>
             <button
               className={staffView === 'booking' ? 'active' : ''}
@@ -46,7 +66,7 @@ export default function AppTopBar({ shopName = 'BarbaSys', isStaff, staffView = 
               aria-pressed={staffView === 'booking'}
             >
               <Sparkles size={14} aria-hidden="true" />
-              {t('topbar.book', 'Book a cut')}
+              <span className="mode-label">{t('topbar.book', 'Book a cut')}</span>
             </button>
           </div>
         )}
@@ -73,13 +93,11 @@ export default function AppTopBar({ shopName = 'BarbaSys', isStaff, staffView = 
           </>
         )}
 
-        {/* Right slot: booking actions */}
+        {/* Right slot: booking / unauthenticated */}
         {(!isStaff || staffView === 'booking') && (
-          <>
-            <button className="btn btn-ghost btn-sm" onClick={() => navigate('/login')}>
-              {t('topbar.sign_in', 'Sign in')}
-            </button>
-          </>
+          <button className="btn btn-ghost btn-sm" onClick={() => navigate('/login')}>
+            {t('topbar.sign_in', 'Sign in')}
+          </button>
         )}
       </div>
     </div>

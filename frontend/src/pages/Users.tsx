@@ -87,8 +87,10 @@ export default function Users() {
         </div>
       )}
 
-      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-        <table className="tbl" style={{ width: '100%', borderCollapse: 'collapse' }}>
+      <p className="table-scroll-hint">Swipe for more →</p>
+      <div className="card" style={{ padding: 0 }}>
+        <div className="table-scroll">
+        <table className="tbl tbl--sticky-first" style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead style={{ background: '#f9fafb', borderBottom: '1px solid var(--border)' }}>
             <tr>
               <th style={{ padding: '1.25rem', textAlign: 'left', fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: '800' }}>User</th>
@@ -133,6 +135,7 @@ export default function Users() {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
 
       {showAddModal && (

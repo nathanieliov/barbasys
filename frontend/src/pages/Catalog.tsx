@@ -92,9 +92,11 @@ export default function Catalog() {
           {t('common.loading', 'Loading...')}
         </div>
       ) : tab === 'services' ? (
-        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+        <>
+        <p className="table-scroll-hint">Swipe for more →</p>
+        <div className="card" style={{ padding: 0 }}>
           <div className="table-scroll">
-            <table className="tbl">
+            <table className="tbl tbl--sticky-first">
               <thead>
                 <tr>
                   <th>{t('catalog.colService', 'Service')}</th>
@@ -140,10 +142,13 @@ export default function Catalog() {
             </table>
           </div>
         </div>
+        </>
       ) : (
-        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+        <>
+        <p className="table-scroll-hint">Swipe for more →</p>
+        <div className="card" style={{ padding: 0 }}>
           <div className="table-scroll">
-            <table className="tbl">
+            <table className="tbl tbl--sticky-first">
               <thead>
                 <tr>
                   <th>{t('catalog.colProduct', 'Product')}</th>
@@ -196,6 +201,7 @@ export default function Catalog() {
             </table>
           </div>
         </div>
+        </>
       )}
     </div>
   );

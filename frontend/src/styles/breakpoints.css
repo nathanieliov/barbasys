@@ -1,0 +1,137 @@
+/*
+ * ─── Breakpoint Scale ───────────────────────────────────────
+ *
+ *  xs   base  ≤419px   Phone portrait
+ *  sm   420px           Large phone / phablet
+ *  md   720px           Tablet portrait  (replaces legacy 640/768/769)
+ *  lg   1024px          Tablet landscape / small laptop
+ *  xl   1280px          Desktop
+ *
+ *  Strategy
+ *  ─────────
+ *  • Media queries  → app shell, top-bar, page padding, modal-vs-sheet
+ *  • Container queries (@supports) → KPI grids, card grids, POS tiles
+ *    Fallback to the matching media-query tier for unsupported engines.
+ *
+ *  Touch targets: var(--touch-target) = 44px  (Apple HIG / WCAG 2.5.5)
+ *  Input font floor: var(--input-font-min) = 1rem (prevents iOS auto-zoom)
+ * ───────────────────────────────────────────────────────────
+ */
+
+/* Convenience classes ──────────────────────────────────────── */
+
+/* Hide on phone, show on tablet+ */
+.hide-mobile  { display: none !important; }
+@media (min-width: 720px) {
+  .hide-mobile  { display: revert !important; }
+}
+
+/* Hide on tablet+, show on phone */
+.hide-desktop { display: revert !important; }
+@media (min-width: 720px) {
+  .hide-desktop { display: none !important; }
+}
+
+/* Form row: stacked by default, side-by-side at sm+ */
+.form-row {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 420px) {
+  .form-row--2 { grid-template-columns: 1fr 1fr; }
+}
+
+/* Table scroll container ────────────────────────────────────── */
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line);
+  /* scroll snap so the swipe affordance hint is easy to notice */
+  scroll-snap-type: x proximity;
+}
+.table-scroll > table {
+  border: none;
+  border-radius: 0;
+}
+
+/* Swipe hint shown on small screens when table is scrollable */
+.table-scroll-hint {
+  display: none;
+  font-size: 12px;
+  color: var(--ink-3);
+  padding: 6px 0 2px;
+  text-align: right;
+}
+@media (max-width: 719px) {
+  .table-scroll-hint { display: block; }
+}
+
+/* Sticky first column in horizontal-scroll tables */
+.tbl--sticky-first th:first-child,
+.tbl--sticky-first td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: inherit;
+}
+.tbl--sticky-first td:first-child { background: var(--surface); }
+.tbl--sticky-first th:first-child { background: var(--surface-2); }
+
+/* KPI grid (container-query driven, media-query fallback) ─── */
+.kpi-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 1fr 1fr;   /* 2-up: phone default */
+}
+@media (max-width: 419px) {
+  .kpi-grid { grid-template-columns: 1fr; }
+}
+@media (min-width: 720px) {
+  .kpi-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+}
+
+@supports (container-type: inline-size) {
+  .kpi-grid-wrap { container-type: inline-size; }
+  .kpi-grid-wrap .kpi-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  @container (max-width: 340px) {
+    .kpi-grid-wrap .kpi-grid { grid-template-columns: 1fr; }
+  }
+  @container (min-width: 560px) {
+    .kpi-grid-wrap .kpi-grid {
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    }
+  }
+}
+
+/* Card list (mobile table replacement) ─────────────────────── */
+.card-list { display: flex; flex-direction: column; gap: 10px; }
+.card-list-row {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.card-list-row-body { flex: 1; min-width: 0; }
+.card-list-row-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.card-list-row-sub {
+  font-size: 13px;
+  color: var(--ink-3);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

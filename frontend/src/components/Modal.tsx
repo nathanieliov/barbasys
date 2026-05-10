@@ -60,7 +60,6 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md', f
     <div
       className="modal-overlay"
       onClick={closeOnOverlay ? onClose : undefined}
-      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
       aria-hidden="false"
     >
       <div
@@ -75,18 +74,22 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md', f
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
           <h2 id={titleId} style={{ margin: 0, fontSize: '1.2rem' }}>{title}</h2>
           <button
-            className="secondary"
+            className="icon-btn"
             onClick={onClose}
-            style={{ padding: '0.5rem', color: 'var(--text-muted)', borderColor: 'transparent' }}
+            style={{ flexShrink: 0 }}
             aria-label={t('common.close')}
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         </div>
 
         <div>{children}</div>
 
-        {footer && <div style={{ marginTop: '1.5rem' }}>{footer}</div>}
+        {footer && (
+          <div style={{ marginTop: '1.5rem', paddingBottom: 'max(0px, env(safe-area-inset-bottom))' }}>
+            {footer}
+          </div>
+        )}
       </div>
     </div>
   );

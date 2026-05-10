@@ -1,12 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import apiClient from './api/apiClient';
 import { BrowserRouter as Router, Routes, Route, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   LayoutDashboard, Package, BarChart3, Users as UsersIcon,
   ShoppingCart, Calendar as CalendarIcon, LogOut, Settings as SettingsIcon,
-  Clock, Truck, BarChart, Receipt, Menu, User, Shield,
+  Clock, Truck, BarChart, Receipt, User, Shield,
 } from 'lucide-react';
+import { useScrollLock } from './hooks/useScrollLock';
+import { useFocusTrap } from './hooks/useFocusTrap';
 import Dashboard from './pages/Dashboard';
 import POS from './pages/POS';
 import Inventory from './pages/Inventory';
@@ -57,6 +59,17 @@ function AdminSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [shops, setShops] = useState<any[]>([]);
+  const sidebarRef = useRef<HTMLElement>(null);
+
+  useScrollLock(isOpen);
+  useFocusTrap(sidebarRef, isOpen);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
+  }, [isOpen, onClose]);
 
   useEffect(() => {
     if ((user?.role === 'OWNER' || user?.role === 'MANAGER') && user.shop_id) {
@@ -128,18 +141,19 @@ function AdminSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
 
   return (
     <>
-      {/* Mobile overlay */}
-      {isOpen && (
-        <div
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', backdropFilter: 'blur(4px)', zIndex: 90 }}
-          onClick={onClose}
-          aria-hidden="true"
-        />
-      )}
+      {/* Mobile backdrop */}
+      <div
+        className={`sidebar-backdrop${isOpen ? ' visible' : ''}`}
+        onClick={onClose}
+        aria-hidden="true"
+      />
 
       <aside
+        ref={sidebarRef}
         className={`admin-sidebar${isOpen ? ' drawer-open' : ''}`}
         aria-label="Main navigation"
+        aria-modal={isOpen ? 'true' : undefined}
+        aria-hidden={isOpen ? undefined : 'true'}
       >
         {/* Multi-shop switcher */}
         {isAdmin && shops.length > 1 && (
@@ -216,6 +230,8 @@ function Layout({ children }: { children: React.ReactNode }) {
         shopName={shopName}
         isStaff={isStaff}
         staffView={staffView}
+        isSidebarOpen={isSidebarOpen}
+        onMenuToggle={isStaff ? () => setIsSidebarOpen(o => !o) : undefined}
         onStaffViewChange={v => {
           if (v === 'booking') navigate(`/book/${user?.shop_id ?? ''}`);
           else navigate('/');
@@ -224,17 +240,6 @@ function Layout({ children }: { children: React.ReactNode }) {
 
       {isStaff ? (
         <>
-          {/* Mobile hamburger */}
-          <div style={{ display: 'none' }} className="mobile-hamburger" />
-          <button
-            className="btn btn-soft btn-sm mobile-menu-btn"
-            style={{ borderRadius: '50%', width: 44, height: 44, padding: 0 }}
-            onClick={() => setIsSidebarOpen(o => !o)}
-            aria-label={t('common.open_menu', 'Menu')}
-          >
-            <Menu size={20} />
-          </button>
-
           <div className="admin-shell">
             <AdminSidebar
               isOpen={isSidebarOpen}

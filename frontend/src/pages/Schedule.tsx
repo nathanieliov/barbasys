@@ -8,6 +8,7 @@ import { useSettings } from '../hooks/useSettings';
 import { formatCurrency } from '../utils/format';
 import Modal from '../components/Modal';
 import Avatar from '../components/Avatar';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 
 const HOURS = ['9', '10', '11', '12', '13', '14', '15', '16', '17'];
 const HOUR_HEIGHT = 56; // px per hour row
@@ -111,6 +112,10 @@ export default function Schedule() {
     apptsByBarber[bid].push(a);
   }
 
+  const isMobile = useMediaQuery('(max-width: 719px)');
+  const [mobileBarberId, setMobileBarberId] = useState<number | null>(null);
+  const mobileBarber = barbers.find(b => b.id === mobileBarberId) ?? barbers[0] ?? null;
+
   const resetForm = () => { setShowBook(false); setBookingError(''); setBookingSuccess(false); setRecurRule(''); setOccurrences(1); setSendConf(true); };
 
   const handleMarkInChair = async (id: number) => {
@@ -182,76 +187,147 @@ export default function Schedule() {
         </button>
       </div>
 
-      {/* Multi-barber schedule grid */}
-      {barbers.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--ink-3)' }}>
-          <p>{t('schedule.no_barbers', 'No barbers configured yet.')}</p>
-        </div>
-      ) : (
-        <div
-          className="schedule-grid"
-          style={{ '--cols': barbers.length } as React.CSSProperties}
-        >
-          {/* Header row */}
-          <div className="col-head" style={{ background: 'var(--surface)', justifyContent: 'center' }}>
-            <span style={{ fontSize: 11, color: 'var(--ink-3)' }}>{t('schedule.time', 'Time')}</span>
+      {/* ── Mobile: single-barber day list ── */}
+      {isMobile && barbers.length > 0 && (
+        <>
+          {/* Barber picker */}
+          <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 6, marginBottom: 14, scrollSnapType: 'x mandatory' }}>
+            {barbers.map((b, i) => (
+              <button
+                key={b.id}
+                onClick={() => setMobileBarberId(b.id)}
+                className={`btn btn-sm ${(mobileBarberId ?? barbers[0]?.id) === b.id ? 'btn-primary' : 'btn-ghost'}`}
+                style={{ flexShrink: 0, scrollSnapAlign: 'start', gap: 6 }}
+              >
+                <Avatar
+                  initials={(b.fullname || b.name || '').slice(0, 2).toUpperCase()}
+                  tone={BARBER_TONES[i % BARBER_TONES.length]}
+                  size={20}
+                />
+                {(b.fullname || b.name || '').split(' ')[0]}
+              </button>
+            ))}
           </div>
-          {barbers.map((b, i) => (
-            <div key={b.id} className="col-head">
-              <Avatar
-                initials={(b.fullname || b.name || '').slice(0, 2).toUpperCase()}
-                tone={BARBER_TONES[i % BARBER_TONES.length]}
-                size={28}
-              />
-              <div>
-                <div style={{ fontWeight: 600, fontSize: 13 }}>{(b.fullname || b.name || '').split(' ')[0]}</div>
-                <div className="muted" style={{ fontSize: 11, fontWeight: 400 }}>{b.role || 'Barber'}</div>
-              </div>
-            </div>
-          ))}
 
-          {/* Hour rows */}
-          {HOURS.map(h => {
-            const isNow = isToday && h === nowHour;
+          {/* Appointment list for selected barber */}
+          {mobileBarber && (() => {
+            const barberAppts = (apptsByBarber[mobileBarber.id] || [])
+              .slice()
+              .sort((a: any, b: any) => a.start_time.localeCompare(b.start_time));
+            if (barberAppts.length === 0) {
+              return (
+                <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--ink-3)', fontSize: 14 }}>
+                  {t('schedule.no_appointments', 'No appointments for this day.')}
+                </div>
+              );
+            }
             return (
-              <>
-                <div key={`t-${h}`} className="time-cell">{h}:00</div>
-                {barbers.map((b, bi) => {
-                  const hourAppts = (apptsByBarber[b.id] || []).filter(a => {
-                    const startH = parseInt(a.start_time?.split('T')[1]?.split(':')[0] || '0');
-                    return startH === parseInt(h);
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {HOURS.map(h => {
+                  const hourAppts = barberAppts.filter((a: any) => {
+                    const startH = a.start_time?.split('T')[1]?.split(':')[0];
+                    return startH === h.padStart(2, '0') || startH === h;
                   });
+                  if (hourAppts.length === 0) return null;
                   return (
-                    <div key={`s-${h}-${b.id}`} className={`slot ${isNow ? 'now' : ''}`}>
-                      {hourAppts.map((a) => {
-                        const svc = services.find(s => s.id === a.service_id);
-                        const statusClass =
-                          a.status === 'completed' ? 'appt-done' :
-                          a.status === 'in-chair' ? 'appt-in-chair' :
-                          a.status === 'no-show' ? 'appt-no-show' :
-                          a.status === 'cancelled' ? 'appt-cancelled' : '';
+                    <div key={h}>
+                      <div style={{ fontSize: 11, color: 'var(--ink-3)', fontWeight: 600, marginBottom: 6 }}>{h}:00</div>
+                      {hourAppts.map((a: any, bi: number) => {
+                        const svc = services.find((s: any) => s.id === a.service_id);
                         return (
-                          <div
+                          <button
                             key={a.id}
-                            className={`appt ${APPT_CLASSES[bi % APPT_CLASSES.length]} ${statusClass}`}
-                            style={{
-                              top: apptTop(a.start_time) % HOUR_HEIGHT,
-                              height: apptHeight(svc?.duration_minutes || 30),
-                            }}
+                            className={`appt ${APPT_CLASSES[bi % APPT_CLASSES.length]}`}
+                            style={{ position: 'relative', width: '100%', height: 'auto', padding: '10px 12px', borderRadius: 10, textAlign: 'left', marginBottom: 6, cursor: 'pointer', border: 'none' }}
                             onClick={() => setSelectedAppointment(a)}
-                            title={`${a.customer_name || 'Walk-in'} — ${svc?.name || 'Service'}`}
                           >
                             <div className="appt-name">{a.customer_name || t('schedule.walk_in', 'Walk-in')}</div>
                             <div className="appt-svc">{svc?.name || '–'} · {a.start_time?.split('T')[1]?.slice(0, 5)}</div>
-                          </div>
+                          </button>
                         );
                       })}
                     </div>
                   );
                 })}
-              </>
+              </div>
             );
-          })}
+          })()}
+        </>
+      )}
+
+      {/* ── Desktop: multi-barber grid ── */}
+      {!isMobile && barbers.length === 0 && (
+        <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--ink-3)' }}>
+          <p>{t('schedule.no_barbers', 'No barbers configured yet.')}</p>
+        </div>
+      )}
+      {!isMobile && barbers.length > 0 && (
+        <div style={{ overflowX: 'auto' }}>
+          <div
+            className="schedule-grid"
+            style={{ '--cols': barbers.length, minWidth: barbers.length * 120 + 64 } as React.CSSProperties}
+          >
+            {/* Header row */}
+            <div className="col-head" style={{ background: 'var(--surface)', justifyContent: 'center' }}>
+              <span style={{ fontSize: 11, color: 'var(--ink-3)' }}>{t('schedule.time', 'Time')}</span>
+            </div>
+            {barbers.map((b, i) => (
+              <div key={b.id} className="col-head">
+                <Avatar
+                  initials={(b.fullname || b.name || '').slice(0, 2).toUpperCase()}
+                  tone={BARBER_TONES[i % BARBER_TONES.length]}
+                  size={28}
+                />
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 13 }}>{(b.fullname || b.name || '').split(' ')[0]}</div>
+                  <div className="muted" style={{ fontSize: 11, fontWeight: 400 }}>{b.role || 'Barber'}</div>
+                </div>
+              </div>
+            ))}
+
+            {/* Hour rows */}
+            {HOURS.map(h => {
+              const isNow = isToday && h === nowHour;
+              return (
+                <>
+                  <div key={`t-${h}`} className="time-cell">{h}:00</div>
+                  {barbers.map((b, bi) => {
+                    const hourAppts = (apptsByBarber[b.id] || []).filter(a => {
+                      const startH = parseInt(a.start_time?.split('T')[1]?.split(':')[0] || '0');
+                      return startH === parseInt(h);
+                    });
+                    return (
+                      <div key={`s-${h}-${b.id}`} className={`slot ${isNow ? 'now' : ''}`}>
+                        {hourAppts.map((a) => {
+                          const svc = services.find(s => s.id === a.service_id);
+                          const statusClass =
+                            a.status === 'completed' ? 'appt-done' :
+                            a.status === 'in-chair' ? 'appt-in-chair' :
+                            a.status === 'no-show' ? 'appt-no-show' :
+                            a.status === 'cancelled' ? 'appt-cancelled' : '';
+                          return (
+                            <div
+                              key={a.id}
+                              className={`appt ${APPT_CLASSES[bi % APPT_CLASSES.length]} ${statusClass}`}
+                              style={{
+                                top: apptTop(a.start_time) % HOUR_HEIGHT,
+                                height: apptHeight(svc?.duration_minutes || 30),
+                              }}
+                              onClick={() => setSelectedAppointment(a)}
+                              title={`${a.customer_name || 'Walk-in'} — ${svc?.name || 'Service'}`}
+                            >
+                              <div className="appt-name">{a.customer_name || t('schedule.walk_in', 'Walk-in')}</div>
+                              <div className="appt-svc">{svc?.name || '–'} · {a.start_time?.split('T')[1]?.slice(0, 5)}</div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
+                </>
+              );
+            })}
+          </div>
         </div>
       )}
 
