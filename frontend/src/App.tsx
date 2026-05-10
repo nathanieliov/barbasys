@@ -114,7 +114,7 @@ function AdminSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
           to={item.to}
           end={item.to === '/'}
           className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-          onClick={() => { if (window.innerWidth <= 768) onClose(); }}
+          onClick={onClose}
           aria-label={item.label}
         >
           {item.icon}
@@ -136,14 +136,7 @@ function AdminSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
       )}
 
       <aside
-        className="admin-sidebar"
-        style={window.innerWidth <= 768 ? {
-          position: 'fixed', left: 0, top: 0, bottom: 0, zIndex: 100, width: 260,
-          transform: isOpen ? 'none' : 'translateX(-100%)',
-          transition: 'transform .25s ease',
-          boxShadow: isOpen ? 'var(--shadow-lg)' : 'none',
-          background: 'var(--surface)',
-        } : undefined}
+        className={`admin-sidebar${isOpen ? ' drawer-open' : ''}`}
         aria-label="Main navigation"
       >
         {/* Multi-shop switcher */}

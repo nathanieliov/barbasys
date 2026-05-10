@@ -67,3 +67,25 @@
   background: var(--line-2);
   flex-shrink: 0;
 }
+
+@media (max-width: 768px) {
+  .ds-stepper {
+    gap: 4px;
+    margin-bottom: 24px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .ds-stepper::-webkit-scrollbar { display: none; }
+
+  /* Non-active steps: bubble-only, no label */
+  .ds-step:not(.ds-step-current) > span:last-child {
+    display: none;
+  }
+  .ds-step:not(.ds-step-current) {
+    padding: 5px;
+  }
+
+  .ds-step-line { width: 8px; }
+}

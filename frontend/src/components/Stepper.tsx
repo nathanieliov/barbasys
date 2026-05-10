@@ -25,6 +25,7 @@ export default function Stepper({ steps, current, max, onJump }: StepperProps) {
               style={{ cursor: reachable ? 'pointer' : 'default', opacity: reachable ? 1 : 0.5 }}
               disabled={!reachable}
               aria-current={state === 'current' ? 'step' : undefined}
+              aria-label={`Step ${i + 1}: ${s.label}${state === 'done' ? ' (completed)' : ''}`}
             >
               <span className="ds-step-num">
                 {state === 'done' ? '✓' : i + 1}

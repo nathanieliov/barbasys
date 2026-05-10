@@ -625,7 +625,7 @@ export default function BookingFlow({ preSelectedBarber }: BookingFlowProps) {
 
           <div className="card" style={{ padding: 22, marginBottom: 20 }}>
             <div style={{ fontWeight: 600, marginBottom: 14 }}>{t('booking.your_details', 'Your details')}</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div className="confirm-details-grid" style={{ display: 'grid', gap: 12 }}>
               <div className="field">
                 <label className="field-label">{t('booking.full_name', 'Full name')}</label>
                 <input className="input" placeholder="Alex Morgan" value={customerName} onChange={e => setCustomerName(e.target.value)} />
