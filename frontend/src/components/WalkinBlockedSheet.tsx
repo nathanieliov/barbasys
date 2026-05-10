@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import BottomSheet from './BottomSheet';
 
 interface WalkinBlockedSheetProps {
@@ -6,8 +7,10 @@ interface WalkinBlockedSheetProps {
 }
 
 export default function WalkinBlockedSheet({ isOpen, onClose }: WalkinBlockedSheetProps) {
+  const { t } = useTranslation();
+
   return (
-    <BottomSheet isOpen={isOpen} onClose={onClose} title="Tabs aren't for walk-ins" height="auto">
+    <BottomSheet isOpen={isOpen} onClose={onClose} title={t('tabs.walkin_title')} height="auto">
       <div style={{ textAlign: 'center', padding: '8px 6px 18px' }}>
         <div style={{
           width: 60,
@@ -29,8 +32,7 @@ export default function WalkinBlockedSheet({ isOpen, onClose }: WalkinBlockedShe
           lineHeight: 1.5,
           padding: '0 8px',
         }}>
-          We need a known customer profile to open a tab so we can follow up.
-          Take cash or transfer now — or convert this walk-in into a regular customer first.
+          {t('tabs.walkin_body')}
         </div>
         <button
           onClick={onClose}
@@ -47,7 +49,7 @@ export default function WalkinBlockedSheet({ isOpen, onClose }: WalkinBlockedShe
             cursor: 'pointer',
           }}
         >
-          Got it
+          {t('tabs.walkin_got_it')}
         </button>
       </div>
     </BottomSheet>

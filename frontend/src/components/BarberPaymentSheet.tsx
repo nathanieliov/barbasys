@@ -192,9 +192,7 @@ export default function BarberPaymentSheet({
                 textAlign: 'left',
               }}
             >
-              {isWalkin
-                ? 'Tabs not available for walk-ins'
-                : 'Customer can\'t pay now — open a tab'}
+              {isWalkin ? t('tabs.walkin_no_tabs') : t('tabs.open_tab_link')}
             </button>
           )}
 

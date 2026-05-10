@@ -1,4 +1,5 @@
 import { Check, MessageCircle, Receipt } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { formatCurrency } from '../utils/format';
 import type { OutstandingTab } from '@barbasys/shared';
 
@@ -27,10 +28,12 @@ export default function OpenTabsCard({
   onNudgeOne,
   onMarkPaid,
 }: OpenTabsCardProps) {
+  const { t } = useTranslation();
   const open = tabs.filter(t => t.status !== 'paid');
   if (!open.length) return null;
 
   const total = open.reduce((s, t) => s + t.amount, 0);
+  const subKey = open.length === 1 ? 'tabs.card_sub' : 'tabs.card_sub_plural';
 
   return (
     <div style={{ margin: '16px 0 0' }}>
@@ -69,9 +72,9 @@ export default function OpenTabsCard({
               letterSpacing: '-0.015em',
               color: 'var(--ink)',
               lineHeight: 1.1,
-            }}>Open tabs</div>
+            }}>{t('tabs.card_title')}</div>
             <div style={{ fontSize: 11.5, color: 'var(--ink-3)', marginTop: 2, fontWeight: 500 }}>
-              {open.length} customer{open.length === 1 ? '' : 's'} · {formatCurrency(total, currencySymbol)} owed
+              {t(subKey, { count: open.length, amount: formatCurrency(total, currencySymbol) })}
             </div>
           </div>
           <button
@@ -92,14 +95,14 @@ export default function OpenTabsCard({
               whiteSpace: 'nowrap',
             }}
           >
-            <span style={{ fontSize: 13 }}>💬</span> Nudge all
+            <span style={{ fontSize: 13 }}>💬</span> {t('tabs.nudge_all')}
           </button>
         </div>
 
         {/* Rows */}
         <div>
-          {open.map((t, i) => (
-            <div key={t.id} style={{
+          {open.map((tab, i) => (
+            <div key={tab.id} style={{
               padding: '12px 18px',
               borderBottom: i < open.length - 1 ? '1px dashed var(--line)' : 'none',
               display: 'flex',
@@ -110,15 +113,15 @@ export default function OpenTabsCard({
                 width: 38,
                 height: 38,
                 borderRadius: 12,
-                background: t.status === 'reminded' ? 'var(--butter-soft, #fef3c7)' : 'var(--surface-2)',
-                color: t.status === 'reminded' ? '#8a6210' : 'var(--ink-2)',
+                background: tab.status === 'reminded' ? 'var(--butter-soft, #fef3c7)' : 'var(--surface-2)',
+                color: tab.status === 'reminded' ? '#8a6210' : 'var(--ink-2)',
                 fontWeight: 700,
                 fontSize: 13,
                 display: 'grid',
                 placeItems: 'center',
                 flexShrink: 0,
               }}>
-                {initials(t.customer_name)}
+                {initials(tab.customer_name)}
               </div>
 
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -132,7 +135,7 @@ export default function OpenTabsCard({
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',
                 }}>
-                  {t.customer_name ?? '—'}
+                  {tab.customer_name ?? '—'}
                 </div>
                 <div style={{
                   fontSize: 11.5,
@@ -144,13 +147,13 @@ export default function OpenTabsCard({
                   alignItems: 'center',
                   flexWrap: 'wrap',
                 }}>
-                  <span>{daysOpen(t.opened_at)}d ago</span>
+                  <span>{t('tabs.days_ago', { n: daysOpen(tab.opened_at) })}</span>
                   <span style={{ color: 'var(--line)' }}>·</span>
-                  <span>{t.items.map(x => x.name).join(', ')}</span>
-                  {t.status === 'reminded' && (
+                  <span>{tab.items.map(x => x.name).join(', ')}</span>
+                  {tab.status === 'reminded' && (
                     <>
                       <span style={{ color: 'var(--line)' }}>·</span>
-                      <span style={{ color: '#8a6210', fontWeight: 600 }}>nudged</span>
+                      <span style={{ color: '#8a6210', fontWeight: 600 }}>{t('tabs.nudged_pill')}</span>
                     </>
                   )}
                 </div>
@@ -165,12 +168,12 @@ export default function OpenTabsCard({
                   fontVariantNumeric: 'tabular-nums',
                   lineHeight: 1,
                 }}>
-                  {formatCurrency(t.amount, currencySymbol)}
+                  {formatCurrency(tab.amount, currencySymbol)}
                 </div>
                 <div style={{ display: 'flex', gap: 6 }}>
                   <button
-                    onClick={() => onNudgeOne(t)}
-                    title="Send WhatsApp reminder"
+                    onClick={() => onNudgeOne(tab)}
+                    title={t('tabs.nudge_btn')}
                     style={{
                       width: 28,
                       height: 28,
@@ -186,8 +189,8 @@ export default function OpenTabsCard({
                     <MessageCircle size={13} />
                   </button>
                   <button
-                    onClick={() => onMarkPaid(t)}
-                    title="Mark paid"
+                    onClick={() => onMarkPaid(tab)}
+                    title={t('tabs.mark_paid_btn')}
                     style={{
                       width: 28,
                       height: 28,

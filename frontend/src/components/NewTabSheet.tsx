@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ArrowRight, Receipt } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import BottomSheet from './BottomSheet';
 import { formatCurrency } from '../utils/format';
 import type { TicketItem } from '../utils/barber-mode';
@@ -32,6 +33,7 @@ export default function NewTabSheet({
   items,
   customer,
 }: NewTabSheetProps) {
+  const { t } = useTranslation();
   const [phone, setPhone] = useState('');
   const [note, setNote] = useState('');
 
@@ -63,7 +65,7 @@ export default function NewTabSheet({
   };
 
   return (
-    <BottomSheet isOpen={isOpen} onClose={onClose} title="Open a tab" height="auto">
+    <BottomSheet isOpen={isOpen} onClose={onClose} title={t('tabs.sheet_title')} height="auto">
       {/* Info banner */}
       <div style={{
         background: 'var(--sage-soft)',
@@ -78,10 +80,7 @@ export default function NewTabSheet({
         lineHeight: 1.45,
       }}>
         <Receipt size={16} style={{ flexShrink: 0, marginTop: 1 }} />
-        <span>
-          Customer leaves now, pays later.
-          We'll keep this on your <b>Open tabs</b> until they settle up.
-        </span>
+        <span dangerouslySetInnerHTML={{ __html: t('tabs.info_banner') }} />
       </div>
 
       {/* Ticket recap */}
@@ -99,7 +98,7 @@ export default function NewTabSheet({
           textTransform: 'uppercase',
           color: 'var(--ink-3)',
           marginBottom: 6,
-        }}>This tab</div>
+        }}>{t('tabs.ticket_heading')}</div>
         {items.map((l, i) => (
           <div key={i} style={{
             display: 'flex',
@@ -124,7 +123,7 @@ export default function NewTabSheet({
           fontWeight: 700,
           color: 'var(--ink)',
         }}>
-          <span>Owed</span>
+          <span>{t('tabs.owed')}</span>
           <span style={{
             fontFamily: 'var(--font-display)',
             fontSize: 20,
@@ -136,7 +135,7 @@ export default function NewTabSheet({
       {/* Customer name (read-only) */}
       <div style={{ marginBottom: 12 }}>
         <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink-2)', marginBottom: 5 }}>
-          Customer
+          {t('tabs.customer_label')}
         </div>
         <div style={{
           height: 44,
@@ -156,12 +155,12 @@ export default function NewTabSheet({
       {/* Phone */}
       <div style={{ marginBottom: 12 }}>
         <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink-2)', marginBottom: 5 }}>
-          Phone (for WhatsApp reminder) <span style={{ color: 'var(--primary-deep)' }}>*</span>
+          {t('tabs.phone_label')} <span style={{ color: 'var(--primary-deep)' }}>{t('tabs.phone_required')}</span>
         </div>
         <input
           value={phone}
           onChange={e => setPhone(e.target.value)}
-          placeholder="+1 555 000 0000"
+          placeholder={t('tabs.phone_placeholder')}
           inputMode="tel"
           style={{
             width: '100%',
@@ -178,19 +177,19 @@ export default function NewTabSheet({
           }}
         />
         <div style={{ fontSize: 11, color: 'var(--ink-3)', fontWeight: 500, marginTop: 2 }}>
-          We'll send a friendly nudge if it stays open.
+          {t('tabs.phone_hint')}
         </div>
       </div>
 
       {/* Note */}
       <div style={{ marginBottom: 18 }}>
         <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink-2)', marginBottom: 5 }}>
-          Note (optional)
+          {t('tabs.note_label')}
         </div>
         <input
           value={note}
           onChange={e => setNote(e.target.value)}
-          placeholder="Forgot wallet, will Venmo Tue"
+          placeholder={t('tabs.note_placeholder')}
           style={{
             width: '100%',
             height: 44,
@@ -228,7 +227,7 @@ export default function NewTabSheet({
           boxShadow: ready ? '0 4px 14px rgba(42,37,32,0.25)' : 'none',
         }}
       >
-        Open tab · {formatCurrency(total, currencySymbol)} <ArrowRight size={16} />
+        {t('tabs.confirm_btn', { amount: formatCurrency(total, currencySymbol) })} <ArrowRight size={16} />
       </button>
 
       <button onClick={onClose} style={{
@@ -243,7 +242,7 @@ export default function NewTabSheet({
         cursor: 'pointer',
         fontFamily: 'var(--font)',
       }}>
-        Back to payment
+        {t('tabs.back_to_payment')}
       </button>
     </BottomSheet>
   );

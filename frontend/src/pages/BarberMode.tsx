@@ -482,10 +482,10 @@ export default function BarberMode() {
       // Clear chair
       setChairState(null);
       persistChair(null);
-      showToast('Tab opened — customer can pay later');
+      showToast(t('tabs.tab_opened_toast'));
       fetchMyTabs();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Could not open tab';
+      const msg = err instanceof Error ? err.message : t('tabs.tab_open_failed');
       toastError(msg);
     }
   };
@@ -493,10 +493,10 @@ export default function BarberMode() {
   const handleNudgeOne = async (tab: OutstandingTab) => {
     try {
       await tabsApi.remind(tab.id);
-      showToast('Reminder sent via WhatsApp');
+      showToast(t('tabs.nudge_sent'));
       fetchMyTabs();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Could not send reminder';
+      const msg = err instanceof Error ? err.message : t('tabs.nudge_failed');
       toastError(msg);
     }
   };
@@ -506,10 +506,10 @@ export default function BarberMode() {
     if (!openIds.length) return;
     try {
       await tabsApi.remindBulk(openIds);
-      showToast('Reminders sent');
+      showToast(t('tabs.bulk_sent', { n: openIds.length }));
       fetchMyTabs();
     } catch {
-      toastError('Could not send reminders');
+      toastError(t('tabs.bulk_failed'));
     }
   };
 
@@ -517,10 +517,10 @@ export default function BarberMode() {
     if (!user?.shop_id) return;
     try {
       await tabsApi.markPaid(tab.id, 'cash', 0);
-      showToast('Tab marked as paid');
+      showToast(t('tabs.paid_success'));
       fetchMyTabs();
     } catch {
-      toastError('Could not mark tab as paid');
+      toastError(t('tabs.paid_failed'));
     }
   };
 

@@ -1,4 +1,5 @@
 import { ArrowRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import BottomSheet from './BottomSheet';
 import { formatCurrency } from '../utils/format';
 import type { OutstandingTab } from '@barbasys/shared';
@@ -43,6 +44,7 @@ export default function DailyNudgeSheet({
   currencySymbol,
   barberName = 'Your barber',
 }: DailyNudgeSheetProps) {
+  const { t } = useTranslation();
   const eligible = tabs.filter(t => t.status !== 'paid' && daysOpen(t.opened_at) >= 1);
   const total = eligible.reduce((s, t) => s + t.amount, 0);
 
@@ -59,8 +61,11 @@ export default function DailyNudgeSheet({
     onClose();
   };
 
+  const bodyKey = eligible.length === 1 ? 'tabs.daily_body' : 'tabs.daily_body_plural';
+  const sendKey = eligible.length === 1 ? 'tabs.send_reminders' : 'tabs.send_reminders_plural';
+
   return (
-    <BottomSheet isOpen={isOpen} onClose={handleNotNow} title="Send today's reminders?" height="auto">
+    <BottomSheet isOpen={isOpen} onClose={handleNotNow} title={t('tabs.daily_title')} height="auto">
       <div style={{ padding: '0 0 8px' }}>
         <div style={{
           width: 60,
@@ -76,17 +81,22 @@ export default function DailyNudgeSheet({
           💬
         </div>
 
-        <div style={{
-          fontSize: 13.5,
-          color: 'var(--ink-2)',
-          marginBottom: 16,
-          lineHeight: 1.5,
-          textAlign: 'center',
-          padding: '0 4px',
-        }}>
-          <b>{eligible.length} customer{eligible.length === 1 ? ' has' : 's have'}</b> an open tab — total{' '}
-          <b>{formatCurrency(total, currencySymbol)}</b>. We'll WhatsApp them a friendly nudge.
-        </div>
+        <div
+          style={{
+            fontSize: 13.5,
+            color: 'var(--ink-2)',
+            marginBottom: 16,
+            lineHeight: 1.5,
+            textAlign: 'center',
+            padding: '0 4px',
+          }}
+          dangerouslySetInnerHTML={{
+            __html: t(bodyKey, {
+              count: eligible.length,
+              amount: formatCurrency(total, currencySymbol),
+            }),
+          }}
+        />
 
         {/* Tab list */}
         <div style={{
@@ -96,8 +106,8 @@ export default function DailyNudgeSheet({
           padding: '6px 14px',
           marginBottom: 16,
         }}>
-          {eligible.map((t, i) => (
-            <div key={t.id} style={{
+          {eligible.map((tab, i) => (
+            <div key={tab.id} style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
@@ -117,15 +127,17 @@ export default function DailyNudgeSheet({
                   placeItems: 'center',
                   flexShrink: 0,
                 }}>
-                  {initials(t.customer_name)}
+                  {initials(tab.customer_name)}
                 </div>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)' }}>
-                    {t.customer_name ?? '—'}
+                    {tab.customer_name ?? '—'}
                   </div>
                   <div style={{ fontSize: 11, color: 'var(--ink-3)', fontWeight: 500 }}>
-                    {daysOpen(t.opened_at)}d open ·{' '}
-                    {t.last_reminder_at ? `last ${new Date(t.last_reminder_at).toLocaleDateString()}` : 'never nudged'}
+                    {t('tabs.days_open', { n: daysOpen(tab.opened_at) })} ·{' '}
+                    {tab.last_reminder_at
+                      ? t('tabs.last_nudged', { date: new Date(tab.last_reminder_at).toLocaleDateString() })
+                      : t('tabs.never_nudged')}
                   </div>
                 </div>
               </div>
@@ -136,7 +148,7 @@ export default function DailyNudgeSheet({
                 fontVariantNumeric: 'tabular-nums',
                 color: 'var(--ink)',
               }}>
-                {formatCurrency(t.amount, currencySymbol)}
+                {formatCurrency(tab.amount, currencySymbol)}
               </div>
             </div>
           ))}
@@ -159,7 +171,7 @@ export default function DailyNudgeSheet({
             textTransform: 'uppercase',
             color: '#3c6c47',
             marginBottom: 4,
-          }}>WhatsApp preview</div>
+          }}>{t('tabs.wa_preview_label')}</div>
           Hey [name]! Just a friendly reminder about your last visit ✂️ —
           you have an open tab of $[amount] from [date]. Pop in any time! — {barberName}
         </div>
@@ -184,7 +196,7 @@ export default function DailyNudgeSheet({
             gap: 8,
           }}
         >
-          Send {eligible.length} reminder{eligible.length === 1 ? '' : 's'}
+          {t(sendKey, { count: eligible.length })}
           <ArrowRight size={15} />
         </button>
 
@@ -200,7 +212,7 @@ export default function DailyNudgeSheet({
           fontFamily: 'var(--font)',
           cursor: 'pointer',
         }}>
-          Not now
+          {t('tabs.not_now')}
         </button>
       </div>
     </BottomSheet>
