@@ -22,6 +22,10 @@ export default function BottomSheet({
   const titleId = useId();
   const sheetRef = useRef<HTMLDivElement>(null);
   const previousFocus = useRef<Element | null>(null);
+  // Stable ref so the setup effect never re-fires when the parent re-renders
+  // with a new onClose reference — avoids focus theft on mobile keyboards.
+  const onCloseRef = useRef(onClose);
+  useEffect(() => { onCloseRef.current = onClose; });
 
   useEffect(() => {
     if (!isOpen) return;
@@ -34,7 +38,7 @@ export default function BottomSheet({
     setTimeout(() => focusable[0]?.focus(), 300);
 
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { onClose(); return; }
+      if (e.key === 'Escape') { onCloseRef.current(); return; }
       if (e.key !== 'Tab' || !el) return;
       const all = Array.from(el.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
         f => !f.closest('[hidden]'),
@@ -57,7 +61,7 @@ export default function BottomSheet({
       document.body.style.overflow = '';
       (previousFocus.current as HTMLElement | null)?.focus();
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]); // isOpen only — onClose is accessed via ref above
 
   return (
     <>

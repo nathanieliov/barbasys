@@ -19,6 +19,10 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md', f
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
   const previousFocus = useRef<Element | null>(null);
+  // Keep a stable ref to onClose so the setup effect never re-fires due to
+  // a new function reference from the parent (which would steal focus on mobile).
+  const onCloseRef = useRef(onClose);
+  useEffect(() => { onCloseRef.current = onClose; });
 
   useEffect(() => {
     if (!isOpen) return;
@@ -31,7 +35,7 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md', f
     focusable[0]?.focus();
 
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { onClose(); return; }
+      if (e.key === 'Escape') { onCloseRef.current(); return; }
       if (e.key !== 'Tab' || !el) return;
       const all = Array.from(el.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(f => !f.closest('[hidden]'));
       if (all.length === 0) return;
@@ -46,7 +50,7 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md', f
       document.body.style.overflow = '';
       (previousFocus.current as HTMLElement | null)?.focus();
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]); // isOpen only — onClose is accessed via ref above
 
   if (!isOpen) return null;
 
