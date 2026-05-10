@@ -432,18 +432,18 @@ export default function BarberMode() {
   };
 
   // ── After successful payment
-  const handlePaymentSuccess = (_tipValue: number) => {
+  const handlePaymentSuccess = (_tipValue: number, toastMsg?: string) => {
     setChairState(null);
     persistChair(null);
 
     // Auto-advance: take next appointment
     const next = agenda[0];
     if (next) {
-      showToast(t('barber_mode.walkin_closed_next'));
+      showToast(toastMsg ?? t('barber_mode.walkin_closed_next'));
       // Brief delay so toast is readable before chair card swaps
       setTimeout(() => takeFromAgenda(next), 300);
     } else {
-      showToast(t('barber_mode.walkin_closed_empty'));
+      showToast(toastMsg ?? t('barber_mode.walkin_closed_empty'));
     }
 
     fetchMyDayStats();
@@ -477,13 +477,20 @@ export default function BarberMode() {
         note: data.note || null,
         shopId: user.shop_id,
       });
+
+      // Service was rendered — mark the appointment completed so it doesn't
+      // linger as in-chair/scheduled on the backend.
+      const apptId = chairState?.appointmentId;
+      if (apptId) {
+        apiClient.patch(`/appointments/${apptId}`, { status: 'completed' }).catch(() => {});
+      }
+
       setShowNewTab(false);
       setSheet(null);
-      // Clear chair
-      setChairState(null);
-      persistChair(null);
-      showToast(t('tabs.tab_opened_toast'));
       fetchMyTabs();
+
+      // Reuse the normal post-payment flow: clears chair, auto-advances, updates stats.
+      handlePaymentSuccess(0, t('tabs.tab_opened_toast'));
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : t('tabs.tab_open_failed');
       toastError(msg);
