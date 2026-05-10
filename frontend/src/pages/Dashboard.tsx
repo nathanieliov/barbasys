@@ -118,7 +118,7 @@ export default function Dashboard() {
       </div>
 
       {/* Content grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 18 }}>
+      <div className="grid-2col">
         {/* Team performance */}
         <div className="card" style={{ padding: 22 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18 }}>

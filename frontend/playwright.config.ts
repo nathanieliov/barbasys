@@ -27,33 +27,12 @@ export default defineConfig({
   },
 
   projects: [
-    // --- Phone sizes ---
-    {
-      name: 'phone-360',
-      use: { ...devices['Galaxy S8'], viewport: { width: 360, height: 640 } },
-    },
-    {
-      name: 'phone-414',
-      use: { ...devices['iPhone 14 Pro Max'], viewport: { width: 414, height: 896 } },
-    },
-    // --- Tablet portrait ---
-    {
-      name: 'tablet-768',
-      use: { ...devices['iPad Mini'], viewport: { width: 768, height: 1024 } },
-    },
-    // --- Tablet landscape ---
-    {
-      name: 'tablet-1024',
-      use: { ...devices['iPad Pro 11'], viewport: { width: 1024, height: 768 } },
-    },
-    // --- Desktop ---
-    {
-      name: 'desktop-1280',
-      use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 900 } },
-    },
-    {
-      name: 'desktop-1440',
-      use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } },
-    },
+    // All projects use Chromium (only browser installed via `npx playwright install chromium`)
+    { name: 'phone-360',    use: { browserName: 'chromium', viewport: { width: 360,  height: 640  } } },
+    { name: 'phone-414',    use: { browserName: 'chromium', viewport: { width: 414,  height: 896  } } },
+    { name: 'tablet-768',   use: { browserName: 'chromium', viewport: { width: 768,  height: 1024 } } },
+    { name: 'tablet-1024',  use: { browserName: 'chromium', viewport: { width: 1024, height: 768  } } },
+    { name: 'desktop-1280', use: { browserName: 'chromium', viewport: { width: 1280, height: 900  } } },
+    { name: 'desktop-1440', use: { browserName: 'chromium', viewport: { width: 1440, height: 900  } } },
   ],
 });

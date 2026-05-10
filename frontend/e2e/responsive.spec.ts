@@ -14,17 +14,29 @@
 import { test, expect, Page } from '@playwright/test';
 
 const ADMIN_ROUTES = ['/', '/schedule', '/pos', '/catalog', '/customers', '/reports', '/analytics', '/settings'];
-const LOGIN_EMAIL = process.env.TEST_EMAIL ?? 'admin@test.com';
-const LOGIN_PASS = process.env.TEST_PASS ?? 'password';
+const LOGIN_USER = process.env.TEST_USER ?? 'admin';
+const LOGIN_PASS = process.env.TEST_PASS ?? 'barba123';
+const API_URL    = process.env.API_URL    ?? 'http://localhost:3000';
 
 async function loginIfNeeded(page: Page) {
-  await page.goto('/login');
-  const emailInput = page.locator('input[type="email"]').first();
-  if (!(await emailInput.isVisible())) return;
-  await emailInput.fill(LOGIN_EMAIL);
-  await page.locator('input[type="password"]').fill(LOGIN_PASS);
-  await page.locator('button[type="submit"]').click();
-  await page.waitForURL('/');
+  // Inject auth via localStorage so we skip the login UI
+  const res = await page.request.post(`${API_URL}/api/auth/login`, {
+    data: { username: LOGIN_USER, password: LOGIN_PASS },
+  });
+  if (!res.ok()) {
+    // Fall back to UI login
+    await page.goto('/login');
+    await page.locator('input[type="text"], input[type="email"]').first().fill(LOGIN_USER);
+    await page.locator('input[type="password"]').fill(LOGIN_PASS);
+    await page.locator('button[type="submit"]').click();
+    await page.waitForURL('/');
+    return;
+  }
+  const { token, user } = await res.json();
+  await page.addInitScript(({ token, user }) => {
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(user));
+  }, { token, user });
 }
 
 test.describe('No horizontal scroll', () => {
@@ -48,7 +60,7 @@ test.describe('No horizontal scroll', () => {
 });
 
 test.describe('Touch target size (mobile viewports only)', () => {
-  test.skip(({ viewport }) => !viewport || viewport.width > 768, 'Desktop viewports skipped');
+  test.skip(({ viewport }) => !viewport || viewport.width >= 720, 'Tablet/desktop viewports skipped — hamburger only visible on mobile (<720px)');
 
   test.beforeEach(async ({ page }) => {
     await loginIfNeeded(page);
@@ -104,7 +116,7 @@ test.describe('Input font-size ≥ 16px (iOS zoom prevention)', () => {
 });
 
 test.describe('Sidebar drawer behaviour (mobile only)', () => {
-  test.skip(({ viewport }) => !viewport || viewport.width > 768, 'Desktop skipped');
+  test.skip(({ viewport }) => !viewport || viewport.width >= 720, 'Tablet/desktop skipped — hamburger only visible on mobile (<720px)');
 
   test.beforeEach(async ({ page }) => {
     await loginIfNeeded(page);
@@ -112,7 +124,10 @@ test.describe('Sidebar drawer behaviour (mobile only)', () => {
 
   test('hamburger opens drawer, ESC closes it', async ({ page }) => {
     await page.goto('/');
+    await page.waitForLoadState('networkidle');
+
     const hamburger = page.locator('.topbar-menu-btn');
+    await hamburger.waitFor({ state: 'visible', timeout: 10000 });
     await hamburger.click();
 
     const drawer = page.locator('.admin-sidebar');
@@ -124,10 +139,14 @@ test.describe('Sidebar drawer behaviour (mobile only)', () => {
 
   test('backdrop click closes drawer', async ({ page }) => {
     await page.goto('/');
+    await page.waitForLoadState('networkidle');
+
     const hamburger = page.locator('.topbar-menu-btn');
+    await hamburger.waitFor({ state: 'visible', timeout: 10000 });
     await hamburger.click();
 
     const backdrop = page.locator('.sidebar-backdrop');
+    await backdrop.waitFor({ state: 'visible', timeout: 5000 });
     await backdrop.click();
 
     const drawer = page.locator('.admin-sidebar');

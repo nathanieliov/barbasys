@@ -213,11 +213,21 @@
   gap: 1rem;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 720px) {
   .grid {
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: 1.5rem;
   }
+}
+
+/* Two-column content layout — collapses on mobile */
+.grid-2col {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 18px;
+}
+@media (max-width: 719px) {
+  .grid-2col { grid-template-columns: 1fr; }
 }
 
 h1 {
@@ -936,14 +946,18 @@ input:focus, select:focus, textarea:focus {
   .confirm-details-grid { grid-template-columns: 1fr; }
 
   /* Top bar compact */
-  .app-top-inner { padding: 10px 16px; gap: 8px; }
-  .mode-switch button { padding: 6px 10px; }
+  .app-top-inner { padding: 10px 12px; gap: 6px; }
+  .mode-switch button { padding: 6px 8px; }
 
-  /* Hide mode-switch label text on very narrow phones */
+  /* Hide mode-switch label text on phones */
   .mode-label { display: none; }
 
+  /* Hide search + bell on narrow phones to prevent top bar overflow */
+  .topbar-search-btn,
+  .topbar-bell-btn { display: none; }
+
   /* Brand name abbreviates gracefully */
-  .brand-name { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .brand-name { max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -76,10 +76,10 @@ export default function AppTopBar({
         {/* Right slot: admin actions */}
         {isStaff && staffView === 'admin' && (
           <>
-            <button className="icon-btn" aria-label={t('topbar.search', 'Search')}>
+            <button className="icon-btn topbar-search-btn" aria-label={t('topbar.search', 'Search')}>
               <Search size={16} />
             </button>
-            <button className="icon-btn" aria-label={t('topbar.notifications', 'Notifications')} style={{ position: 'relative' }}>
+            <button className="icon-btn topbar-bell-btn" aria-label={t('topbar.notifications', 'Notifications')} style={{ position: 'relative' }}>
               <Bell size={16} />
               <span style={{ position: 'absolute', top: 6, right: 6, width: 8, height: 8, borderRadius: '50%', background: 'var(--primary)', border: '2px solid var(--bg)' }} aria-hidden="true" />
             </button>

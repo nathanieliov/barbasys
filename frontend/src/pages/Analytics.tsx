@@ -50,7 +50,7 @@ export default function Analytics() {
 
       <div className="grid">
         {/* Revenue by Hour Heatmap */}
-        <div className="card" style={{ gridColumn: 'span 2' }}>
+        <div className="card" style={{ gridColumn: '1 / -1' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem' }}>
             <Clock size={20} color="var(--primary)" />
             <h2 style={{ margin: 0 }}>Ingresos por Hora (Mapa de Calor)</h2>
