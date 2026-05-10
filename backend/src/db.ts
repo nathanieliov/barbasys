@@ -503,6 +503,21 @@ db.exec(`
   );
 `);
 
+// Walk-in queue (Barber Mode)
+try {
+  db.exec(`CREATE TABLE IF NOT EXISTS walkin_queue (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    shop_id INTEGER NOT NULL,
+    description TEXT NOT NULL DEFAULT 'Walk-in customer',
+    wanted_service TEXT,
+    wait_since TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    status TEXT NOT NULL DEFAULT 'waiting' CHECK(status IN ('waiting', 'taken')),
+    taken_by_barber_id INTEGER,
+    FOREIGN KEY (shop_id) REFERENCES shops(id) ON DELETE CASCADE
+  )`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_walkin_shop_status ON walkin_queue(shop_id, status)`);
+} catch (_e) { /* table already exists */ }
+try { db.exec("ALTER TABLE sales ADD COLUMN payment_method TEXT DEFAULT 'cash'"); } catch (_e) {}
 try { db.exec("ALTER TABLE customers ADD COLUMN wa_opt_in INTEGER DEFAULT 0"); } catch (e) {}
 try { db.exec("ALTER TABLE customers ADD COLUMN wa_opt_in_at TEXT"); } catch (e) {}
 try { db.exec("ALTER TABLE customers ADD COLUMN preferred_language TEXT DEFAULT 'es'"); } catch (e) {}

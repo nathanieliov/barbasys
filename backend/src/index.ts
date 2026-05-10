@@ -1102,6 +1102,48 @@ app.post('/api/sales/:id/resend-receipt', protect, async (req, res) => {
   }
 });
 
+// ─── Walk-in queue (Barber Mode) ────────────────────────────
+
+app.get('/api/walkin-queue', protect, (req, res) => {
+  const shopId = req.user?.shop_id;
+  if (!shopId) return res.status(400).json({ error: 'Missing shop context' });
+  const rows = db.prepare(
+    `SELECT * FROM walkin_queue WHERE shop_id = ? AND status = 'waiting' ORDER BY wait_since ASC`,
+  ).all(shopId);
+  res.json(rows);
+});
+
+app.post('/api/walkin-queue', protect, (req, res) => {
+  const shopId = req.user?.shop_id;
+  if (!shopId) return res.status(400).json({ error: 'Missing shop context' });
+  const { description, wanted_service } = req.body || {};
+  if (!description || typeof description !== 'string' || !description.trim()) {
+    return res.status(400).json({ error: 'description is required' });
+  }
+  const result = db.prepare(
+    `INSERT INTO walkin_queue (shop_id, description, wanted_service) VALUES (?, ?, ?)`,
+  ).run(shopId, description.trim(), wanted_service?.trim() || null);
+  const entry = db.prepare('SELECT * FROM walkin_queue WHERE id = ?').get(result.lastInsertRowid);
+  res.status(201).json(entry);
+});
+
+app.delete('/api/walkin-queue/:id', protect, (req, res) => {
+  const shopId = req.user?.shop_id;
+  const id = parseInt(req.params.id as string);
+  if (isNaN(id)) return res.status(400).json({ error: 'Invalid id' });
+  const entry = db.prepare(
+    `SELECT id FROM walkin_queue WHERE id = ? AND shop_id = ?`,
+  ).get(id, shopId) as { id: number } | undefined;
+  if (!entry) return res.status(404).json({ error: 'Not found' });
+  db.prepare(`UPDATE walkin_queue SET status = 'taken', taken_by_barber_id = ? WHERE id = ?`).run(
+    req.user?.barber_id ?? null,
+    id,
+  );
+  res.json({ ok: true });
+});
+
+// ─── Sales ───────────────────────────────────────────────────
+
 app.get('/api/sales', protect, async (req, res) => {
   const shopId = req.user?.shop_id;
   const { startDate, endDate, barberId: queryBarberId, as: asParam } = req.query;

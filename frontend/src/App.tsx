@@ -35,6 +35,7 @@ import BookingFlow from './pages/BookingFlow';
 import BarberDirect from './pages/BarberDirect';
 import CustomerPortal from './pages/CustomerPortal';
 import MyBookings from './pages/MyBookings';
+import BarberMode from './pages/BarberMode';
 import ProtectedRoute from './components/ProtectedRoute';
 import AppTopBar from './components/AppTopBar';
 import { AuthProvider, useAuth } from './hooks/useAuth';
@@ -89,6 +90,7 @@ function AdminSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
     { to: '/barbers',    icon: <UsersIcon size={17} />,       label: t('nav.barbers'), admin: true },
     { to: '/catalog',    icon: <Package size={17} />,         label: t('nav.catalog', 'Products & Services'), admin: true },
     { to: '/my-schedule',icon: <CalendarIcon size={17} />,    label: t('nav.my_schedule'), roles: ['BARBER'] },
+    { to: '/barber-mode',icon: <ShoppingCart size={17} />,   label: t('barber_mode.nav_label', 'Barber Mode'), roles: ['BARBER'] },
     { to: '/sales',      icon: <Receipt size={17} />,         label: t('nav.sales_log') },
     { to: '/customers',  icon: <UsersIcon size={17} />,       label: t('nav.customers') },
   ];
@@ -191,6 +193,7 @@ function Layout({ children }: { children: React.ReactNode }) {
   const customerPaths = ['/discovery', '/book/', '/my-bookings', '/b/'];
   const isCustomerRoute = customerPaths.some(p => location.pathname.startsWith(p));
   const isAuthRoute = ['/login', '/signup', '/forgot-password', '/reset-password'].includes(location.pathname);
+  const isBarberModeRoute = location.pathname.startsWith('/barber-mode');
 
   const isStaff = user != null && user.role !== 'CUSTOMER' && !isCustomerRoute;
   const staffView: 'admin' | 'booking' = isCustomerRoute ? 'booking' : 'admin';
@@ -201,8 +204,8 @@ function Layout({ children }: { children: React.ReactNode }) {
     }
   }, [user]);
 
-  // Auth-only pages: no top bar or sidebar
-  if (isAuthRoute) {
+  // Auth-only pages and Barber Mode: no top bar or sidebar
+  if (isAuthRoute || isBarberModeRoute) {
     return <>{children}</>;
   }
 
@@ -278,6 +281,10 @@ function App() {
               <Route path="/book/:shopId" element={<BookingFlow />} />
               <Route path="/b/:slug" element={<BarberDirect />} />
               <Route path="/my-bookings" element={<MyBookings />} />
+
+              <Route element={<ProtectedRoute roles={['BARBER', 'OWNER', 'MANAGER']} />}>
+                <Route path="/barber-mode" element={<BarberMode />} />
+              </Route>
 
               <Route element={<ProtectedRoute />}>
                 <Route path="/my-schedule" element={<MySchedule />} />

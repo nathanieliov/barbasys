@@ -1,0 +1,199 @@
+/* ─── Barber Mode — animations and phone shell ───────────────── */
+
+/* Status-strip pulsing dot */
+@keyframes barber-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%       { transform: scale(1.4); opacity: 0.6; }
+}
+
+/* Spinner for payment processing */
+@keyframes barber-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Inline toast pop-in */
+@keyframes bm-toast-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(8px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* ─── Root shell ─────────────────────────────────────────────── */
+
+.barber-mode-root {
+  min-height: 100dvh;
+  background: var(--bg);
+  position: relative;
+  overflow-x: hidden;
+  /* Center on wide screens — phone feels native on desktop too */
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+/* ─── Up-next horizontal scroll ─────────────────────────────── */
+
+.bm-up-next-scroll {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  /* Hide scrollbar — draggable on touch */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.bm-up-next-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* ─── Ticket line separator ──────────────────────────────────── */
+
+.bm-ticket-sep {
+  height: 1px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--line) 0 6px,
+    transparent 6px 12px
+  );
+  margin: 0;
+}
+
+/* ─── Inline toast ───────────────────────────────────────────── */
+
+.bm-toast {
+  position: fixed;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--ink);
+  color: var(--bg);
+  padding: 10px 22px;
+  border-radius: var(--r-pill);
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  z-index: 300;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: bm-toast-in 0.18s ease-out;
+}
+
+/* ─── Payment spinner ────────────────────────────────────────── */
+
+.bm-spinner {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 4px solid var(--surface-3);
+  border-top-color: var(--primary);
+  animation: barber-spin 0.9s linear infinite;
+}
+
+/* ─── Add-item search input ──────────────────────────────────── */
+
+.bm-search {
+  width: 100%;
+  height: 44px;
+  padding: 0 14px 0 42px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--surface);
+  font-family: var(--font);
+  font-size: 15px;
+  color: var(--ink);
+  box-sizing: border-box;
+  outline: none;
+}
+.bm-search:focus {
+  border-color: var(--primary);
+}
+
+/* ─── Catalog grid ───────────────────────────────────────────── */
+
+.bm-catalog-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* ─── Tip input card ─────────────────────────────────────────── */
+
+.bm-tip-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.bm-tip-card.error {
+  border-color: var(--primary-deep);
+}
+
+.bm-tip-input-pill {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: var(--surface-2);
+  border-radius: 12px;
+  padding: 6px 10px;
+  border: 1px solid transparent;
+  flex-shrink: 0;
+}
+
+.bm-tip-card.error .bm-tip-input-pill {
+  border-color: var(--primary-deep);
+}
+
+.bm-tip-input {
+  width: 84px;
+  border: none;
+  background: transparent;
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  text-align: right;
+  outline: none;
+  padding: 0;
+}
+
+/* ─── Payment method tiles ───────────────────────────────────── */
+
+.bm-method-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.bm-method-tile {
+  height: 68px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.bm-method-tile.selected {
+  border: 2px solid var(--ink);
+  color: var(--ink);
+}
+
+/* ─── Responsive guard: fill viewport below 480px ───────────── */
+
+@media (max-width: 479px) {
+  .barber-mode-root {
+    max-width: 100%;
+  }
+}
