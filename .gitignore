@@ -42,6 +42,7 @@ NEXT_SESSION.md
 
 # E2E test artifacts
 e2e/.auth/
+e2e/results/
 e2e/test-results/
 test-results/
 data/test.db
