@@ -529,4 +529,40 @@ try { db.exec("ALTER TABLE barbers ADD COLUMN gcal_resource_id TEXT"); } catch (
 try { db.exec("ALTER TABLE barbers ADD COLUMN gcal_watch_expires_at TEXT"); } catch (e) {}
 try { db.exec("ALTER TABLE appointments ADD COLUMN gcal_event_id TEXT"); } catch (e) {}
 
+// Outstanding tabs (Pay Later)
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS outstanding_tabs (
+      id               TEXT PRIMARY KEY,
+      customer_id      INTEGER NOT NULL REFERENCES customers(id) ON DELETE RESTRICT,
+      barber_id        INTEGER NOT NULL REFERENCES barbers(id) ON DELETE RESTRICT,
+      sale_id          INTEGER REFERENCES sales(id) ON DELETE SET NULL,
+      items_json       TEXT NOT NULL,
+      amount           REAL NOT NULL,
+      opened_at        TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      status           TEXT NOT NULL DEFAULT 'open'
+                         CHECK(status IN ('open','reminded','paid')),
+      last_reminder_at TEXT,
+      reminder_count   INTEGER DEFAULT 0,
+      note             TEXT,
+      paid_at          TEXT,
+      paid_method      TEXT CHECK(paid_method IN ('cash','bank_transfer')),
+      paid_sale_id     INTEGER REFERENCES sales(id) ON DELETE SET NULL,
+      tip_on_payback   REAL,
+      shop_id          INTEGER REFERENCES shops(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_tabs_customer ON outstanding_tabs(customer_id);
+    CREATE INDEX IF NOT EXISTS idx_tabs_barber   ON outstanding_tabs(barber_id);
+    CREATE INDEX IF NOT EXISTS idx_tabs_shop_status ON outstanding_tabs(shop_id, status);
+
+    CREATE TABLE IF NOT EXISTS tab_reminder_log (
+      id       INTEGER PRIMARY KEY AUTOINCREMENT,
+      tab_id   TEXT NOT NULL REFERENCES outstanding_tabs(id) ON DELETE CASCADE,
+      sent_by  INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      sent_at  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      wa_status TEXT
+    );
+  `);
+} catch (_e) {}
+
 export default db;

@@ -11,6 +11,12 @@ import Modal from '../components/Modal';
 import BarberChairCard from '../components/BarberChairCard';
 import BarberAddItemSheet from '../components/BarberAddItemSheet';
 import BarberPaymentSheet from '../components/BarberPaymentSheet';
+import NewTabSheet from '../components/NewTabSheet';
+import WalkinBlockedSheet from '../components/WalkinBlockedSheet';
+import OpenTabsCard from '../components/OpenTabsCard';
+import DailyNudgeSheet, { shouldShowDailyNudge, dismissDailyNudge } from '../components/DailyNudgeSheet';
+import { tabsApi } from '../api/tabsApi';
+import type { OutstandingTab } from '@barbasys/shared';
 import '../styles/barber-mode.css';
 import {
   addTicketItem,
@@ -183,6 +189,11 @@ export default function BarberMode() {
   // ── UI state
   const [sheet, setSheet] = useState<null | 'service' | 'product' | 'pay'>(null);
   const [localToast, setLocalToast] = useState<string | null>(null);
+  // ── Tabs state
+  const [myTabs, setMyTabs] = useState<OutstandingTab[]>([]);
+  const [showNewTab, setShowNewTab] = useState(false);
+  const [showWalkinBlock, setShowWalkinBlock] = useState(false);
+  const [showDailyNudge, setShowDailyNudge] = useState(false);
   const [time, setTime] = useState(liveTime);
   const [showLogWalkin, setShowLogWalkin] = useState(false);
   const [walkinDesc, setWalkinDesc] = useState('');
@@ -228,15 +239,30 @@ export default function BarberMode() {
     }
   }, []);
 
+  const fetchMyTabs = useCallback(async () => {
+    if (!user?.barber_id) return;
+    try {
+      const res = await tabsApi.list({ barberId: user.barber_id });
+      setMyTabs(res.data);
+      // Show daily nudge if eligible
+      if (shouldShowDailyNudge(res.data)) {
+        setShowDailyNudge(true);
+      }
+    } catch {
+      // tabs unavailable
+    }
+  }, [user?.barber_id]);
+
   useEffect(() => {
     Promise.all([
       fetchAgenda(),
       fetchMyDayStats(),
       fetchWalkinQueue(),
+      fetchMyTabs(),
       apiClient.get('/services').then(r => setServices(r.data)).catch(() => {}),
       apiClient.get('/inventory').then(r => setProducts(r.data)).catch(() => {}),
     ]);
-  }, [fetchAgenda, fetchMyDayStats, fetchWalkinQueue]);
+  }, [fetchAgenda, fetchMyDayStats, fetchWalkinQueue, fetchMyTabs]);
 
   // Poll walk-in queue every 30s
   useEffect(() => {
@@ -423,6 +449,81 @@ export default function BarberMode() {
     fetchMyDayStats();
   };
 
+  // ── Open tab handlers
+  const handleOpenTab = () => {
+    if (!chairState) return;
+    if (chairState.customer.isWalkin || !chairState.customer.id) {
+      setShowWalkinBlock(true);
+    } else {
+      setShowNewTab(true);
+    }
+  };
+
+  const handleConfirmTab = async (data: {
+    customerId: number;
+    name: string;
+    phone: string;
+    note: string;
+    items: import('@barbasys/shared').TabItem[];
+    amount: number;
+  }) => {
+    if (!user?.barber_id || !user?.shop_id) return;
+    try {
+      await tabsApi.create({
+        customerId: data.customerId,
+        barberId: user.barber_id,
+        items: data.items,
+        amount: data.amount,
+        note: data.note || null,
+        shopId: user.shop_id,
+      });
+      setShowNewTab(false);
+      setSheet(null);
+      // Clear chair
+      setChairState(null);
+      persistChair(null);
+      showToast('Tab opened — customer can pay later');
+      fetchMyTabs();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Could not open tab';
+      toastError(msg);
+    }
+  };
+
+  const handleNudgeOne = async (tab: OutstandingTab) => {
+    try {
+      await tabsApi.remind(tab.id);
+      showToast('Reminder sent via WhatsApp');
+      fetchMyTabs();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Could not send reminder';
+      toastError(msg);
+    }
+  };
+
+  const handleNudgeAll = async () => {
+    const openIds = myTabs.filter(t => t.status !== 'paid').map(t => t.id);
+    if (!openIds.length) return;
+    try {
+      await tabsApi.remindBulk(openIds);
+      showToast('Reminders sent');
+      fetchMyTabs();
+    } catch {
+      toastError('Could not send reminders');
+    }
+  };
+
+  const handleMarkTabPaid = async (tab: OutstandingTab) => {
+    if (!user?.shop_id) return;
+    try {
+      await tabsApi.markPaid(tab.id, 'cash', 0);
+      showToast('Tab marked as paid');
+      fetchMyTabs();
+    } catch {
+      toastError('Could not mark tab as paid');
+    }
+  };
+
   // ── Log walk-in
   const handleLogWalkin = async () => {
     if (!walkinDesc.trim()) return;
@@ -575,6 +676,17 @@ export default function BarberMode() {
           </div>
         </div>
       )}
+
+      {/* ── Open tabs card ── */}
+      <div style={{ margin: '0 18px' }}>
+        <OpenTabsCard
+          tabs={myTabs}
+          currencySymbol={currencySymbol}
+          onNudgeAll={handleNudgeAll}
+          onNudgeOne={handleNudgeOne}
+          onMarkPaid={handleMarkTabPaid}
+        />
+      </div>
 
       {/* ── Walk-ins waiting ── */}
       <div
@@ -787,9 +899,47 @@ export default function BarberMode() {
         taxRate={taxRate}
         barberId={user?.barber_id ?? null}
         appointmentId={chairState?.appointmentId ?? null}
+        isWalkin={chairState?.customer.isWalkin ?? false}
         onClose={() => setSheet(null)}
         onSuccess={handlePaymentSuccess}
+        onOpenTab={handleOpenTab}
         onCharge={handleCharge}
+      />
+
+      {/* ── New tab sheet ── */}
+      <NewTabSheet
+        isOpen={showNewTab}
+        onClose={() => setShowNewTab(false)}
+        onConfirm={handleConfirmTab}
+        total={chairState ? chairState.items.reduce((s, i) => s + i.price * i.qty, 0) : 0}
+        currencySymbol={currencySymbol}
+        items={chairState?.items ?? []}
+        customer={chairState?.customer.id != null ? {
+          id: chairState.customer.id,
+          name: chairState.customer.name,
+          phone: null,
+        } : null}
+      />
+
+      {/* ── Walk-in blocked sheet ── */}
+      <WalkinBlockedSheet
+        isOpen={showWalkinBlock}
+        onClose={() => setShowWalkinBlock(false)}
+      />
+
+      {/* ── Daily nudge sheet ── */}
+      <DailyNudgeSheet
+        isOpen={showDailyNudge}
+        onClose={() => { dismissDailyNudge(); setShowDailyNudge(false); }}
+        onSendAll={async (tabIds) => {
+          try {
+            await tabsApi.remindBulk(tabIds);
+            fetchMyTabs();
+          } catch { /* best-effort */ }
+        }}
+        tabs={myTabs}
+        currencySymbol={currencySymbol}
+        barberName={barberName}
       />
 
       {/* ── Log walk-in modal ── */}

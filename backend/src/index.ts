@@ -55,6 +55,13 @@ import { DeleteUser } from './use-cases/DeleteUser.js';
 import { UpdateProfile } from './use-cases/UpdateProfile.js';
 import { SendOTP } from './use-cases/SendOTP.js';
 import { VerifyOTP } from './use-cases/VerifyOTP.js';
+import { SqliteTabRepository } from './repositories/sqlite-tab-repository.js';
+import { CreateTab } from './use-cases/tabs/CreateTab.js';
+import { GetTabs } from './use-cases/tabs/GetTabs.js';
+import { GetTabById } from './use-cases/tabs/GetTabById.js';
+import { RemindTab } from './use-cases/tabs/RemindTab.js';
+import { RemindTabsBulk } from './use-cases/tabs/RemindTabsBulk.js';
+import { MarkTabPaid } from './use-cases/tabs/MarkTabPaid.js';
 
 import { protect, authorize } from './middleware/auth-middleware.js';
 import { loginRateLimiter, recordFailedLogin, clearLoginAttempts } from './middleware/login-rate-limiter.js';
@@ -117,6 +124,14 @@ const deleteUser = new DeleteUser(userRepo);
 const updateProfile = new UpdateProfile(userRepo, barberRepo);
 const sendOTP = new SendOTP(userRepo, customerRepo);
 const verifyOTP = new VerifyOTP(userRepo, customerRepo);
+
+const tabRepo = new SqliteTabRepository(db);
+const createTab = new CreateTab(tabRepo);
+const getTabs = new GetTabs(tabRepo);
+const getTabById = new GetTabById(tabRepo);
+const remindTab = new RemindTab(tabRepo, whatsAppClient);
+const remindTabsBulk = new RemindTabsBulk(tabRepo, whatsAppClient);
+const markTabPaid = new MarkTabPaid(tabRepo, saleRepo, barberRepo);
 
 app.use(cors());
 app.use(express.json());
@@ -1397,6 +1412,102 @@ setInterval(() => {
     db.prepare('UPDATE appointments SET reminder_sent = 1 WHERE id = ?').run(apt.id);
   }
 }, 60 * 60 * 1000); // Hourly
+
+// ─── Outstanding Tabs ────────────────────────────────────────────────────────
+
+app.get('/api/tabs', protect, authorize('OWNER', 'MANAGER', 'BARBER'), (req: any, res) => {
+  try {
+    const { status, barberId } = req.query as { status?: string; barberId?: string };
+    const shopId = req.user.shop_id;
+    if (!shopId) return res.status(400).json({ error: 'No shop context' });
+
+    let tabs = getTabs.execute(shopId, (status as any) ?? 'all');
+    if (barberId) {
+      tabs = tabs.filter(t => t.barber_id === Number(barberId));
+    }
+    res.json(tabs);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/tabs/:id', protect, authorize('OWNER', 'MANAGER', 'BARBER'), (req: any, res) => {
+  try {
+    const tab = getTabById.execute(req.params.id);
+    res.json(tab);
+  } catch (err: any) {
+    res.status(404).json({ error: err.message });
+  }
+});
+
+app.post('/api/tabs', protect, authorize('OWNER', 'MANAGER', 'BARBER'), (req: any, res) => {
+  try {
+    const { customerId, barberId, saleId, items, amount, note } = req.body;
+    const shopId = req.user.shop_id;
+    if (!shopId) return res.status(400).json({ error: 'No shop context' });
+    if (!customerId || !barberId || !items || amount == null) {
+      return res.status(400).json({ error: 'Missing required fields: customerId, barberId, items, amount' });
+    }
+    const tab = createTab.execute({ customerId, barberId, saleId, items, amount, note, shopId });
+    res.status(201).json(tab);
+  } catch (err: any) {
+    const status = err.message.includes('Maximum') ? 422 : 500;
+    res.status(status).json({ error: err.message });
+  }
+});
+
+app.post('/api/tabs/remind-bulk', protect, authorize('OWNER', 'MANAGER', 'BARBER'), async (req: any, res) => {
+  try {
+    const { tabIds } = req.body as { tabIds: string[] };
+    if (!Array.isArray(tabIds) || tabIds.length === 0) {
+      return res.status(400).json({ error: 'tabIds must be a non-empty array' });
+    }
+    const results = await remindTabsBulk.execute(tabIds, req.user.id ?? null);
+    res.json(results);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/tabs/:id/remind', protect, authorize('OWNER', 'MANAGER', 'BARBER'), async (req: any, res) => {
+  try {
+    const result = await remindTab.execute(req.params.id, req.user.id ?? null);
+    res.json(result);
+  } catch (err: any) {
+    const status = err.message.includes('24 hours') ? 429 : err.message.includes('not found') ? 404 : 400;
+    res.status(status).json({ error: err.message });
+  }
+});
+
+app.post('/api/tabs/:id/pay', protect, authorize('OWNER', 'MANAGER', 'BARBER'), async (req: any, res) => {
+  try {
+    const { method, tipAmount } = req.body as { method: 'cash' | 'bank_transfer'; tipAmount: number };
+    const shopId = req.user.shop_id;
+    if (!shopId) return res.status(400).json({ error: 'No shop context' });
+    if (!method) return res.status(400).json({ error: 'method is required' });
+    const result = await markTabPaid.execute({
+      tabId: req.params.id,
+      method,
+      tipAmount: tipAmount ?? 0,
+      shopId,
+    });
+    res.json(result);
+  } catch (err: any) {
+    const status = err.message.includes('not found') ? 404 : err.message.includes('already paid') ? 422 : 500;
+    res.status(status).json({ error: err.message });
+  }
+});
+
+app.get('/api/customers/:id/tabs', protect, authorize('OWNER', 'MANAGER'), (req: any, res) => {
+  try {
+    const tabs = tabRepo.findByCustomer(Number(req.params.id));
+    res.json(tabs);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 const frontendPath = path.join(__dirname, '../../frontend/dist');
 app.use(express.static(frontendPath));

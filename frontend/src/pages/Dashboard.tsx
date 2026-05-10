@@ -8,6 +8,7 @@ import { formatCompactCurrency } from '../utils/format';
 import { useTranslation } from 'react-i18next';
 import KpiCard from '../components/KpiCard';
 import Avatar from '../components/Avatar';
+import OutstandingTabsSection from '../components/OutstandingTabsSection';
 
 export default function Dashboard() {
   const { t, i18n } = useTranslation();
@@ -91,6 +92,11 @@ export default function Dashboard() {
           </button>
         )}
       </div>
+
+      {/* Outstanding tabs — OWNER/MANAGER only */}
+      {(user?.role === 'OWNER' || user?.role === 'MANAGER') && (
+        <OutstandingTabsSection currencySymbol={settings.currency_symbol ?? '$'} />
+      )}
 
       {/* 4-KPI row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 14, marginBottom: 22 }}>

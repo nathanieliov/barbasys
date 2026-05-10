@@ -21,8 +21,10 @@ interface BarberPaymentSheetProps {
   taxRate: number;
   barberId: number | null;
   appointmentId: number | null;
+  isWalkin?: boolean;
   onClose: () => void;
   onSuccess: (tipValue: number) => void;
+  onOpenTab?: () => void;
   onCharge: (args: {
     barberId: number;
     items: TicketItem[];
@@ -39,8 +41,10 @@ export default function BarberPaymentSheet({
   taxRate,
   barberId,
   appointmentId,
+  isWalkin = false,
   onClose,
   onSuccess,
+  onOpenTab,
   onCharge,
 }: BarberPaymentSheetProps) {
   const { t } = useTranslation();
@@ -169,6 +173,30 @@ export default function BarberPaymentSheet({
               ))}
             </div>
           </div>
+
+          {/* Pay Later link */}
+          {onOpenTab && (
+            <button
+              onClick={onOpenTab}
+              style={{
+                background: 'transparent',
+                border: 0,
+                color: 'var(--ink-3)',
+                fontSize: 12.5,
+                fontWeight: 600,
+                fontFamily: 'var(--font)',
+                cursor: 'pointer',
+                textDecoration: 'underline',
+                textUnderlineOffset: 2,
+                padding: 0,
+                textAlign: 'left',
+              }}
+            >
+              {isWalkin
+                ? 'Tabs not available for walk-ins'
+                : 'Customer can\'t pay now — open a tab'}
+            </button>
+          )}
 
           {/* Tip input */}
           <div className={`bm-tip-card${!tipValidation.valid ? ' error' : ''}`}>

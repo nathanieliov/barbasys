@@ -190,3 +190,42 @@ export interface GCalPendingOp {
   last_error: string | null;
   created_at: string;
 }
+
+export type TabStatus = 'open' | 'reminded' | 'paid';
+
+export interface TabItem {
+  name: string;
+  price: number;
+  qty?: number;
+}
+
+export interface OutstandingTab {
+  id: string;
+  customer_id: number;
+  customer_name: string | null;
+  customer_phone: string | null;
+  barber_id: number;
+  barber_name: string | null;
+  sale_id: number | null;
+  items: TabItem[];
+  amount: number;
+  opened_at: string;
+  status: TabStatus;
+  last_reminder_at: string | null;
+  reminder_count: number;
+  note: string | null;
+  paid_at: string | null;
+  paid_method: 'cash' | 'bank_transfer' | null;
+  tip_on_payback: number | null;
+  shop_id: number | null;
+}
+
+export interface CreateTabDto {
+  customerId: number;
+  barberId: number;
+  saleId?: number | null;
+  items: TabItem[];
+  amount: number;
+  note?: string | null;
+  shopId: number;
+}
