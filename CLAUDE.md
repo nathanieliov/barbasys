@@ -33,18 +33,18 @@ bash scripts/ai-verify.sh      # Cleans dist/, rebuilds shared+backend+frontend,
 
 ### Docker (two environments, same host)
 ```bash
-# Production — port 3000, data/prod/barbasys.db, ngrok on :4040
-docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
-
-# Stage — port 3001, data/stage/barbasys.db, ngrok on :4041
-docker compose -f docker-compose.stage.yml --env-file .env.stage up -d --build
-
-# Refresh stage DB from prod snapshot
-cp data/prod/barbasys.db data/stage/barbasys.db
-
-# Stop a stack
-docker compose -f docker-compose.prod.yml down
-docker compose -f docker-compose.stage.yml down
+make prod-up          # Build + start production  (port 3000, ngrok :4040)
+make stage-up         # Build + start stage       (port 3001, ngrok :4041)
+make prod-down        # Stop production
+make stage-down       # Stop stage
+make prod-logs        # Tail production logs
+make stage-logs       # Tail stage logs
+make prod-restart     # Restart prod app (no rebuild)
+make stage-restart    # Restart stage app (no rebuild)
+make stage-refresh-db # Copy prod DB snapshot → stage
+make up               # Start both environments
+make down             # Stop both environments
+make ps               # Show container status for both
 ```
 
 ### Utilities
