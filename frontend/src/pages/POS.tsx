@@ -25,6 +25,7 @@ export default function POS() {
   const [customerPhone, setCustomerPhone] = useState('');
   const [cart, setCart] = useState<any[]>([]);
   
+  const [activeTab, setActiveTab] = useState<'services' | 'products'>('services');
   const [tipAmount, setTipAmount] = useState<number>(0);
   const [discountAmount, setDiscountAmount] = useState<number>(0);
   const [showCheckout, setShowCheckout] = useState(false);
@@ -227,34 +228,46 @@ export default function POS() {
 
       <div className="pos-grid">
         <div>
-          {/* Services */}
           <div className="pos-tabs">
-            <button className="active">{t('pos.services', 'Services')}</button>
-            <button>{t('pos.products', 'Products')}</button>
+            <button
+              className={activeTab === 'services' ? 'active' : ''}
+              onClick={() => setActiveTab('services')}
+            >
+              {t('pos.services', 'Services')}
+            </button>
+            <button
+              className={activeTab === 'products' ? 'active' : ''}
+              onClick={() => setActiveTab('products')}
+            >
+              {t('pos.products', 'Products')}
+            </button>
           </div>
 
-          <div className="svc-grid" style={{ marginBottom: 20 }}>
-            {services.map(s => (
-              <button key={s.id} className="svc-tile" onClick={() => addToCart(s, 'service')}>
-                <div className="svc-icon">✂️</div>
-                <div className="svc-name">{s.name}</div>
-                <div className="svc-meta">{s.duration_minutes ?? 30} min</div>
-                <div className="svc-price">{formatCurrency(s.price, settings.currency_symbol)}</div>
-              </button>
-            ))}
-          </div>
+          {activeTab === 'services' && (
+            <div className="svc-grid" style={{ marginBottom: 20 }}>
+              {services.map(s => (
+                <button key={s.id} className="svc-tile" onClick={() => addToCart(s, 'service')}>
+                  <div className="svc-icon">✂️</div>
+                  <div className="svc-name">{s.name}</div>
+                  <div className="svc-meta">{s.duration_minutes ?? 30} min</div>
+                  <div className="svc-price">{formatCurrency(s.price, settings.currency_symbol)}</div>
+                </button>
+              ))}
+            </div>
+          )}
 
-          <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 12, color: 'var(--ink-2)' }}>{t('pos.products', 'Products')}</div>
-          <div className="svc-grid">
-            {products.map(p => (
-              <button key={p.id} className="svc-tile" onClick={() => addToCart(p, 'product')} disabled={p.stock === 0} style={{ opacity: p.stock === 0 ? 0.5 : 1 }}>
-                <div className="svc-icon">🧴</div>
-                <div className="svc-name">{p.name}</div>
-                <div className="svc-meta">{p.stock === 0 ? t('pos.out_of_stock', 'Out of stock') : `${p.stock} ${t('common.stock', 'in stock')}`}</div>
-                <div className="svc-price">{formatCurrency(p.price, settings.currency_symbol)}</div>
-              </button>
-            ))}
-          </div>
+          {activeTab === 'products' && (
+            <div className="svc-grid">
+              {products.map(p => (
+                <button key={p.id} className="svc-tile" onClick={() => addToCart(p, 'product')} disabled={p.stock === 0} style={{ opacity: p.stock === 0 ? 0.5 : 1 }}>
+                  <div className="svc-icon">🧴</div>
+                  <div className="svc-name">{p.name}</div>
+                  <div className="svc-meta">{p.stock === 0 ? t('pos.out_of_stock', 'Out of stock') : `${p.stock} ${t('common.stock', 'in stock')}`}</div>
+                  <div className="svc-price">{formatCurrency(p.price, settings.currency_symbol)}</div>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="cart-section">

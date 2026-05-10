@@ -31,6 +31,7 @@ vi.mock('react-i18next', () => ({
 
 const mockBarbers = [{ id: 1, fullname: 'Carlos', name: 'Carlos', barber_id: 1 }];
 const mockServices = [{ id: 10, name: 'Cut', duration_minutes: 30, price: 25 }];
+const mockProducts = [{ id: 20, name: 'Pomade', price: 15, stock: 10 }];
 
 function setupApiMocks() {
   vi.mocked(apiClient.get).mockImplementation((url: string) => {
@@ -54,6 +55,77 @@ function renderPOS() {
     </MemoryRouter>
   );
 }
+
+function setupApiMocksWithProducts() {
+  vi.mocked(apiClient.get).mockImplementation((url: string) => {
+    if (url.startsWith('/settings')) return Promise.resolve({ data: { default_tax_rate: '0' } });
+    if (url.startsWith('/barbers')) return Promise.resolve({ data: mockBarbers });
+    if (url.startsWith('/services')) return Promise.resolve({ data: mockServices });
+    if (url.startsWith('/inventory')) return Promise.resolve({ data: mockProducts });
+    return Promise.resolve({ data: [] });
+  });
+  vi.mocked(apiClient.post).mockResolvedValue({ data: { success: true, saleId: 42 } });
+}
+
+describe('POS tab switching', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    setupApiMocksWithProducts();
+  });
+
+  it('defaults to Services tab with services visible', async () => {
+    renderPOS();
+    const servicesTab = await screen.findByRole('button', { name: /^services$/i });
+    expect(servicesTab).toHaveClass('active');
+    expect(await screen.findByText('Cut')).toBeInTheDocument();
+  });
+
+  it('clicking Products tab makes it active and hides services', async () => {
+    renderPOS();
+    await screen.findByText('Cut'); // wait for data load
+
+    const productsTab = screen.getByRole('button', { name: /^products$/i });
+    fireEvent.click(productsTab);
+
+    expect(productsTab).toHaveClass('active');
+    expect(screen.queryByText('Cut')).not.toBeInTheDocument();
+  });
+
+  it('clicking Products tab shows product tiles', async () => {
+    renderPOS();
+    await screen.findByText('Cut');
+
+    fireEvent.click(screen.getByRole('button', { name: /^products$/i }));
+
+    expect(await screen.findByText('Pomade')).toBeInTheDocument();
+  });
+
+  it('clicking a product tile on the Products tab adds it to the cart', async () => {
+    renderPOS();
+    await screen.findByText('Cut');
+
+    fireEvent.click(screen.getByRole('button', { name: /^products$/i }));
+    fireEvent.click(await screen.findByText('Pomade'));
+
+    // Quantity controls only render when the cart has items
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /decrease quantity/i })).toBeInTheDocument();
+    });
+  });
+
+  it('switching back to Services tab hides products and shows services', async () => {
+    renderPOS();
+    await screen.findByText('Cut');
+
+    fireEvent.click(screen.getByRole('button', { name: /^products$/i }));
+    await screen.findByText('Pomade');
+
+    fireEvent.click(screen.getByRole('button', { name: /^services$/i }));
+
+    expect(await screen.findByText('Cut')).toBeInTheDocument();
+    expect(screen.queryByText('Pomade')).not.toBeInTheDocument();
+  });
+});
 
 describe('POS receipt feedback', () => {
   beforeEach(() => {
