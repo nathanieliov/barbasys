@@ -2,7 +2,11 @@
 node_modules/
 dist/
 build/
+
+# Environment files (all contain secrets)
 .env
+.env.prod
+.env.stage
 
 # Databases
 *.db

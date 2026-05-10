@@ -1,0 +1,23 @@
+name: barbasys-stage
+services:
+  app:
+    build: .
+    container_name: barbasys-stage
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./data/stage:/app/data
+    env_file: .env.stage
+    restart: always
+
+  ngrok:
+    image: ngrok/ngrok:latest
+    container_name: ngrok-stage
+    restart: always
+    ports:
+      - "4041:4040"
+    environment:
+      NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}
+    command: ["http", "barbasys-stage:3000"]
+    depends_on:
+      - app

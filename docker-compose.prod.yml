@@ -1,0 +1,23 @@
+name: barbasys-prod
+services:
+  app:
+    build: .
+    container_name: barbasys-prod
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data/prod:/app/data
+    env_file: .env.prod
+    restart: always
+
+  ngrok:
+    image: ngrok/ngrok:latest
+    container_name: ngrok-prod
+    restart: always
+    ports:
+      - "4040:4040"
+    environment:
+      NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}
+    command: ["http", "barbasys-prod:3000"]
+    depends_on:
+      - app
