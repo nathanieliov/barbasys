@@ -99,11 +99,12 @@ export default function UserProfile() {
               <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>Full Name</label>
               <div style={{ position: 'relative' }}>
                 <User size={16} style={{ position: 'absolute', left: '0.75rem', top: '0.75rem', color: '#94a3b8' }} />
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={fullname}
                   onChange={e => setFullname(e.target.value)}
                   style={{ paddingLeft: '2.5rem' }}
+                  enterKeyHint="next"
                   required
                 />
               </div>
@@ -113,11 +114,12 @@ export default function UserProfile() {
               <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>Username</label>
               <div style={{ position: 'relative' }}>
                 <User size={16} style={{ position: 'absolute', left: '0.75rem', top: '0.75rem', color: '#94a3b8' }} />
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={username}
                   onChange={e => setUsername(e.target.value)}
                   style={{ paddingLeft: '2.5rem' }}
+                  enterKeyHint="next"
                   required
                 />
               </div>
@@ -127,11 +129,13 @@ export default function UserProfile() {
               <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>Email Address</label>
               <div style={{ position: 'relative' }}>
                 <Mail size={16} style={{ position: 'absolute', left: '0.75rem', top: '0.75rem', color: '#94a3b8' }} />
-                <input 
-                  type="email" 
+                <input
+                  type="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   style={{ paddingLeft: '2.5rem' }}
+                  enterKeyHint="done"
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }}
                   required
                 />
               </div>
@@ -161,11 +165,12 @@ export default function UserProfile() {
           <form onSubmit={handleChangePassword}>
             <div style={{ marginBottom: '1.25rem' }}>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>Current Password</label>
-              <input 
-                type="password" 
+              <input
+                type="password"
                 value={currentPassword}
                 onChange={e => setCurrentPassword(e.target.value)}
                 placeholder="••••••••"
+                enterKeyHint="next"
                 required
               />
             </div>
@@ -174,22 +179,25 @@ export default function UserProfile() {
 
             <div style={{ marginBottom: '1.25rem' }}>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>New Password</label>
-              <input 
-                type="password" 
+              <input
+                type="password"
                 value={newPassword}
                 onChange={e => setNewPassword(e.target.value)}
                 placeholder="Min. 8 characters"
+                enterKeyHint="next"
                 required
               />
             </div>
 
             <div style={{ marginBottom: '1.5rem' }}>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '600' }}>Confirm New Password</label>
-              <input 
-                type="password" 
+              <input
+                type="password"
                 value={confirmPassword}
                 onChange={e => setConfirmPassword(e.target.value)}
                 placeholder="Confirm new password"
+                enterKeyHint="done"
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }}
                 required
               />
             </div>

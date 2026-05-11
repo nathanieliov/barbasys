@@ -112,7 +112,7 @@ export default function BarberPaymentSheet({
       height="auto"
     >
       {phase === 'select' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <form onSubmit={e => { e.preventDefault(); handleCharge(); }} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {/* Subtotal pill */}
           <div
             style={{
@@ -223,6 +223,7 @@ export default function BarberPaymentSheet({
                 className="bm-tip-input"
                 type="text"
                 inputMode="decimal"
+                enterKeyHint="done"
                 value={tipStr}
                 onChange={e => setTipStr(sanitizeTipInput(e.target.value))}
                 onFocus={() => { if (tipStr === '0.00') setTipStr(''); }}
@@ -305,8 +306,8 @@ export default function BarberPaymentSheet({
 
           {/* Charge button */}
           <button
+            type="submit"
             disabled={!tipValidation.valid}
-            onClick={handleCharge}
             style={{
               height: 54,
               borderRadius: 16,
@@ -331,7 +332,7 @@ export default function BarberPaymentSheet({
               : t('barber_mode.confirm_transfer')}
             <ArrowRight size={18} />
           </button>
-        </div>
+        </form>
       )}
 
       {phase === 'processing' && (

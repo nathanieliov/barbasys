@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../api/apiClient';
-import { Search, Mail, Phone, Calendar, X, ShoppingBag, Scissors, Tag, Save, History, MessageSquare, Clock } from 'lucide-react';
+import { Search, Mail, Phone, Calendar, X, ShoppingBag, Scissors, Tag, Save, History, MessageSquare, Clock, UserPlus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSettings } from '../hooks/useSettings';
 import { formatCurrency } from '../utils/format';
+
+const EMPTY_NEW = { name: '', phone: '', email: '' };
 
 export default function Customers() {
   const { t } = useTranslation();
@@ -14,6 +16,9 @@ export default function Customers() {
   const [history, setHistory] = useState<any[]>([]);
   const [editingNotes, setEditingNotes] = useState('');
   const [editingTags, setEditingTags] = useState('');
+  const [showCreate, setShowCreate] = useState(false);
+  const [newCustomer, setNewCustomer] = useState(EMPTY_NEW);
+  const [creating, setCreating] = useState(false);
 
   const fetchCustomers = () => {
     apiClient.get('/customers').then(res => setCustomers(res.data));
@@ -32,6 +37,27 @@ export default function Customers() {
       setEditingTags(res.data.tags || '');
     } catch (err) {
       alert(t('customers.failed_load'));
+    }
+  };
+
+  const createCustomer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCustomer.name && !newCustomer.phone && !newCustomer.email) return;
+    setCreating(true);
+    try {
+      await apiClient.post('/customers', newCustomer);
+      setShowCreate(false);
+      setNewCustomer(EMPTY_NEW);
+      fetchCustomers();
+    } catch (err: any) {
+      const status = err.response?.status;
+      if (status === 409) {
+        alert(t('customers.duplicate_error'));
+      } else {
+        alert(t('customers.failed_create'));
+      }
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -71,6 +97,9 @@ export default function Customers() {
           <h1>{t('customers.title')}</h1>
           <p style={{ color: 'var(--text-muted)' }}>{t('customers.manage_clients')}</p>
         </div>
+        <button className="btn" style={{ gap: '0.5rem' }} onClick={() => { setNewCustomer(EMPTY_NEW); setShowCreate(true); }}>
+          <UserPlus size={18} /> {t('customers.new_customer', 'New Customer')}
+        </button>
       </div>
 
       {/* Search Bar */}
@@ -145,6 +174,65 @@ export default function Customers() {
           </div>
         )}
       </div>
+
+      {/* Create Customer Modal */}
+      {showCreate && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: '480px', display: 'block' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h2 style={{ margin: 0 }}>{t('customers.new_customer', 'New Customer')}</h2>
+              <button className="btn btn-ghost" onClick={() => setShowCreate(false)}><X size={20} /></button>
+            </div>
+            <form onSubmit={createCustomer} style={{ display: 'grid', gap: '1rem' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-muted)' }}>
+                  {t('customers.name_label', 'Name')}
+                </label>
+                <input
+                  type="text"
+                  value={newCustomer.name}
+                  onChange={e => setNewCustomer(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder={t('customers.name_placeholder', 'Full name')}
+                  enterKeyHint="next"
+                  style={{ marginBottom: 0 }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-muted)' }}>
+                  {t('customers.phone_label', 'Phone')}
+                </label>
+                <input
+                  type="tel"
+                  inputMode="tel"
+                  value={newCustomer.phone}
+                  onChange={e => setNewCustomer(prev => ({ ...prev, phone: e.target.value }))}
+                  placeholder={t('customers.phone_placeholder', '+1 809 000 0000')}
+                  enterKeyHint="next"
+                  style={{ marginBottom: 0 }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-muted)' }}>
+                  {t('customers.email_label', 'Email')}
+                </label>
+                <input
+                  type="email"
+                  inputMode="email"
+                  value={newCustomer.email}
+                  onChange={e => setNewCustomer(prev => ({ ...prev, email: e.target.value }))}
+                  placeholder={t('customers.email_placeholder', 'email@example.com')}
+                  enterKeyHint="done"
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }}
+                  style={{ marginBottom: 0 }}
+                />
+              </div>
+              <button type="submit" disabled={creating || (!newCustomer.name && !newCustomer.phone && !newCustomer.email)} style={{ width: '100%', gap: '0.5rem', marginTop: '0.5rem' }}>
+                <UserPlus size={18} /> {creating ? t('customers.creating', 'Creating…') : t('customers.create_btn', 'Create Customer')}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Profile Modal */}
       {selectedCustomer && (

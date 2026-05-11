@@ -322,7 +322,18 @@
     "no_visit_history": "No visit history found.",
     "failed_load": "Failed to load profile",
     "failed_update": "Failed to update profile",
-    "update_success": "Profile updated successfully"
+    "update_success": "Profile updated successfully",
+    "new_customer": "New Customer",
+    "name_label": "Name",
+    "name_placeholder": "Full name",
+    "phone_label": "Phone",
+    "phone_placeholder": "+1 809 000 0000",
+    "email_label": "Email",
+    "email_placeholder": "email@example.com",
+    "creating": "Creating…",
+    "create_btn": "Create Customer",
+    "failed_create": "Failed to create customer",
+    "duplicate_error": "A customer with that email or phone already exists"
   },
   "services": {
     "title": "Service Catalog",

@@ -322,7 +322,18 @@
     "no_visit_history": "No se encontró historial de visitas.",
     "failed_load": "Error al cargar el perfil",
     "failed_update": "Error al actualizar el perfil",
-    "update_success": "Perfil actualizado exitosamente"
+    "update_success": "Perfil actualizado exitosamente",
+    "new_customer": "Nuevo Cliente",
+    "name_label": "Nombre",
+    "name_placeholder": "Nombre completo",
+    "phone_label": "Teléfono",
+    "phone_placeholder": "+1 809 000 0000",
+    "email_label": "Correo electrónico",
+    "email_placeholder": "correo@ejemplo.com",
+    "creating": "Creando…",
+    "create_btn": "Crear Cliente",
+    "failed_create": "Error al crear el cliente",
+    "duplicate_error": "Ya existe un cliente con ese correo o teléfono"
   },
   "services": {
     "title": "Catálogo de Servicios",

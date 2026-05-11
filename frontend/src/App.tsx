@@ -4,8 +4,8 @@ import { BrowserRouter as Router, Routes, Route, NavLink, useNavigate, useLocati
 import { useTranslation } from 'react-i18next';
 import {
   LayoutDashboard, Package, BarChart3, Users as UsersIcon,
-  ShoppingCart, Calendar as CalendarIcon, LogOut, Settings as SettingsIcon,
-  Clock, Truck, BarChart, Receipt, User, Shield,
+  ShoppingCart, Calendar as CalendarIcon, Settings as SettingsIcon,
+  Clock, Truck, BarChart, Receipt, Shield,
 } from 'lucide-react';
 import { useScrollLock } from './hooks/useScrollLock';
 import { useFocusTrap } from './hooks/useFocusTrap';
@@ -55,9 +55,8 @@ interface NavItemDef {
 }
 
 function AdminSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const [shops, setShops] = useState<any[]>([]);
   const sidebarRef = useRef<HTMLElement>(null);
 
@@ -88,11 +87,6 @@ function AdminSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
     }
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
   if (!user) return null;
   const isAdmin = user.role === 'OWNER' || user.role === 'MANAGER';
 
@@ -115,7 +109,6 @@ function AdminSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
     { to: '/expenses',   icon: <Receipt size={17} />,         label: t('nav.expenses'), admin: true },
     { to: '/suppliers',  icon: <Truck size={17} />,           label: t('nav.suppliers'), admin: true },
     { to: '/users',      icon: <Shield size={17} />,          label: t('nav.user_accounts'), admin: true },
-    { to: '/profile',    icon: <User size={17} />,            label: t('nav.my_profile') },
     { to: '/settings',   icon: <SettingsIcon size={17} />,    label: t('nav.settings'), admin: true },
   ];
 
@@ -174,21 +167,7 @@ function AdminSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
         <div className="sidebar-eyebrow" style={{ marginTop: 8 }}>{t('nav.shop', 'Shop')}</div>
         {renderItems(shopItems)}
 
-        {/* Drawer status card */}
         <div style={{ flex: 1 }} aria-hidden="true" />
-        <div style={{ padding: 14, background: 'var(--surface-2)', borderRadius: 14, fontSize: 12.5, color: 'var(--ink-2)', marginTop: 8 }}>
-          <div style={{ fontWeight: 600, color: 'var(--ink)', marginBottom: 4 }}>
-            {user.fullname || user.username}
-          </div>
-          <div style={{ fontSize: 11.5, color: 'var(--ink-3)', marginBottom: 10 }}>{user.role}</div>
-          <button
-            className="btn btn-ghost btn-sm"
-            style={{ width: '100%', color: 'var(--danger)' }}
-            onClick={handleLogout}
-          >
-            <LogOut size={14} aria-hidden="true" /> {t('common.logout')}
-          </button>
-        </div>
       </aside>
     </>
   );

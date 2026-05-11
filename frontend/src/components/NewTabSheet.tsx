@@ -152,6 +152,7 @@ export default function NewTabSheet({
         </div>
       </div>
 
+      <form onSubmit={e => { e.preventDefault(); handleConfirm(); }}>
       {/* Phone */}
       <div style={{ marginBottom: 12 }}>
         <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink-2)', marginBottom: 5 }}>
@@ -162,6 +163,8 @@ export default function NewTabSheet({
           onChange={e => setPhone(e.target.value)}
           placeholder={t('tabs.phone_placeholder')}
           inputMode="tel"
+          enterKeyHint="done"
+          onKeyDown={e => { if (e.key === 'Enter' && ready) { e.preventDefault(); handleConfirm(); } }}
           style={{
             width: '100%',
             height: 44,
@@ -190,6 +193,8 @@ export default function NewTabSheet({
           value={note}
           onChange={e => setNote(e.target.value)}
           placeholder={t('tabs.note_placeholder')}
+          enterKeyHint="done"
+          onKeyDown={e => { if (e.key === 'Enter' && ready) { e.preventDefault(); handleConfirm(); } }}
           style={{
             width: '100%',
             height: 44,
@@ -207,7 +212,7 @@ export default function NewTabSheet({
       </div>
 
       <button
-        onClick={handleConfirm}
+        type="submit"
         disabled={!ready}
         style={{
           width: '100%',
@@ -229,6 +234,7 @@ export default function NewTabSheet({
       >
         {t('tabs.confirm_btn', { amount: formatCurrency(total, currencySymbol) })} <ArrowRight size={16} />
       </button>
+      </form>
 
       <button onClick={onClose} style={{
         width: '100%',

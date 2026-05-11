@@ -1,5 +1,6 @@
+import { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Bell, Settings, Sparkles, Menu, X } from 'lucide-react';
+import { Search, Bell, Settings, Sparkles, Menu, X, User, LogOut } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useTranslation } from 'react-i18next';
 
@@ -20,9 +21,31 @@ export default function AppTopBar({
   onMenuToggle,
   onStaffViewChange,
 }: AppTopBarProps) {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMenuOpen(false); };
+    document.addEventListener('mousedown', handleOutside);
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('mousedown', handleOutside);
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, [menuOpen]);
+
+  const handleProfile = () => { setMenuOpen(false); navigate('/profile'); };
+  const handleLogout = () => { setMenuOpen(false); logout(); navigate('/login'); };
+
   const initials = user?.fullname
     ? user.fullname.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
     : user?.username?.slice(0, 2).toUpperCase() ?? '?';
@@ -83,12 +106,34 @@ export default function AppTopBar({
               <Bell size={16} />
               <span style={{ position: 'absolute', top: 6, right: 6, width: 8, height: 8, borderRadius: '50%', background: 'var(--primary)', border: '2px solid var(--bg)' }} aria-hidden="true" />
             </button>
-            <div
-              className="avatar"
-              aria-label={user?.fullname ?? user?.username}
-              title={user?.fullname ?? user?.username}
-            >
-              {initials}
+            <div className="avatar-wrapper" ref={menuRef}>
+              <button
+                className="avatar"
+                onClick={() => setMenuOpen(o => !o)}
+                aria-label={t('topbar.open_profile_menu', 'Profile menu')}
+                aria-expanded={menuOpen}
+                aria-haspopup="menu"
+              >
+                {initials}
+              </button>
+              {menuOpen && (
+                <div className="avatar-menu" role="menu">
+                  <div className="avatar-menu-header">
+                    <div className="avatar-menu-name">{user?.fullname ?? user?.username}</div>
+                    <div className="avatar-menu-role">{user?.role}</div>
+                  </div>
+                  <div className="avatar-menu-divider" />
+                  <button className="avatar-menu-item" role="menuitem" onClick={handleProfile}>
+                    <User size={14} aria-hidden="true" />
+                    {t('nav.my_profile', 'Profile & Security')}
+                  </button>
+                  <div className="avatar-menu-divider" />
+                  <button className="avatar-menu-item avatar-menu-item--danger" role="menuitem" onClick={handleLogout}>
+                    <LogOut size={14} aria-hidden="true" />
+                    {t('common.logout', 'Log out')}
+                  </button>
+                </div>
+              )}
             </div>
           </>
         )}

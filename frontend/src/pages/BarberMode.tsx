@@ -212,7 +212,9 @@ export default function BarberMode() {
     const today = new Date().toISOString().split('T')[0];
     try {
       const res = await apiClient.get(`/appointments?date=${today}`);
-      setAgenda((res.data as Appointment[]).filter(a => a.status !== 'CANCELLED'));
+      setAgenda((res.data as Appointment[]).filter(
+        a => a.status !== 'cancelled' && a.status !== 'completed' && a.status !== 'no-show'
+      ));
     } catch {
       // agenda unavailable, keep empty
     }
@@ -433,11 +435,13 @@ export default function BarberMode() {
 
   // ── After successful payment
   const handlePaymentSuccess = (_tipValue: number, toastMsg?: string) => {
+    const completedApptId = chairState?.appointmentId;
     setChairState(null);
     persistChair(null);
 
-    // Auto-advance: take next appointment
-    const next = agenda[0];
+    // Auto-advance: skip the just-completed appointment (it may still be in agenda
+    // if the session was resumed from localStorage after a page refresh).
+    const next = agenda.find(a => a.id !== completedApptId);
     if (next) {
       showToast(toastMsg ?? t('barber_mode.walkin_closed_next'));
       // Brief delay so toast is readable before chair card swaps
