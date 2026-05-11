@@ -62,7 +62,7 @@ export class ProcessSale {
     const tax_amount = taxable_amount * (taxRate / 100);
     const total_amount = taxable_amount + tax_amount + tip_amount;
 
-    let customerId = null;
+    let customerId: number | null = null;
     if (customer_email || customer_phone) {
       const customer = await this.customerRepo.findByEmailOrPhone(customer_email, customer_phone);
       if (customer) {
@@ -76,6 +76,10 @@ export class ProcessSale {
           shop_id
         } as any);
       }
+    }
+
+    if (!customerId) {
+      customerId = await this.customerRepo.findOrCreateWalkIn(shop_id);
     }
 
     // Create sale + optionally mark appointment completed in a single transaction

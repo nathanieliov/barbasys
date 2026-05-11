@@ -528,12 +528,6 @@ app.post('/api/barbers/:id/time-off', protect, authorize('OWNER', 'MANAGER', 'BA
 
 app.get('/api/customers', protect, async (req, res) => {
   const shopId = req.user?.shop_id ?? null;
-  if (req.user?.role === 'BARBER') {
-    const rows = shopId !== null
-      ? db.prepare('SELECT DISTINCT c.* FROM customers c JOIN sales s ON s.customer_id = c.id WHERE s.barber_id = ? AND c.shop_id = ? ORDER BY c.last_visit DESC').all(req.user.barber_id, shopId)
-      : db.prepare('SELECT DISTINCT c.* FROM customers c JOIN sales s ON s.customer_id = c.id WHERE s.barber_id = ? ORDER BY c.last_visit DESC').all(req.user.barber_id);
-    return res.json(rows);
-  }
   const customers = shopId !== null
     ? await customerRepo.findAll(shopId)
     : db.prepare('SELECT * FROM customers ORDER BY last_visit DESC').all();
@@ -547,11 +541,6 @@ app.get('/api/customers/:id', protect, (req, res) => {
     ? db.prepare('SELECT * FROM customers WHERE id = ? AND shop_id = ?').get(id, shopId) as any
     : db.prepare('SELECT * FROM customers WHERE id = ?').get(id) as any;
   if (!customer) return res.status(404).json({ error: 'Customer not found' });
-
-  if (req.user?.role === 'BARBER') {
-    const hasServed = db.prepare('SELECT 1 FROM sales WHERE customer_id = ? AND barber_id = ? LIMIT 1').get(id, req.user.barber_id);
-    if (!hasServed) return res.status(403).json({ error: 'Not authorized to view this customer' });
-  }
 
   const historyQuery = `
     SELECT s.id as sale_id, s.timestamp, s.total_amount, s.barber_id, b.name as barber_name,
@@ -584,11 +573,6 @@ app.patch('/api/customers/:id', protect, (req, res) => {
     : db.prepare('SELECT id FROM customers WHERE id = ?').get(id);
   if (!existing) return res.status(404).json({ error: 'Customer not found' });
 
-  if (req.user?.role === 'BARBER') {
-    const hasServed = db.prepare('SELECT 1 FROM sales WHERE customer_id = ? AND barber_id = ? LIMIT 1').get(id, req.user.barber_id);
-    if (!hasServed) return res.status(403).json({ error: 'Not authorized to update this customer' });
-  }
-
   try {
     if (shopId !== null) {
       db.prepare('UPDATE customers SET name = ?, email = ?, phone = ?, notes = ?, tags = ? WHERE id = ? AND shop_id = ?')
@@ -598,6 +582,38 @@ app.patch('/api/customers/:id', protect, (req, res) => {
         .run(name, email, phone, notes, tags, id);
     }
     res.json({ success: true });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.post('/api/customers', protect, async (req, res) => {
+  const shopId = req.user?.shop_id ?? null;
+  const { name, email, phone, notes, tags } = req.body;
+
+  if (!name && !phone && !email) {
+    return res.status(400).json({ error: 'At least one of name, phone, or email is required' });
+  }
+
+  try {
+    if (email || phone) {
+      const existing = await customerRepo.findByEmailOrPhone(
+        email || null,
+        phone || null,
+        shopId ?? undefined
+      );
+      if (existing) {
+        return res.status(409).json({ error: 'A customer with that email or phone already exists', existing_id: existing.id });
+      }
+    }
+
+    const id = await customerRepo.create({ name, email, phone, notes, shop_id: shopId } as any);
+    if (tags && shopId !== null) {
+      db.prepare('UPDATE customers SET tags = ? WHERE id = ? AND shop_id = ?').run(tags, id, shopId);
+    } else if (tags) {
+      db.prepare('UPDATE customers SET tags = ? WHERE id = ?').run(tags, id);
+    }
+    res.status(201).json({ id });
   } catch (err: any) {
     res.status(400).json({ error: err.message });
   }
@@ -1202,9 +1218,11 @@ app.get('/api/sales/:id', protect, (req, res) => {
 
   try {
     let query = `
-      SELECT s.*, COALESCE(s.barber_name, b.name) as barber_name
+      SELECT s.*, COALESCE(s.barber_name, b.name) as barber_name,
+             c.name AS customer_name, COALESCE(c.is_walkin, 0) AS is_walkin
       FROM sales s
       LEFT JOIN barbers b ON s.barber_id = b.id
+      LEFT JOIN customers c ON s.customer_id = c.id
       WHERE s.id = ? AND s.shop_id = ?
     `;
     const params: any[] = [id, shopId];
@@ -1513,7 +1531,9 @@ const frontendPath = path.join(__dirname, '../../frontend/dist');
 app.use(express.static(frontendPath));
 
 app.use((req, res) => {
-  if (!req.path.startsWith('/api')) {
+  if (req.path.startsWith('/api')) {
+    res.status(404).json({ error: `Cannot ${req.method} ${req.path}` });
+  } else {
     res.sendFile(path.join(frontendPath, 'index.html'));
   }
 });

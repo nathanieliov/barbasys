@@ -27,6 +27,7 @@ export interface Customer {
   tags?: string | null;
   shop_id: number | null;
   created_at: string;
+  is_walkin?: number;
 }
 
 export interface Sale {

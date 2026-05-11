@@ -4,6 +4,7 @@ export interface ICustomerRepository {
   findById(id: number, shopId?: number): Promise<Customer | null>;
   findByEmailOrPhone(email: string | null, phone: string | null, shopId?: number): Promise<Customer | null>;
   findAll(shopId: number): Promise<Customer[]>;
+  findOrCreateWalkIn(shopId: number): Promise<number>;
   create(customer: Partial<Customer>): Promise<number>;
   update(customer: Partial<Customer> & { id: number }): Promise<void>;
   updateLastVisit(id: number): Promise<void>;

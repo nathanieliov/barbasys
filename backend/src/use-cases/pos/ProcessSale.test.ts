@@ -73,4 +73,33 @@ describe('ProcessSale receipt wiring', () => {
     const [, client] = vi.mocked(sendReceipt).mock.calls[0];
     expect(client).toBeUndefined();
   });
+
+  it('assigns walk-in sentinel when no customer info is provided', async () => {
+    vi.mocked(sendReceipt).mockClear();
+    const { saleId } = await useCase.execute({
+      barber_id: barberId,
+      items: [{ id: 1, name: 'Cut', type: 'service', price: 30 }],
+      shop_id: shopId,
+    });
+
+    const sale = db.prepare('SELECT customer_id FROM sales WHERE id = ?').get(saleId) as { customer_id: number | null };
+    expect(sale.customer_id).not.toBeNull();
+
+    const customer = db.prepare('SELECT is_walkin FROM customers WHERE id = ?').get(sale.customer_id) as { is_walkin: number };
+    expect(customer.is_walkin).toBe(1);
+  });
+
+  it('does not assign walk-in when a real customer email is provided', async () => {
+    vi.mocked(sendReceipt).mockClear();
+    const { saleId } = await useCase.execute({
+      barber_id: barberId,
+      items: [{ id: 1, name: 'Cut', type: 'service', price: 30 }],
+      customer_email: `real-${Date.now()}@example.com`,
+      shop_id: shopId,
+    });
+
+    const sale = db.prepare('SELECT customer_id FROM sales WHERE id = ?').get(saleId) as { customer_id: number };
+    const customer = db.prepare('SELECT is_walkin FROM customers WHERE id = ?').get(sale.customer_id) as { is_walkin: number };
+    expect(customer.is_walkin).toBeFalsy();
+  });
 });

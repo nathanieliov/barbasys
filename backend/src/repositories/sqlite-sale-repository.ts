@@ -62,28 +62,29 @@ export class SQLiteSaleRepository implements ISaleRepository {
     };
   }
 
-  async findDetailedInRange(startDate: string, endDate: string, shopId: number, barberId?: number | null): Promise<(Sale & { items: SaleItem[] })[]> {
-    let query = 'SELECT * FROM sales WHERE date(timestamp) BETWEEN ? AND ? AND shop_id = ?';
+  async findDetailedInRange(startDate: string, endDate: string, shopId: number, barberId?: number | null): Promise<(Sale & { items: SaleItem[]; customer_name: string | null; is_walkin: number })[]> {
+    let query = `
+      SELECT s.*, c.name AS customer_name, COALESCE(c.is_walkin, 0) AS is_walkin
+      FROM sales s
+      LEFT JOIN customers c ON s.customer_id = c.id
+      WHERE date(s.timestamp) BETWEEN ? AND ? AND s.shop_id = ?
+    `;
     const params: any[] = [startDate, endDate, shopId];
 
     if (barberId !== undefined) {
-      query += ' AND barber_id = ?';
+      query += ' AND s.barber_id = ?';
       params.push(barberId);
     }
 
-    query += ' ORDER BY timestamp DESC';
+    query += ' ORDER BY s.timestamp DESC';
 
-    const sales = this.db.prepare(query).all(...params) as Sale[];
-    const salesWithItems: (Sale & { items: SaleItem[] })[] = [];
-
+    const sales = this.db.prepare(query).all(...params) as (Sale & { customer_name: string | null; is_walkin: number })[];
     const itemQuery = this.db.prepare('SELECT * FROM sale_items WHERE sale_id = ?');
 
-    for (const sale of sales) {
-      const items = itemQuery.all(sale.id) as SaleItem[];
-      salesWithItems.push({ ...sale, items });
-    }
-
-    return salesWithItems;
+    return sales.map(sale => ({
+      ...sale,
+      items: itemQuery.all(sale.id) as SaleItem[],
+    }));
   }
 
   async updateContactInfo(saleId: number, email: string | null, phone: string | null): Promise<void> {

@@ -144,7 +144,9 @@ export default function SalesHistory() {
                       <span style={{ fontWeight: '700', fontSize: '0.9rem' }}>{sale.barber_name}</span>
                     </div>
                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', paddingLeft: '1.5rem' }}>
-                      {sale.customer_email || sale.customer_phone || 'Guest Customer'}
+                      {sale.is_walkin
+                        ? 'Walk-in'
+                        : (sale.customer_name || sale.customer_email || sale.customer_phone || 'Walk-in')}
                     </div>
                   </div>
 

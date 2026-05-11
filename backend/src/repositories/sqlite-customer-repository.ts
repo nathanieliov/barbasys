@@ -16,7 +16,7 @@ export class SQLiteCustomerRepository implements ICustomerRepository {
   async findByEmailOrPhone(email: string | null, phone: string | null, shopId?: number): Promise<Customer | null> {
     if (!email && !phone) return null;
     const shopFilter = shopId !== undefined ? ' AND shop_id = ?' : '';
-    const query = `SELECT * FROM customers WHERE ((email = ? AND email IS NOT NULL) OR (phone = ? AND phone IS NOT NULL))${shopFilter}`;
+    const query = `SELECT * FROM customers WHERE is_walkin = 0 AND ((email = ? AND email IS NOT NULL) OR (phone = ? AND phone IS NOT NULL))${shopFilter}`;
     const args: any[] = [email, phone];
     if (shopId !== undefined) args.push(shopId);
     const result = this.db.prepare(query).get(...args);
@@ -24,7 +24,16 @@ export class SQLiteCustomerRepository implements ICustomerRepository {
   }
 
   async findAll(shopId: number): Promise<Customer[]> {
-    return this.db.prepare('SELECT * FROM customers WHERE shop_id = ? ORDER BY last_visit DESC').all(shopId) as Customer[];
+    return this.db.prepare('SELECT * FROM customers WHERE shop_id = ? AND (is_walkin = 0 OR is_walkin IS NULL) ORDER BY last_visit DESC').all(shopId) as Customer[];
+  }
+
+  async findOrCreateWalkIn(shopId: number): Promise<number> {
+    const existing = this.db.prepare('SELECT id FROM customers WHERE shop_id = ? AND is_walkin = 1 LIMIT 1').get(shopId) as { id: number } | undefined;
+    if (existing) return existing.id;
+    const result = this.db.prepare(
+      "INSERT INTO customers (name, shop_id, is_walkin) VALUES ('Walk-in', ?, 1)"
+    ).run(shopId);
+    return Number(result.lastInsertRowid);
   }
 
   async create(customer: Partial<Customer>): Promise<number> {

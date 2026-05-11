@@ -565,4 +565,31 @@ try {
   `);
 } catch (_e) {}
 
+// Walk-in sentinel: one generic customer per shop for anonymous sales
+try { db.exec("ALTER TABLE customers ADD COLUMN is_walkin INTEGER DEFAULT 0"); } catch (_e) {}
+
+// Seed one walk-in customer per shop (idempotent)
+try {
+  const shops = db.prepare('SELECT id FROM shops').all() as { id: number }[];
+  const insertWalkIn = db.prepare(
+    "INSERT OR IGNORE INTO customers (name, shop_id, is_walkin) SELECT 'Walk-in', ?, 1 WHERE NOT EXISTS (SELECT 1 FROM customers WHERE shop_id = ? AND is_walkin = 1)"
+  );
+  for (const shop of shops) {
+    insertWalkIn.run(shop.id, shop.id);
+  }
+} catch (_e) {}
+
+// Backfill sales that have no customer to the shop's walk-in sentinel
+try {
+  db.exec(`
+    UPDATE sales
+    SET customer_id = (
+      SELECT id FROM customers
+      WHERE customers.shop_id = sales.shop_id AND customers.is_walkin = 1
+      LIMIT 1
+    )
+    WHERE customer_id IS NULL
+  `);
+} catch (_e) {}
+
 export default db;
